@@ -4,16 +4,6 @@ struct TokenData {
 }
 
 use logos::Logos;
-use logos::Lexer;
-
-fn identifier_callback(lex: &mut Lexer<Token>) -> TokenData {
-    // let line = lex.extras.0;
-    // let column = lex.span().start - lex.extras.1;
-
-    TokenData{
-        value: lex.slice().to_string(),
-    }
-}
 
 #[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"[ \t\n\f]+")]
@@ -28,7 +18,7 @@ enum Token {
     While,
     #[token("for")]
     For,
-    
+
     #[token("+")]
     Plus,
     #[token("-")]
@@ -77,9 +67,9 @@ enum Token {
     #[token(";")]
     Semicolon,
 
-    #[regex("[a-zA-Z]+", identifier_callback)]
+    #[regex("[a-zA-Z]+", |lex| TokenData {value: lex.slice().to_string()})]
     Identifier(TokenData),
-    #[regex("[0-9]+", identifier_callback)]
+    #[regex("[0-9]+", |lex| TokenData {value: lex.slice().to_string()})]
     NumberLiteral(TokenData),
 }
 
