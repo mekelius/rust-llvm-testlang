@@ -1,0 +1,3 @@
+function test() {
+    testCall(x,y,z);
+}
