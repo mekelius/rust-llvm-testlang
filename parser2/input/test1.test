@@ -1,9 +1,8 @@
-test() {
+function test() {
     return 123;
 }
 
-main() {
-    let joo = test();
+function main() {
     print(joo);
     return 0;
 }

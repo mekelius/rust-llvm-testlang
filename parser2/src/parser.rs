@@ -17,16 +17,21 @@ pub enum Node {
     Formals(Vec<Node>),
     Formal(String),
     FunctionBody(Vec<Node>),
+
     While {
         condition: Box<Node>,
         body: Box<Node>,
     },
     EmptyStatement,
+    LetStatement(String, Box<Node>),
+    ReturnStatement(Box<Node>),
+
     ArgumentList(Vec<Node>),
     FunctionCall {
         callee: String,
         argument_list: Vec<Node>,
     },
+
     UnaryOperator {
         op: Box<Node>,
         rhs: Box<Node>,
@@ -77,15 +82,9 @@ pub fn parser<'src>()
         just(Token::NotEquals),
     ));
 
-    let binary_op_2 = choice((
-        just(Token::Times),
-        just(Token::Divided),
-    ));
+    let binary_op_2 = choice((just(Token::Times), just(Token::Divided)));
 
-    let binary_op_3 = choice((
-        just(Token::Plus),
-        just(Token::Minus),
-    ));
+    let binary_op_3 = choice((just(Token::Plus), just(Token::Minus)));
 
     let expression = recursive(|expr| {
         let argument_list = parenthesized(
@@ -132,15 +131,14 @@ pub fn parser<'src>()
         ));
 
         let binary_expression_1 = term.clone().foldl(
-            binary_op_1
-                .clone()
-                .then(term.clone())
-                .repeated(),
+            binary_op_1.clone().then(term.clone()).repeated(),
             |lhs, (op, rhs)| match op {
                 Token::Equals => Node::Equals(Box::new(lhs), Box::new(rhs)),
                 Token::GreaterThan => Node::GreaterThan(Box::new(lhs), Box::new(rhs)),
                 Token::LessThan => Node::LessThan(Box::new(lhs), Box::new(rhs)),
-                Token::GreaterThanOrEquals => Node::GreaterThanOrEquals(Box::new(lhs), Box::new(rhs)),
+                Token::GreaterThanOrEquals => {
+                    Node::GreaterThanOrEquals(Box::new(lhs), Box::new(rhs))
+                }
                 Token::LessThanOrEquals => Node::LessThanOrEquals(Box::new(lhs), Box::new(rhs)),
                 Token::NotEquals => Node::NotEquals(Box::new(lhs), Box::new(rhs)),
                 _ => unreachable!(),
@@ -202,8 +200,30 @@ pub fn parser<'src>()
                 .map(|e| Node::Block(e)),
         );
 
-        let single_statement =
-            ((expression.clone()).or(empty_statement)).then_ignore(just(Token::Semicolon));
+        let let_statement = just(Token::Let)
+            .ignore_then(identifier.clone())
+            .then_ignore(just(Token::Assign))
+            .then(expression.clone())
+            .map(|(name, value)| {
+                let name = match name {
+                    Node::Identifier(name) => name,
+                    _ => unreachable!(),
+                };
+
+                Node::LetStatement(name, Box::new(value))
+            });
+
+        let return_statement = just(Token::Return)
+            .ignore_then(expression.clone())
+            .map(|expr| Node::ReturnStatement(Box::new(expr)));
+
+        let simple_statement = choice((
+            let_statement.clone(),
+            return_statement.clone(),
+            expression.clone(),
+            empty_statement.clone(),
+        )).boxed();
+        let single_statement = simple_statement.then_ignore(just(Token::Semicolon)).boxed();
 
         let complex_statement = while_;
 
