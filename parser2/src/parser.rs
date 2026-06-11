@@ -27,10 +27,11 @@ pub enum Node {
         argument_list: Vec<Node>,
     },
     UnaryOperator {
-        operator: Box<Node>,
+        op: Box<Node>,
         rhs: Box<Node>,
     },
     UnaryMinus,
+    Equals(Box<Node>, Box<Node>),
 }
 
 fn parenthesized<'src>(
@@ -53,7 +54,23 @@ pub fn parser<'src>()
 
     let unary_operator = just(Token::Minus).to(Node::UnaryMinus);
 
-    // let binary_operator = just(Token::Minus).to(Node::UnaryMinus);
+    let binary_op_1 = choice((
+        just(Token::Equals),
+        just(Token::GreaterThan),
+        just(Token::LessThan),
+        just(Token::GreaterThanOrEqual),
+        just(Token::LessThanOrEqual),
+    ));
+
+    // let binary_op_2 = choice((
+    //     just(Token::Times),
+    //     just(Token::Division),
+    // ));
+
+    // let binary_op_3 = choice((
+    //     just(Token::Plus),
+    //     just(Token::Minus),
+    // ));
 
     let expression = recursive(|expr| {
         let argument_list = parenthesized(
@@ -62,23 +79,6 @@ pub fn parser<'src>()
                 .collect::<Vec<Node>>()
                 .map(|e| Node::ArgumentList(e)),
         );
-
-        let unary_expression =
-            unary_operator
-                .then(expr.clone())
-                .map(|(operator, rhs)| Node::UnaryOperator {
-                    operator: Box::new(operator),
-                    rhs: Box::new(rhs),
-                });
-
-        // let binary_expression = todo();
-
-        // let function_call = identifier.then(argument_list).map(
-        //     |(Node::Identifier(value), Node::ArgumentList(argument_list))| Node::FunctionCall {
-        //         callee: value,
-        //         argument_list,
-        //     },
-        // );
 
         let function_call = identifier
             .then(argument_list)
@@ -99,12 +99,39 @@ pub fn parser<'src>()
                 }
             });
 
-        let expression = choice((
-            function_call,
-            identifier,
-            unary_expression,
-            // binary_expression,
+        let unary_expression =
+            unary_operator
+                .clone()
+                .then(expr.clone())
+                .map(|(op, rhs)| Node::UnaryOperator {
+                    op: Box::new(op),
+                    rhs: Box::new(rhs),
+                });
+
+        let term = choice((
             parenthesized(expr.clone()),
+            unary_expression.clone(),
+            identifier.clone(),
+            function_call.clone(),
+        ));
+
+        let binary_expression_1 = term.clone().foldl(
+            binary_op_1
+                .clone()
+                .then(term.clone())
+                .repeated(),
+            |lhs, (op, rhs)| match op {
+                Token::Equals => Node::Equals(Box::new(lhs), Box::new(rhs)),
+                _ => unreachable!(),
+            },
+        );
+
+        let expression = choice((
+            parenthesized(expr.clone()),
+            function_call,
+            binary_expression_1,
+            unary_expression,
+            identifier,
         ));
 
         expression

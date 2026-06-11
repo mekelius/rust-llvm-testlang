@@ -50,12 +50,19 @@ pub enum Token {
     #[token(",")]
     Comma,
 
-    #[token("=")]
+    #[token("==")]
     Equals,
+    #[token("<=")]
+    LessThanOrEqual,
+    #[token(">=")]
+    GreaterThanOrEqual,
     #[token("<")]
     LessThan,
     #[token(">")]
     GreaterThan,
+
+    #[token("=")]
+    Assign,
 
     #[token("let")]
     Let,
