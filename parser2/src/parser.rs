@@ -38,6 +38,10 @@ pub enum Node {
     GreaterThanOrEquals(Box<Node>, Box<Node>),
     LessThanOrEquals(Box<Node>, Box<Node>),
     NotEquals(Box<Node>, Box<Node>),
+    Times(Box<Node>, Box<Node>),
+    Divided(Box<Node>, Box<Node>),
+    Plus(Box<Node>, Box<Node>),
+    Minus(Box<Node>, Box<Node>),
 }
 
 fn parenthesized<'src>(
@@ -73,15 +77,15 @@ pub fn parser<'src>()
         just(Token::NotEquals),
     ));
 
-    // let binary_op_2 = choice((
-    //     just(Token::Times),
-    //     just(Token::Division),
-    // ));
+    let binary_op_2 = choice((
+        just(Token::Times),
+        just(Token::Divided),
+    ));
 
-    // let binary_op_3 = choice((
-    //     just(Token::Plus),
-    //     just(Token::Minus),
-    // ));
+    let binary_op_3 = choice((
+        just(Token::Plus),
+        just(Token::Minus),
+    ));
 
     let expression = recursive(|expr| {
         let argument_list = parenthesized(
@@ -143,7 +147,33 @@ pub fn parser<'src>()
             },
         );
 
+        let binary_expression_2 = binary_expression_1.clone().foldl(
+            binary_op_2
+                .clone()
+                .then(binary_expression_1.clone())
+                .repeated(),
+            |lhs, (op, rhs)| match op {
+                Token::Times => Node::Times(Box::new(lhs), Box::new(rhs)),
+                Token::Divided => Node::Divided(Box::new(lhs), Box::new(rhs)),
+                _ => unreachable!(),
+            },
+        );
+
+        let binary_expression_3 = binary_expression_2.clone().foldl(
+            binary_op_3
+                .clone()
+                .then(binary_expression_2.clone())
+                .repeated(),
+            |lhs, (op, rhs)| match op {
+                Token::Plus => Node::Plus(Box::new(lhs), Box::new(rhs)),
+                Token::Minus => Node::Minus(Box::new(lhs), Box::new(rhs)),
+                _ => unreachable!(),
+            },
+        );
+
         let expression = choice((
+            binary_expression_3,
+            binary_expression_2,
             binary_expression_1,
             unary_expression,
             function_call,

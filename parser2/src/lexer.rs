@@ -26,7 +26,7 @@ pub enum Token {
     #[token("*")]
     Times,
     #[token("/")]
-    Division,
+    Divided,
     #[token("%")]
     Modulo,
 
