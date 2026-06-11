@@ -12,26 +12,44 @@ pub enum Expr {
     Identifier(String),
     Formals(Vec<Expr>),
     Formal(String),
+    While {
+        condition: Box<Expr>,
+        body: Box<Expr>,
+    },
 }
 
-pub fn parser<'src>() -> impl Parser<'src, &'src [Token], Expr> {
-    // recursive(|p| {
+fn parenthesized<'src>(
+    a: impl Parser<'src, &'src [Token], Expr> + Clone,
+) -> impl Parser<'src, &'src [Token], Expr> + Clone {
+    a.delimited_by(just(Token::LParenthesis), just(Token::RParenthesis))
+}
 
-    // })
-
+pub fn parser<'src>() -> impl Parser<'src, &'src [Token], Expr> + Clone {
     let identifier = select! {
-        Token::Identifier(TokenData {value}) => Expr::Identifier(value)
+    Token::Identifier(TokenData {value}) => Expr::Identifier(value)
     };
 
     let expression = identifier;
 
-    let statement = expression.then_ignore(just(Token::Semicolon));
+    let block = recursive(|p| {
+        let while_ = just(Token::While)
+            .ignore_then(parenthesized(expression))
+            .then(p.clone())
+            .map(|(condition, body)| Expr::While {
+                condition: Box::new(condition),
+                body: Box::new(body),
+            });
 
-    let block = (statement
-        .repeated()
-        .collect::<Vec<Expr>>()
-        .map(|e| Expr::Block(e)))
-    .delimited_by(just(Token::LCurlyBrace), just(Token::RCurlyBrace));
+        let statement = (expression.or(while_)).then_ignore(just(Token::Semicolon));
+
+        let block = (statement
+            .repeated()
+            .collect::<Vec<Expr>>()
+            .map(|e| Expr::Block(e)))
+        .delimited_by(just(Token::LCurlyBrace), just(Token::RCurlyBrace));
+
+        block
+    });
 
     let formal = select! {
         Token::Identifier(TokenData {value}) => Expr::Formal(value)
