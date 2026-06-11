@@ -181,7 +181,7 @@ pub fn parser<'src>()
             parenthesized(expr.clone()),
         ));
 
-        expression
+        expression.boxed()
     });
 
     let statement = recursive(|p| {
@@ -207,7 +207,7 @@ pub fn parser<'src>()
 
         let complex_statement = while_;
 
-        single_statement.or(block).or(complex_statement)
+        single_statement.or(block).or(complex_statement).boxed()
     });
 
     let formal = select! {
@@ -255,5 +255,5 @@ pub fn parser<'src>()
         .collect::<Vec<Node>>()
         .map(|e| Node::Program(e));
 
-    program
+    program.boxed()
 }
