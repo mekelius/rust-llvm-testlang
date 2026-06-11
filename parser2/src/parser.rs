@@ -13,6 +13,7 @@ pub enum Node {
     Block(Vec<Node>),
     Expression(Vec<Node>),
     Identifier(String),
+    NumberLiteral(String),
     Formals(Vec<Node>),
     Formal(String),
     FunctionBody(Vec<Node>),
@@ -36,6 +37,7 @@ pub enum Node {
     LessThan(Box<Node>, Box<Node>),
     GreaterThanOrEquals(Box<Node>, Box<Node>),
     LessThanOrEquals(Box<Node>, Box<Node>),
+    NotEquals(Box<Node>, Box<Node>),
 }
 
 fn parenthesized<'src>(
@@ -56,6 +58,10 @@ pub fn parser<'src>()
         Token::Identifier(TokenData {value}) => Node::Identifier(value),
     };
 
+    let number_literal = select! {
+        Token::NumberLiteral(TokenData {value}) => Node::NumberLiteral(value),
+    };
+
     let unary_operator = just(Token::Minus).to(Node::UnaryMinus);
 
     let binary_op_1 = choice((
@@ -64,6 +70,7 @@ pub fn parser<'src>()
         just(Token::LessThan),
         just(Token::GreaterThanOrEquals),
         just(Token::LessThanOrEquals),
+        just(Token::NotEquals),
     ));
 
     // let binary_op_2 = choice((
@@ -117,6 +124,7 @@ pub fn parser<'src>()
             unary_expression.clone(),
             function_call.clone(),
             identifier.clone(),
+            number_literal.clone(),
         ));
 
         let binary_expression_1 = term.clone().foldl(
@@ -130,6 +138,7 @@ pub fn parser<'src>()
                 Token::LessThan => Node::LessThan(Box::new(lhs), Box::new(rhs)),
                 Token::GreaterThanOrEquals => Node::GreaterThanOrEquals(Box::new(lhs), Box::new(rhs)),
                 Token::LessThanOrEquals => Node::LessThanOrEquals(Box::new(lhs), Box::new(rhs)),
+                Token::NotEquals => Node::NotEquals(Box::new(lhs), Box::new(rhs)),
                 _ => unreachable!(),
             },
         );

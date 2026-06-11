@@ -60,6 +60,8 @@ pub enum Token {
     LessThan,
     #[token(">")]
     GreaterThan,
+    #[token("!=")]
+    NotEquals,
 
     #[token("=")]
     Assign,
