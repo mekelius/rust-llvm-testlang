@@ -5,7 +5,11 @@ use chumsky::prelude::*;
 #[derive(Debug, Clone)]
 pub enum Node {
     Program(Vec<Node>),
-    Function((Box<Node>, Box<Node>, Box<Node>)),
+    Function {
+        name: String,
+        formals: Vec<Node>,
+        body: Box<Node>,
+    },
     Block(Vec<Node>),
     Expression(Vec<Node>),
     Identifier(String),
@@ -155,7 +159,21 @@ pub fn parser<'src>()
         .then(formals)
         .then(function_body)
         .map(|((name, formals), function_body)| {
-            Node::Function((Box::new(name), Box::new(formals), Box::new(function_body)))
+            let name = match name {
+                Node::Identifier(value) => value,
+                _ => unreachable!(),
+            };
+
+            let formals = match formals {
+                Node::Formals(formals) => formals,
+                _ => unreachable!(),
+            };
+
+            Node::Function {
+                name,
+                formals,
+                body: Box::new(function_body),
+            }
         });
 
     let program = function
