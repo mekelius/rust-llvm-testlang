@@ -10,7 +10,8 @@ pub enum Expr {
     Statement(Vec<Expr>),
     Expression(Vec<Expr>),
     Identifier(String),
-    Arguments,
+    Formals(Vec<Expr>),
+    Formal(String),
 }
 
 pub fn parser<'src>() -> impl Parser<'src, &'src [Token], Expr> {
@@ -31,11 +32,22 @@ pub fn parser<'src>() -> impl Parser<'src, &'src [Token], Expr> {
         .then_ignore(just(Token::RCurlyBrace))
         .map(|e| Expr::Block(e));
 
-    let args = just([Token::LParenthesis, Token::RParenthesis]).to(Expr::Arguments);
+    let formal = select! {
+        Token::Identifier(TokenData {value}) => Expr::Formal(value)
+    };
+
+    let formals = just(Token::LParenthesis)
+        .ignore_then(
+            formal
+                .separated_by(just(Token::Comma))
+                .collect::<Vec<Expr>>(),
+        )
+        .then_ignore(just(Token::RParenthesis))
+        .map(|e| Expr::Formals(e));
 
     let function = just(Token::Function)
         .ignore_then(identifier)
-        .then(args)
+        .then(formals)
         .then(block)
         .map(|((name, args), body)| {
             Expr::Function((Box::new(name), Box::new(args), Box::new(body)))
