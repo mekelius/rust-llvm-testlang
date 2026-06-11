@@ -7,31 +7,39 @@ pub enum Expr {
     Program(Vec<Expr>),
     Function((Box<Expr>, Box<Expr>, Box<Expr>)),
     Block(Vec<Expr>),
-    Statement(Vec<Expr>),
     Expression(Vec<Expr>),
     Identifier(String),
     Formals(Vec<Expr>),
     Formal(String),
+    FunctionBody(Vec<Expr>),
     While {
         condition: Box<Expr>,
         body: Box<Expr>,
     },
+    EmptyStatement,
 }
 
 fn parenthesized<'src>(
-    a: impl Parser<'src, &'src [Token], Expr> + Clone,
-) -> impl Parser<'src, &'src [Token], Expr> + Clone {
+    a: impl Parser<'src, &'src [Token], Expr, chumsky::extra::Err<Rich<'src, Token>>> + Clone,
+) -> impl Parser<'src, &'src [Token], Expr, chumsky::extra::Err<Rich<'src, Token>>> + Clone {
     a.delimited_by(just(Token::LParenthesis), just(Token::RParenthesis))
 }
 
-pub fn parser<'src>() -> impl Parser<'src, &'src [Token], Expr> + Clone {
+fn in_curly_braces<'src>(
+    a: impl Parser<'src, &'src [Token], Expr, chumsky::extra::Err<Rich<'src, Token>>> + Clone,
+) -> impl Parser<'src, &'src [Token], Expr, chumsky::extra::Err<Rich<'src, Token>>> + Clone {
+    a.delimited_by(just(Token::LCurlyBrace), just(Token::RCurlyBrace))
+}
+
+pub fn parser<'src>()
+-> impl Parser<'src, &'src [Token], Expr, chumsky::extra::Err<Rich<'src, Token>>> + Clone {
     let identifier = select! {
-    Token::Identifier(TokenData {value}) => Expr::Identifier(value)
+        Token::Identifier(TokenData {value}) => Expr::Identifier(value),
     };
 
     let expression = identifier;
 
-    let block = recursive(|p| {
+    let statement = recursive(|p| {
         let while_ = just(Token::While)
             .ignore_then(parenthesized(expression))
             .then(p.clone())
@@ -40,33 +48,47 @@ pub fn parser<'src>() -> impl Parser<'src, &'src [Token], Expr> + Clone {
                 body: Box::new(body),
             });
 
-        let statement = (expression.or(while_)).then_ignore(just(Token::Semicolon));
+        let empty_statement = empty().to(Expr::EmptyStatement);
 
-        let block = (statement
-            .repeated()
-            .collect::<Vec<Expr>>()
-            .map(|e| Expr::Block(e)))
-        .delimited_by(just(Token::LCurlyBrace), just(Token::RCurlyBrace));
+        let block = in_curly_braces(
+            p.clone()
+                .repeated()
+                .collect::<Vec<Expr>>()
+                .map(|e| Expr::Block(e)),
+        );
 
-        block
+        let single_statement =
+            ((expression).or(empty_statement)).then_ignore(just(Token::Semicolon));
+
+        let complex_statement = while_;
+
+        single_statement.or(block).or(complex_statement)
     });
 
     let formal = select! {
         Token::Identifier(TokenData {value}) => Expr::Formal(value)
     };
 
-    let formals = (formal
-        .separated_by(just(Token::Comma))
-        .collect::<Vec<Expr>>()
-        .map(|e| Expr::Formals(e)))
-    .delimited_by(just(Token::LParenthesis), just(Token::RParenthesis));
+    let function_body = in_curly_braces(
+        statement
+            .repeated()
+            .collect::<Vec<Expr>>()
+            .map(|e| Expr::FunctionBody(e)),
+    );
+
+    let formals = parenthesized(
+        formal
+            .separated_by(just(Token::Comma))
+            .collect::<Vec<Expr>>()
+            .map(|e| Expr::Formals(e)),
+    );
 
     let function = just(Token::Function)
         .ignore_then(identifier)
         .then(formals)
-        .then(block)
-        .map(|((name, args), body)| {
-            Expr::Function((Box::new(name), Box::new(args), Box::new(body)))
+        .then(function_body)
+        .map(|((name, formals), function_body)| {
+            Expr::Function((Box::new(name), Box::new(formals), Box::new(function_body)))
         });
 
     let program = function
@@ -76,13 +98,3 @@ pub fn parser<'src>() -> impl Parser<'src, &'src [Token], Expr> + Clone {
 
     program
 }
-
-// pub fn parser<'src>()
-// -> impl Parser<'src, &'src [Token], Expr, chumsky::extra::Err<chumsky::error::Simple<'src, Token>>>
-// {
-//     let program = just(Token::Identifier).repeated();
-//     // recursive(|p| {
-
-//     // })
-//     program
-// }

@@ -1,7 +1,4 @@
 function testWhile() {
     while (test) {
-        asok;
-        qwewq;
-        qweqweqwe;
     }
 }
