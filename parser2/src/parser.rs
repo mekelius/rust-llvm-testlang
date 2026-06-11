@@ -120,11 +120,11 @@ pub fn parser<'src>()
                 });
 
         let term = choice((
-            parenthesized(expr.clone()),
             unary_expression.clone(),
             function_call.clone(),
             identifier.clone(),
             number_literal.clone(),
+            parenthesized(expr.clone()),
         ));
 
         let binary_expression_1 = term.clone().foldl(
@@ -144,11 +144,11 @@ pub fn parser<'src>()
         );
 
         let expression = choice((
-            parenthesized(expr.clone()),
-            function_call,
             binary_expression_1,
             unary_expression,
+            function_call,
             identifier,
+            parenthesized(expr.clone()),
         ));
 
         expression
