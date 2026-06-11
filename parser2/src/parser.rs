@@ -27,23 +27,21 @@ pub fn parser<'src>() -> impl Parser<'src, &'src [Token], Expr> {
 
     let statement = expression.then_ignore(just(Token::Semicolon));
 
-    let block = just(Token::LCurlyBrace)
-        .ignore_then(statement.repeated().collect::<Vec<Expr>>())
-        .then_ignore(just(Token::RCurlyBrace))
-        .map(|e| Expr::Block(e));
+    let block = (statement
+        .repeated()
+        .collect::<Vec<Expr>>()
+        .map(|e| Expr::Block(e)))
+    .delimited_by(just(Token::LCurlyBrace), just(Token::RCurlyBrace));
 
     let formal = select! {
         Token::Identifier(TokenData {value}) => Expr::Formal(value)
     };
 
-    let formals = just(Token::LParenthesis)
-        .ignore_then(
-            formal
-                .separated_by(just(Token::Comma))
-                .collect::<Vec<Expr>>(),
-        )
-        .then_ignore(just(Token::RParenthesis))
-        .map(|e| Expr::Formals(e));
+    let formals = (formal
+        .separated_by(just(Token::Comma))
+        .collect::<Vec<Expr>>()
+        .map(|e| Expr::Formals(e)))
+    .delimited_by(just(Token::LParenthesis), just(Token::RParenthesis));
 
     let function = just(Token::Function)
         .ignore_then(identifier)
