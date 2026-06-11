@@ -32,6 +32,10 @@ pub enum Node {
     },
     UnaryMinus,
     Equals(Box<Node>, Box<Node>),
+    GreaterThan(Box<Node>, Box<Node>),
+    LessThan(Box<Node>, Box<Node>),
+    GreaterThanOrEquals(Box<Node>, Box<Node>),
+    LessThanOrEquals(Box<Node>, Box<Node>),
 }
 
 fn parenthesized<'src>(
@@ -58,8 +62,8 @@ pub fn parser<'src>()
         just(Token::Equals),
         just(Token::GreaterThan),
         just(Token::LessThan),
-        just(Token::GreaterThanOrEqual),
-        just(Token::LessThanOrEqual),
+        just(Token::GreaterThanOrEquals),
+        just(Token::LessThanOrEquals),
     ));
 
     // let binary_op_2 = choice((
@@ -111,8 +115,8 @@ pub fn parser<'src>()
         let term = choice((
             parenthesized(expr.clone()),
             unary_expression.clone(),
-            identifier.clone(),
             function_call.clone(),
+            identifier.clone(),
         ));
 
         let binary_expression_1 = term.clone().foldl(
@@ -122,6 +126,10 @@ pub fn parser<'src>()
                 .repeated(),
             |lhs, (op, rhs)| match op {
                 Token::Equals => Node::Equals(Box::new(lhs), Box::new(rhs)),
+                Token::GreaterThan => Node::GreaterThan(Box::new(lhs), Box::new(rhs)),
+                Token::LessThan => Node::LessThan(Box::new(lhs), Box::new(rhs)),
+                Token::GreaterThanOrEquals => Node::GreaterThanOrEquals(Box::new(lhs), Box::new(rhs)),
+                Token::LessThanOrEquals => Node::LessThanOrEquals(Box::new(lhs), Box::new(rhs)),
                 _ => unreachable!(),
             },
         );

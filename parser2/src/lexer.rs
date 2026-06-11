@@ -53,9 +53,9 @@ pub enum Token {
     #[token("==")]
     Equals,
     #[token("<=")]
-    LessThanOrEqual,
+    LessThanOrEquals,
     #[token(">=")]
-    GreaterThanOrEqual,
+    GreaterThanOrEquals,
     #[token("<")]
     LessThan,
     #[token(">")]
