@@ -7,7 +7,7 @@ pub enum Node {
         body: Box<Node>,
     },
     Block(Vec<Node>),
-    Expression(Vec<Node>),
+    ExpressionStatement(Box<Node>),
     Identifier(String),
     NumberLiteral(String),
     Formals(Vec<Node>),

@@ -1,0 +1,7 @@
+function mainiota() {
+    print(1);
+}
+
+function lolol() {
+    hihhih(joo);
+}

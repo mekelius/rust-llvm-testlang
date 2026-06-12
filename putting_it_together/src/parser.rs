@@ -1,6 +1,7 @@
 use crate::lexer::Token;
 use crate::lexer;
 use crate::lexer::TokenData;
+use std::error::Error;
 use chumsky::prelude::*;
 
 use crate::ast::Node;
@@ -169,10 +170,12 @@ fn parser<'src>()
             .ignore_then(expression.clone())
             .map(|expr| Node::ReturnStatement(Box::new(expr))).boxed();
 
+        let expression_statement = expression.clone().map(|e| Node::ExpressionStatement(Box::new(e)));
+
         let simple_statement = choice((
             let_statement.clone(),
             return_statement.clone(),
-            expression.clone(),
+            expression_statement.clone(),
             empty_statement.clone(),
         )).boxed();
         let single_statement = simple_statement.then_ignore(just(Token::Semicolon)).boxed();
@@ -230,7 +233,7 @@ fn parser<'src>()
     program.boxed()
 }
 
-pub fn parse(src: &str) -> Result<Node, Vec<chumsky::error::Rich<'_, Token>>> {
+pub fn run(src: &str) -> Result<Node, Box<dyn Error>> {
     let tokens = match lexer::run(src) {
         Ok(tokens) => tokens,
         Err(_) => unreachable!(),
