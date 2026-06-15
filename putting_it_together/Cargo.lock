@@ -69,6 +69,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dict"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39fbb71fba1e2c935f51b056de0d812d9b625b8165b2d7f8848902080fbdffb4"
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -322,6 +328,7 @@ name = "testl"
 version = "0.1.0"
 dependencies = [
  "chumsky",
+ "dict",
  "inkwell",
  "logos",
 ]

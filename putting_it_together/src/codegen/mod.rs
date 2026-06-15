@@ -1,8 +1,11 @@
-use inkwell::builder::Builder;
+mod builtins;
+
+use inkwell::{builder::Builder, values::FunctionValue};
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::support::LLVMString;
 use std::error::Error;
+use dict::{ Dict, DictIface };
 
 use crate::ast::Node;
 
@@ -10,9 +13,22 @@ pub struct CodeGen<'ctx> {
     pub context: &'ctx Context,
     pub module: Module<'ctx>,
     pub builder: Builder<'ctx>,
+    pub builtins: Dict::<FunctionValue<'ctx>>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
+    pub fn new(context: &'ctx Context, name: &str) -> Self {
+        let mut codegen = Self {
+            context, 
+            module: context.create_module(name),
+            builder: context.create_builder(),
+            builtins: Dict::<FunctionValue<'ctx>>::new(),
+        };
+
+        codegen.init_builtins();
+        codegen
+    }
+
     pub fn run(&self, ast: &Node) -> Result<(), Box<dyn Error>> {
         match ast {
             Node::Program(program) => {
@@ -56,7 +72,7 @@ impl<'ctx> CodeGen<'ctx> {
 
         let test_f = self.module.add_function(&name, void_ft, None);
 
-        let entry_b = self.context.append_basic_block(test_f, "entry");
+        let entry_b = self.context.append_basic_block(test_f, "Entry");
         self.builder.position_at_end(entry_b);
 
         let Node::FunctionBody(body) = &**body else {
