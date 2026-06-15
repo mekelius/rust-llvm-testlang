@@ -1,8 +1,8 @@
-use crate::lexer::Token;
 use crate::lexer;
+use crate::lexer::Token;
 use crate::lexer::TokenData;
-use std::error::Error;
 use chumsky::prelude::*;
+use std::error::Error;
 
 use crate::ast::Node;
 
@@ -33,7 +33,7 @@ fn parser<'src>()
     };
 
     let unary_operator = just(Token::Minus).to(Node::UnaryMinus);
-    
+
     let binary_op_1 = choice((just(Token::Times), just(Token::Divided)));
     let binary_op_2 = choice((just(Token::Plus), just(Token::Minus)));
     let binary_op_3 = choice((
@@ -51,7 +51,8 @@ fn parser<'src>()
                 .separated_by(just(Token::Comma))
                 .collect::<Vec<Node>>()
                 .map(|e| Node::ArgumentList(e)),
-        ).boxed();
+        )
+        .boxed();
 
         let function_call = identifier
             .then(argument_list)
@@ -70,61 +71,81 @@ fn parser<'src>()
                     callee,
                     argument_list,
                 }
-            }).boxed();
+            })
+            .boxed();
 
-        let unary_expression =
-            unary_operator
-                .clone()
-                .then(expr.clone())
-                .map(|(op, rhs)| Node::UnaryOperator {
-                    op: Box::new(op),
-                    rhs: Box::new(rhs),
-                }).boxed();
+        let unary_expression = unary_operator
+            .clone()
+            .then(expr.clone())
+            .map(|(op, rhs)| Node::UnaryOperator {
+                op: Box::new(op),
+                rhs: Box::new(rhs),
+            })
+            .boxed();
+
+        let typed_expression = select! {
+            Token::TypeIdentifier(TokenData{value}) => value
+        }
+        .then(expr.clone())
+        .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)));
 
         let term = choice((
             unary_expression.clone(),
             function_call.clone(),
             identifier.clone(),
             number_literal.clone(),
+            typed_expression.clone(),
             parenthesized(expr.clone()),
-        )).boxed();
+        ))
+        .boxed();
 
-        let binary_expression_1 = term.clone().foldl(
-            binary_op_1.clone().then(term.clone()).repeated(),
-            |lhs, (op, rhs)| match op {
-                Token::Times => Node::Times(Box::new(lhs), Box::new(rhs)),
-                Token::Divided => Node::Divided(Box::new(lhs), Box::new(rhs)),
-                _ => unreachable!(),
-            },
-        ).boxed();
+        let binary_expression_1 = term
+            .clone()
+            .foldl(
+                binary_op_1.clone().then(term.clone()).repeated(),
+                |lhs, (op, rhs)| match op {
+                    Token::Times => Node::Times(Box::new(lhs), Box::new(rhs)),
+                    Token::Divided => Node::Divided(Box::new(lhs), Box::new(rhs)),
+                    _ => unreachable!(),
+                },
+            )
+            .boxed();
 
-        let binary_expression_2 = binary_expression_1.clone().foldl(
-            binary_op_2
-                .clone()
-                .then(binary_expression_1.clone())
-                .repeated(),
-            |lhs, (op, rhs)| match op {
-                Token::Plus => Node::Plus(Box::new(lhs), Box::new(rhs)),
-                Token::Minus => Node::Minus(Box::new(lhs), Box::new(rhs)),
-                _ => unreachable!(),
-            },
-        ).boxed();
+        let binary_expression_2 = binary_expression_1
+            .clone()
+            .foldl(
+                binary_op_2
+                    .clone()
+                    .then(binary_expression_1.clone())
+                    .repeated(),
+                |lhs, (op, rhs)| match op {
+                    Token::Plus => Node::Plus(Box::new(lhs), Box::new(rhs)),
+                    Token::Minus => Node::Minus(Box::new(lhs), Box::new(rhs)),
+                    _ => unreachable!(),
+                },
+            )
+            .boxed();
 
-        let binary_expression_3 = binary_expression_2.clone().foldl(
-            binary_op_3
-                .clone()
-                .then(binary_expression_2.clone())
-                .repeated(),
-            |lhs, (op, rhs)| match op {
-                Token::Equals => Node::Equals(Box::new(lhs), Box::new(rhs)),
-                Token::GreaterThan => Node::GreaterThan(Box::new(lhs), Box::new(rhs)),
-                Token::LessThan => Node::LessThan(Box::new(lhs), Box::new(rhs)),
-                Token::GreaterThanOrEquals => Node::GreaterThanOrEquals(Box::new(lhs), Box::new(rhs)),
-                Token::LessThanOrEquals => Node::LessThanOrEquals(Box::new(lhs), Box::new(rhs)),
-                Token::NotEquals => Node::NotEquals(Box::new(lhs), Box::new(rhs)),
-                _ => unreachable!(),
-            },
-        ).boxed();
+        let binary_expression_3 = binary_expression_2
+            .clone()
+            .foldl(
+                binary_op_3
+                    .clone()
+                    .then(binary_expression_2.clone())
+                    .repeated(),
+                |lhs, (op, rhs)| match op {
+                    Token::Equals => Node::Equals(Box::new(lhs), Box::new(rhs)),
+                    Token::GreaterThan => Node::GreaterThan(Box::new(lhs), Box::new(rhs)),
+                    Token::LessThan => Node::LessThan(Box::new(lhs), Box::new(rhs)),
+                    Token::GreaterThanOrEquals => {
+                        Node::GreaterThanOrEquals(Box::new(lhs), Box::new(rhs))
+                    }
+                    Token::LessThanOrEquals => Node::LessThanOrEquals(Box::new(lhs), Box::new(rhs)),
+                    Token::NotEquals => Node::NotEquals(Box::new(lhs), Box::new(rhs)),
+                    _ => unreachable!(),
+                },
+            )
+            .boxed();
 
         let expression = choice((
             binary_expression_3,
@@ -136,10 +157,12 @@ fn parser<'src>()
             number_literal,
             identifier,
             parenthesized(expr.clone()),
-        )).boxed();
+        ))
+        .boxed();
 
         expression
-    }).boxed();
+    })
+    .boxed();
 
     let statement = recursive(|p| {
         let while_ = just(Token::While)
@@ -148,7 +171,8 @@ fn parser<'src>()
             .map(|(condition, body)| Node::While {
                 condition: Box::new(condition),
                 body: Box::new(body),
-            }).boxed();
+            })
+            .boxed();
 
         let empty_statement = empty().to(Node::EmptyStatement).boxed();
 
@@ -157,7 +181,8 @@ fn parser<'src>()
                 .repeated()
                 .collect::<Vec<Node>>()
                 .map(|e| Node::Block(e)),
-        ).boxed();
+        )
+        .boxed();
 
         let let_statement = just(Token::Let)
             .ignore_then(identifier.clone())
@@ -170,30 +195,45 @@ fn parser<'src>()
                 };
 
                 Node::LetStatement(name, Box::new(value))
-            }).boxed();
+            })
+            .boxed();
 
         let return_statement = just(Token::Return)
             .ignore_then(expression.clone())
-            .map(|expr| Node::ReturnStatement(Box::new(expr))).boxed();
+            .map(|expr| Node::ReturnStatement(Box::new(expr)))
+            .boxed();
 
-        let expression_statement = expression.clone().map(|e| Node::ExpressionStatement(Box::new(e)));
+        let expression_statement = expression
+            .clone()
+            .map(|e| Node::ExpressionStatement(Box::new(e)));
 
         let simple_statement = choice((
             let_statement.clone(),
             return_statement.clone(),
             expression_statement.clone(),
             empty_statement.clone(),
-        )).boxed();
+        ))
+        .boxed();
         let single_statement = simple_statement.then_ignore(just(Token::Semicolon)).boxed();
 
         let complex_statement = while_;
 
         single_statement.or(block).or(complex_statement).boxed()
-    }).boxed();
+    })
+    .boxed();
 
-    let formal = select! {
-        Token::Identifier(TokenData {value}) => Node::Formal(value)
+    let untyped_formal = select! {
+        Token::Identifier(TokenData {value}) => Node::UntypedFormal(value)
     };
+
+    let typed_formal = select! {Token::TypeIdentifier(TokenData {value}) => value}
+        .clone()
+        .then(select! {
+            Token::Identifier(TokenData {value}) => value
+        })
+        .map(|(type_, name)| Node::TypedFormal(type_, name));
+
+    let formal = typed_formal.clone().or(untyped_formal.clone());
 
     let function_body = in_curly_braces(
         statement
@@ -229,7 +269,8 @@ fn parser<'src>()
                 formals,
                 body: Box::new(function_body),
             }
-        }).boxed();
+        })
+        .boxed();
 
     let program = function
         .repeated()

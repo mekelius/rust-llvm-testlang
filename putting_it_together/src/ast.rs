@@ -11,8 +11,11 @@ pub enum Node {
     Identifier(String),
     NumberLiteral(String),
     StringLiteral(String),
+    TypedExpression(String, Box<Node>),
+
     Formals(Vec<Node>),
-    Formal(String),
+    UntypedFormal(String),
+    TypedFormal(String, String),
     FunctionBody(Vec<Node>),
 
     While {
