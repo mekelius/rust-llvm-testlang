@@ -74,7 +74,7 @@ impl<'ctx> CodeGen<'ctx> {
         let void_t = self.context.void_type();
         // let i64_i64_i64_ft = i64_t.fn_type(&[i64_t.into(), i64_t.into(), i64_t.into()], false);
         let void_ft = void_t.fn_type(&[], false);
-        
+
         let test_f = self.module.add_function(&name, void_ft, None);
         self.function_identifiers.add(name.to_string(), test_f);
 
@@ -132,8 +132,9 @@ impl<'ctx> CodeGen<'ctx> {
             Node::GreaterThanOrEquals(_lhs, _rhs) => todo!(),
             Node::LessThanOrEquals(_lhs, _rhs) => todo!(),
             Node::NotEquals(_lhs, _rhs) => todo!(),
-            Node::Times(_lhs, _rhs) => todo!(),
-            Node::Divided(_lhs, _rhs) => todo!(),
+            Node::Mult(_lhs, _rhs) => todo!(),
+            Node::Div(_lhs, _rhs) => todo!(),
+            Node::Add(lhs, rhs) => self.handle_add(lhs, rhs),
 
             Node::FunctionCall {
                 callee: _,
@@ -187,8 +188,19 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     fn handle_string_literal(&self, value: &str) -> AnyValueEnum<'_> {
-        self.builder.build_global_string_ptr(value, "string_literal")
+        self.builder
+            .build_global_string_ptr(value, "string_literal")
             .unwrap_or_else(|_| panic!("Creating global string from {} failed", value))
+            .as_any_value_enum()
+    }
+
+    fn handle_add(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_add(lhs_value, rhs_value, "")
+            .unwrap()
             .as_any_value_enum()
     }
 }

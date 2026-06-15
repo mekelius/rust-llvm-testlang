@@ -104,8 +104,8 @@ fn parser<'src>()
             .foldl(
                 binary_op_1.clone().then(term.clone()).repeated(),
                 |lhs, (op, rhs)| match op {
-                    Token::Times => Node::Times(Box::new(lhs), Box::new(rhs)),
-                    Token::Divided => Node::Divided(Box::new(lhs), Box::new(rhs)),
+                    Token::Times => Node::Mult(Box::new(lhs), Box::new(rhs)),
+                    Token::Divided => Node::Div(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
                 },
             )
@@ -119,8 +119,8 @@ fn parser<'src>()
                     .then(binary_expression_1.clone())
                     .repeated(),
                 |lhs, (op, rhs)| match op {
-                    Token::Plus => Node::Plus(Box::new(lhs), Box::new(rhs)),
-                    Token::Minus => Node::Minus(Box::new(lhs), Box::new(rhs)),
+                    Token::Plus => Node::Add(Box::new(lhs), Box::new(rhs)),
+                    Token::Minus => Node::Subtr(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
                 },
             )
