@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ast = parser::run(&src)?;
 
     let context = Context::create();
-    let codegen = CodeGen::new(&context, "test");
+    let mut codegen = CodeGen::new(&context, "test");
 
     codegen.run(&ast)?;
     codegen.print()?;

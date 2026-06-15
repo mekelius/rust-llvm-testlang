@@ -1,7 +1,5 @@
-use inkwell::{
-    AddressSpace, builder::Builder, context::Context, module::Module, values::FunctionValue,
-};
-use dict::{ Dict, DictIface };
+use dict::DictIface;
+use inkwell::AddressSpace;
 
 use super::CodeGen;
 
@@ -39,11 +37,16 @@ impl<'ctx> CodeGen<'ctx> {
             .builder
             .build_global_string_ptr(format_string, "int_printf_format")
             .unwrap();
-        self.builder.build_call(
-            *printf,
-            &[format_string_val_ptr.as_pointer_value().into(), arg1.into()],
-            "",
-        );
-        self.builder.build_return(None);
+        self.builder
+            .build_call(
+                *printf,
+                &[format_string_val_ptr.as_pointer_value().into(), arg1.into()],
+                "",
+            )
+            .unwrap();
+
+        self.builder.build_return(None).unwrap();
+
+        self.builtins.add("print".to_string(), print_f);
     }
 }

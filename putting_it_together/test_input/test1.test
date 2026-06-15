@@ -1,7 +1,3 @@
-function mainiota() {
-    print(1);
-}
-
-function lolol() {
-    hihhih(joo);
+function main() {
+    print_int(123);
 }

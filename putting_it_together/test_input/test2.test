@@ -1,0 +1,8 @@
+function test() {
+    print_int(999);
+}
+
+function main() {
+    test();
+}
+

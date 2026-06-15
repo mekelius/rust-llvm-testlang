@@ -1,11 +1,14 @@
 mod builtins;
+mod identifier;
 
-use inkwell::{builder::Builder, values::FunctionValue};
+use dict::{Dict, DictIface};
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::support::LLVMString;
+use inkwell::types::StringRadix::Decimal;
+use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
+use inkwell::{builder::Builder, values::FunctionValue};
 use std::error::Error;
-use dict::{ Dict, DictIface };
 
 use crate::ast::Node;
 
@@ -13,23 +16,25 @@ pub struct CodeGen<'ctx> {
     pub context: &'ctx Context,
     pub module: Module<'ctx>,
     pub builder: Builder<'ctx>,
-    pub builtins: Dict::<FunctionValue<'ctx>>,
+    pub builtins: Dict<FunctionValue<'ctx>>,
+    pub function_identifiers: Dict<FunctionValue<'ctx>>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn new(context: &'ctx Context, name: &str) -> Self {
+    pub fn new(context: &'ctx Context, name: &'ctx str) -> CodeGen<'ctx> {
         let mut codegen = Self {
-            context, 
+            context,
             module: context.create_module(name),
             builder: context.create_builder(),
-            builtins: Dict::<FunctionValue<'ctx>>::new(),
+            builtins: Dict::new(),
+            function_identifiers: Dict::new(),
         };
 
         codegen.init_builtins();
         codegen
     }
 
-    pub fn run(&self, ast: &Node) -> Result<(), Box<dyn Error>> {
+    pub fn run(&mut self, ast: &'ctx Node) -> Result<(), Box<dyn Error>> {
         match ast {
             Node::Program(program) => {
                 for function in program {
@@ -55,8 +60,8 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(())
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    fn handle_function(&self, function: &Node) -> Result<(), Box<dyn Error>> {
+    ////////////////////////////////////////// Handlers ///////////////////////////////////////////
+    fn handle_function(&mut self, function: &Node) -> Result<(), Box<dyn Error>> {
         let Node::Function {
             name,
             formals: _,
@@ -69,8 +74,9 @@ impl<'ctx> CodeGen<'ctx> {
         let void_t = self.context.void_type();
         // let i64_i64_i64_ft = i64_t.fn_type(&[i64_t.into(), i64_t.into(), i64_t.into()], false);
         let void_ft = void_t.fn_type(&[], false);
-
+        
         let test_f = self.module.add_function(&name, void_ft, None);
+        self.function_identifiers.add(name.to_string(), test_f);
 
         let entry_b = self.context.append_basic_block(test_f, "Entry");
         self.builder.position_at_end(entry_b);
@@ -115,10 +121,10 @@ impl<'ctx> CodeGen<'ctx> {
             } => todo!(), //self.while_(statement),
             Node::Block(_) => todo!(), //self.block(statement),
             _ => unreachable!(),
-        }
+        };
     }
 
-    fn handle_expression(&self, expression: &Node) {
+    fn handle_expression(&self, expression: &Node) -> AnyValueEnum<'_> {
         match expression {
             Node::Equals(_lhs, _rhs) => todo!(),
             Node::GreaterThan(_lhs, _rhs) => todo!(),
@@ -134,27 +140,48 @@ impl<'ctx> CodeGen<'ctx> {
                 argument_list: _,
             } => self.handle_function_call(&expression),
 
-            Node::Identifier(_value) => todo!(),
-            Node::NumberLiteral(_value) => todo!(),
+            Node::Identifier(_value) => todo!("Identifier"),
+            Node::NumberLiteral(value) => self.handle_number_literal(&value),
             _ => unreachable!(),
         }
     }
 
-    fn handle_function_call(&self, call_expression: &Node) {
+    fn handle_function_call(&self, call_expression: &Node) -> AnyValueEnum<'_> {
         let Node::FunctionCall {
-            callee,
+            callee: callee_name,
             argument_list,
         } = call_expression
         else {
             unreachable!();
         };
-        
+
         // !!!PLACEHOLDER
-        let i64_t = self.context.i64_type();
-        let i64_ft = i64_t.fn_type(&[], false);
-        let callee_ref_PLACEHOLDER = self.module.add_function(callee, i64_ft, None);
+        // let i64_t = self.context.i64_type();
+        // let i64_ft = i64_t.fn_type(&[], false);
+        // let callee_ref_PLACEHOLDER = self.module.add_function(callee, i64_ft, None);
         // !!!
-        
-        self.builder.build_call(callee_ref_PLACEHOLDER, &[], "");
+
+        // let mut args = Vec<LLVMVa>::new;
+        let args: Vec<BasicMetadataValueEnum> = argument_list
+            .into_iter()
+            .map(|arg| BasicMetadataValueEnum::try_from(self.handle_expression(arg)).unwrap())
+            .collect();
+
+        let callee = self
+            .resolve_function(callee_name)
+            .unwrap_or_else(|| panic!("Attempt to call nonexistent function {}", callee_name));
+
+        self.builder
+            .build_call(*callee, &args, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    fn handle_number_literal(&self, value: &str) -> AnyValueEnum<'_> {
+        self.context
+            .i64_type()
+            .const_int_from_string(value, Decimal)
+            .unwrap_or_else(|| panic!("Could not create integer from {}", value))
+            .as_any_value_enum()
     }
 }
