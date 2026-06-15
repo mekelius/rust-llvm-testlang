@@ -10,6 +10,7 @@ pub enum Node {
     ExpressionStatement(Box<Node>),
     Identifier(String),
     NumberLiteral(String),
+    StringLiteral(String),
     Formals(Vec<Node>),
     Formal(String),
     FunctionBody(Vec<Node>),

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+ll_file=./testbin/out.ll
+output_file=./testbin/out
+
+cargo run --bin testc < $1 > $ll_file
+clang $ll_file -o $output_file

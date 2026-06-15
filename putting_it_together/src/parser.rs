@@ -28,6 +28,10 @@ fn parser<'src>()
         Token::NumberLiteral(TokenData {value}) => Node::NumberLiteral(value),
     };
 
+    let string_literal = select! {
+        Token::StringLiteral(TokenData {value}) => Node::StringLiteral(value),
+    };
+
     let unary_operator = just(Token::Minus).to(Node::UnaryMinus);
     
     let binary_op_1 = choice((just(Token::Times), just(Token::Divided)));
@@ -128,6 +132,8 @@ fn parser<'src>()
             binary_expression_1,
             unary_expression,
             function_call,
+            string_literal,
+            number_literal,
             identifier,
             parenthesized(expr.clone()),
         )).boxed();

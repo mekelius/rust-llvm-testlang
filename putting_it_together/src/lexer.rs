@@ -78,10 +78,20 @@ pub enum Token {
     #[token(";")]
     Semicolon,
 
-    #[regex("[a-zA-Z]+", |lex| TokenData {value: lex.slice().to_string()})]
+    #[regex("[a-zA-Z_]+", |lex| TokenData {value: lex.slice().to_string()})]
     Identifier(TokenData),
     #[regex("[0-9]+", |lex| TokenData {value: lex.slice().to_string()})]
     NumberLiteral(TokenData),
+
+    #[regex("\"[^\"]+\"", |lex| {
+        let string = lex.slice();
+        // String the quotes
+        TokenData {value: string[1..string.len()-1].to_string()}})]
+    #[regex("\'[^\']+\'", |lex| {
+        let string = lex.slice();
+        // String the quotes
+        TokenData {value: string[1..string.len()-1].to_string()}})]
+    StringLiteral(TokenData),
 }
 
 pub fn run(src: &str) -> Result<Vec<Token>, Box<dyn Error>> {

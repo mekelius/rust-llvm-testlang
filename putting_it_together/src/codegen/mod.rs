@@ -142,6 +142,7 @@ impl<'ctx> CodeGen<'ctx> {
 
             Node::Identifier(_value) => todo!("Identifier"),
             Node::NumberLiteral(value) => self.handle_number_literal(&value),
+            Node::StringLiteral(value) => self.handle_string_literal(&value),
             _ => unreachable!(),
         }
     }
@@ -182,6 +183,12 @@ impl<'ctx> CodeGen<'ctx> {
             .i64_type()
             .const_int_from_string(value, Decimal)
             .unwrap_or_else(|| panic!("Could not create integer from {}", value))
+            .as_any_value_enum()
+    }
+
+    fn handle_string_literal(&self, value: &str) -> AnyValueEnum<'_> {
+        self.builder.build_global_string_ptr(value, "string_literal")
+            .unwrap_or_else(|_| panic!("Creating global string from {} failed", value))
             .as_any_value_enum()
     }
 }
