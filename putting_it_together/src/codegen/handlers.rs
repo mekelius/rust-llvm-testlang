@@ -1,9 +1,9 @@
-use std::error::Error;
 use dict::DictIface;
 use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
+use std::error::Error;
 
-use crate::ast::Node;
 use super::CodeGen;
+use crate::ast::Node;
 
 impl<'ctx> CodeGen<'ctx> {
     ////////////////////////////////////////// Handlers ///////////////////////////////////////////
@@ -40,7 +40,7 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(())
     }
 
-    fn handle_statement(&self, statement: &Node) {
+    pub fn handle_statement(&self, statement: &Node) {
         /*  CURRENTLY POSSIBLE STATEMENTS DEFINED IN THIS CLUSTEFUCK:
 
             let simple_statement = choice((
@@ -59,15 +59,29 @@ impl<'ctx> CodeGen<'ctx> {
         match statement {
             Node::LetStatement(_, _) => todo!("Let"), // self.let_statement(statement),
             Node::ReturnStatement(_) => todo!("Return"), // self.return_statement(statement),
-            Node::ExpressionStatement(expression) => self.handle_expression(&expression),
+            Node::ExpressionStatement(expression) => {
+                self.handle_expression(&expression);
+            }
             Node::EmptyStatement => return,
-            Node::While {
-                condition: _,
-                body: _,
-            } => todo!(), //self.while_(statement),
-            Node::Block(_) => todo!(), //self.block(statement),
-            _ => unreachable!(),
+
+            Node::If { condition, body } => self.handle_if(condition, body),
+            Node::While { condition, body } => self.handle_while(condition, body),
+            Node::For {
+                init,
+                condition,
+                step,
+                body,
+            } => self.handle_for(init, condition, step, body),
+
+            Node::Block(statements) => self.handle_block(statements),
+            _ => unreachable!("Unknown statement type {:?}", statement),
         };
+    }
+
+    pub fn handle_block(&self, statements: &Vec<Node>) {
+        for statement in statements {
+            self.handle_statement(statement);
+        }
     }
 
     pub fn handle_expression(&self, expression: &Node) -> AnyValueEnum<'_> {
@@ -90,7 +104,7 @@ impl<'ctx> CodeGen<'ctx> {
             } => self.handle_function_call(&expression),
 
             Node::Identifier(_value) => todo!("Identifier"),
-            
+
             Node::NumberLiteral(value) => self.handle_number_literal(&value),
             Node::StringLiteral(value) => self.handle_string_literal(&value),
             Node::BooleanLiteral(value) => self.handle_boolean_literal(&value),

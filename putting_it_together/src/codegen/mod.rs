@@ -3,6 +3,7 @@ mod identifier;
 mod handlers;
 mod binop;
 mod literal;
+mod control;
 
 use dict::Dict;
 use inkwell::context::Context;
@@ -49,10 +50,18 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     pub fn print(&self) -> Result<(), LLVMString> {
-        self.module.verify()?;
+        let passed = self.module.verify();
+
         let dump = self.module.print_to_string().to_string();
         print!("{}", &dump);
-        Ok(())
+
+        match passed {
+            Err(err) => {
+                print!("{:?}", err);
+                panic!("Module verification failed");
+            },
+            Ok(_) => return Ok(())
+        };
     }
 
     pub fn print_to_file(&self, output_file: &str) -> Result<(), LLVMString> {

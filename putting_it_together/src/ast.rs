@@ -25,6 +25,17 @@ pub enum Node {
         condition: Box<Node>,
         body: Box<Node>,
     },
+    For {
+        init: Box<Node>,
+        condition: Box<Node>,
+        step: Box<Node>,
+        body: Box<Node>,
+    },
+    If {
+        condition: Box<Node>,
+        body: Box<Node>,
+    },
+
     EmptyStatement,
     LetStatement(String, Box<Node>),
     ReturnStatement(Box<Node>),

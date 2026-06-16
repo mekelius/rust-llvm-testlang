@@ -6,16 +6,16 @@ use std::error::Error;
 
 use crate::ast::Node;
 
-fn parenthesized<'src>(
-    a: impl Parser<'src, &'src [Token], Node, chumsky::extra::Err<Rich<'src, Token>>> + Clone,
-) -> impl Parser<'src, &'src [Token], Node, chumsky::extra::Err<Rich<'src, Token>>> + Clone {
-    a.delimited_by(just(Token::LParenthesis), just(Token::RParenthesis))
+macro_rules! parenthesized {
+    ($p:expr) => {
+        ($p).delimited_by(just(Token::LParenthesis), just(Token::RParenthesis))
+    };
 }
 
-fn in_curly_braces<'src>(
-    a: impl Parser<'src, &'src [Token], Node, chumsky::extra::Err<Rich<'src, Token>>> + Clone,
-) -> impl Parser<'src, &'src [Token], Node, chumsky::extra::Err<Rich<'src, Token>>> + Clone {
-    a.delimited_by(just(Token::LCurlyBrace), just(Token::RCurlyBrace))
+macro_rules! in_curly_braces {
+    ($p:expr) => {
+        ($p).delimited_by(just(Token::LCurlyBrace), just(Token::RCurlyBrace))
+    };
 }
 
 fn parser<'src>()
@@ -51,11 +51,11 @@ fn parser<'src>()
     ));
 
     let expression = recursive(|expr| {
-        let argument_list = parenthesized(
+        let argument_list = parenthesized!(
             expr.clone()
                 .separated_by(just(Token::Comma))
                 .collect::<Vec<Node>>()
-                .map(|e| Node::ArgumentList(e)),
+                .map(|e| Node::ArgumentList(e))
         )
         .boxed();
 
@@ -92,7 +92,8 @@ fn parser<'src>()
             string_literal.clone(),
             number_literal.clone(),
             boolean_literal.clone(),
-        )).boxed();
+        ))
+        .boxed();
 
         let typed_expression = select! {
             Token::TypeIdentifier(TokenData{value}) => value
@@ -106,7 +107,7 @@ fn parser<'src>()
             identifier.clone(),
             literal.clone(),
             typed_expression.clone(),
-            parenthesized(expr.clone()),
+            parenthesized!(expr.clone()),
         ))
         .boxed();
 
@@ -167,7 +168,7 @@ fn parser<'src>()
             string_literal,
             number_literal,
             identifier,
-            parenthesized(expr.clone()),
+            parenthesized!(expr.clone()),
         ))
         .boxed();
 
@@ -176,8 +177,37 @@ fn parser<'src>()
     .boxed();
 
     let statement = recursive(|p| {
-        let while_ = just(Token::While)
-            .ignore_then(parenthesized(expression.clone()))
+        let if_statement = just(Token::If)
+            .ignore_then(parenthesized!(expression.clone()))
+            .then(p.clone())
+            .map(|(condition, body)| Node::If {
+                condition: Box::new(condition),
+                body: Box::new(body),
+            })
+            .boxed();
+
+        let for_init = p.clone();
+        let for_condition = expression.clone();
+        let for_step = p.clone();
+
+        let for_statement = just(Token::For)
+            .ignore_then(parenthesized!(
+                for_init
+                    .clone()
+                    .then(for_condition.clone())
+                    .then(for_step.clone())
+            ))
+            .then(p.clone())
+            .map(|(((init, condition), step), body)| Node::For {
+                init: Box::new(init),
+                condition: Box::new(condition),
+                step: Box::new(step),
+                body: Box::new(body),
+            })
+            .boxed();
+
+        let while_statement = just(Token::While)
+            .ignore_then(parenthesized!(expression.clone()))
             .then(p.clone())
             .map(|(condition, body)| Node::While {
                 condition: Box::new(condition),
@@ -187,11 +217,11 @@ fn parser<'src>()
 
         let empty_statement = empty().to(Node::EmptyStatement).boxed();
 
-        let block = in_curly_braces(
+        let block = in_curly_braces!(
             p.clone()
                 .repeated()
                 .collect::<Vec<Node>>()
-                .map(|e| Node::Block(e)),
+                .map(|e| Node::Block(e))
         )
         .boxed();
 
@@ -227,7 +257,12 @@ fn parser<'src>()
         .boxed();
         let single_statement = simple_statement.then_ignore(just(Token::Semicolon)).boxed();
 
-        let complex_statement = while_;
+        let complex_statement = choice((
+            if_statement.clone(),
+            while_statement.clone(),
+            for_statement.clone(),
+        ))
+        .boxed();
 
         single_statement.or(block).or(complex_statement).boxed()
     })
@@ -246,18 +281,18 @@ fn parser<'src>()
 
     let formal = typed_formal.clone().or(untyped_formal.clone());
 
-    let function_body = in_curly_braces(
+    let function_body = in_curly_braces!(
         statement
             .repeated()
             .collect::<Vec<Node>>()
-            .map(|e| Node::FunctionBody(e)),
+            .map(|e| Node::FunctionBody(e))
     );
 
-    let formals = parenthesized(
+    let formals = parenthesized!(
         formal
             .separated_by(just(Token::Comma))
             .collect::<Vec<Node>>()
-            .map(|e| Node::Formals(e)),
+            .map(|e| Node::Formals(e))
     );
 
     let function = just(Token::Function)

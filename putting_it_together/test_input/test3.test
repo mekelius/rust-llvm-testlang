@@ -5,4 +5,3 @@ function test(a) {
 function main() {
     test(8);
 }
-
