@@ -1,7 +1,10 @@
-use inkwell::values::{AnyValue, AnyValueEnum};
+use inkwell::{
+    IntPredicate::{EQ, NE, SGE, SGT, SLE, SLT},
+    values::{AnyValue, AnyValueEnum},
+};
 
-use crate::ast::Node;
 use super::CodeGen;
+use crate::ast::Node;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_add(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
@@ -14,7 +17,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_subtr(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+    pub fn handle_sub(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -24,7 +27,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_mult(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+    pub fn handle_mul(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -40,6 +43,66 @@ impl<'ctx> CodeGen<'ctx> {
 
         self.builder
             .build_int_signed_div(lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    pub fn handle_eq(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_compare(EQ, lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    pub fn handle_neq(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_compare(NE, lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    pub fn handle_gt(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_compare(SGT, lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    pub fn handle_lt(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_compare(SLT, lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    pub fn handle_gteq(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_compare(SGE, lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    pub fn handle_lteq(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_compare(SLE, lhs_value, rhs_value, "")
             .unwrap()
             .as_any_value_enum()
     }

@@ -47,8 +47,8 @@ pub enum Node {
     GreaterThanOrEquals(Box<Node>, Box<Node>),
     LessThanOrEquals(Box<Node>, Box<Node>),
     NotEquals(Box<Node>, Box<Node>),
-    Mult(Box<Node>, Box<Node>),
+    Mul(Box<Node>, Box<Node>),
     Div(Box<Node>, Box<Node>),
     Add(Box<Node>, Box<Node>),
-    Subtr(Box<Node>, Box<Node>),
+    Sub(Box<Node>, Box<Node>),
 }

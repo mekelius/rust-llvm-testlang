@@ -72,16 +72,17 @@ impl<'ctx> CodeGen<'ctx> {
 
     pub fn handle_expression(&self, expression: &Node) -> AnyValueEnum<'_> {
         match expression {
-            Node::Equals(_lhs, _rhs) => todo!("Equals"),
-            Node::GreaterThan(_lhs, _rhs) => todo!("GT"),
-            Node::LessThan(_lhs, _rhs) => todo!("LT"),
-            Node::GreaterThanOrEquals(_lhs, _rhs) => todo!("GTorEQ"),
-            Node::LessThanOrEquals(_lhs, _rhs) => todo!("LTorEQ"),
-            Node::NotEquals(_lhs, _rhs) => todo!("NEQ"),
-            Node::Mult(lhs, rhs) => self.handle_mult(lhs, rhs),
+            Node::Equals(lhs, rhs) => self.handle_eq(lhs, rhs),
+            Node::NotEquals(lhs, rhs) => self.handle_neq(lhs, rhs),
+            Node::GreaterThan(lhs, rhs) => self.handle_gt(lhs, rhs),
+            Node::LessThan(lhs, rhs) => self.handle_lt(lhs, rhs),
+            Node::GreaterThanOrEquals(lhs, rhs) => self.handle_gteq(lhs, rhs),
+            Node::LessThanOrEquals(lhs, rhs) => self.handle_lteq(lhs, rhs),
+
+            Node::Mul(lhs, rhs) => self.handle_mul(lhs, rhs),
             Node::Div(lhs, rhs) => self.handle_div(lhs, rhs),
             Node::Add(lhs, rhs) => self.handle_add(lhs, rhs),
-            Node::Subtr(lhs, rhs) => self.handle_subtr(lhs, rhs),
+            Node::Sub(lhs, rhs) => self.handle_sub(lhs, rhs),
 
             Node::FunctionCall {
                 callee: _,

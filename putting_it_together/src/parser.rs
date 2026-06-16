@@ -115,7 +115,7 @@ fn parser<'src>()
             .foldl(
                 binary_op_1.clone().then(term.clone()).repeated(),
                 |lhs, (op, rhs)| match op {
-                    Token::Times => Node::Mult(Box::new(lhs), Box::new(rhs)),
+                    Token::Times => Node::Mul(Box::new(lhs), Box::new(rhs)),
                     Token::Divided => Node::Div(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
                 },
@@ -131,7 +131,7 @@ fn parser<'src>()
                     .repeated(),
                 |lhs, (op, rhs)| match op {
                     Token::Plus => Node::Add(Box::new(lhs), Box::new(rhs)),
-                    Token::Minus => Node::Subtr(Box::new(lhs), Box::new(rhs)),
+                    Token::Minus => Node::Sub(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
                 },
             )
