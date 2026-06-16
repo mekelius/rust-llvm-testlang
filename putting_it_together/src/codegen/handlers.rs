@@ -1,6 +1,6 @@
 use std::error::Error;
 use dict::DictIface;
-use inkwell::{types::StringRadix::Decimal, values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum}};
+use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
 
 use crate::ast::Node;
 use super::CodeGen;
@@ -89,9 +89,11 @@ impl<'ctx> CodeGen<'ctx> {
             } => self.handle_function_call(&expression),
 
             Node::Identifier(_value) => todo!("Identifier"),
+            
             Node::NumberLiteral(value) => self.handle_number_literal(&value),
             Node::StringLiteral(value) => self.handle_string_literal(&value),
-            _ => unreachable!(),
+            Node::BooleanLiteral(value) => self.handle_boolean_literal(&value),
+            _ => unreachable!("Unknown AST node type {:?}", expression),
         }
     }
 
@@ -125,20 +127,4 @@ impl<'ctx> CodeGen<'ctx> {
             .unwrap()
             .as_any_value_enum()
     }
-
-    fn handle_number_literal(&self, value: &str) -> AnyValueEnum<'_> {
-        self.context
-            .i64_type()
-            .const_int_from_string(value, Decimal)
-            .unwrap_or_else(|| panic!("Could not create integer from {}", value))
-            .as_any_value_enum()
-    }
-
-    fn handle_string_literal(&self, value: &str) -> AnyValueEnum<'_> {
-        self.builder
-            .build_global_string_ptr(value, "string_literal")
-            .unwrap_or_else(|_| panic!("Creating global string from {} failed", value))
-            .as_any_value_enum()
-    }
-
 }

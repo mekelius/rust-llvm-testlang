@@ -75,6 +75,11 @@ pub enum Token {
     #[token("return")]
     Return,
 
+    #[token("true")]
+    True,
+    #[token("false")]
+    False,
+
     #[token(";")]
     Semicolon,
 

@@ -9,8 +9,11 @@ pub enum Node {
     Block(Vec<Node>),
     ExpressionStatement(Box<Node>),
     Identifier(String),
+
     NumberLiteral(String),
     StringLiteral(String),
+    BooleanLiteral(bool),
+    
     TypedExpression(String, Box<Node>),
 
     Formals(Vec<Node>),
@@ -37,6 +40,7 @@ pub enum Node {
         rhs: Box<Node>,
     },
     UnaryMinus,
+
     Equals(Box<Node>, Box<Node>),
     GreaterThan(Box<Node>, Box<Node>),
     LessThan(Box<Node>, Box<Node>),
