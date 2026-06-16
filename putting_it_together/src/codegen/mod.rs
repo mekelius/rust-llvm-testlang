@@ -1,6 +1,7 @@
 mod builtins;
 mod identifier;
 mod handlers;
+mod binop;
 
 use dict::Dict;
 use inkwell::context::Context;

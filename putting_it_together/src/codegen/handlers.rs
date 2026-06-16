@@ -70,7 +70,7 @@ impl<'ctx> CodeGen<'ctx> {
         };
     }
 
-    fn handle_expression(&self, expression: &Node) -> AnyValueEnum<'_> {
+    pub fn handle_expression(&self, expression: &Node) -> AnyValueEnum<'_> {
         match expression {
             Node::Equals(_lhs, _rhs) => todo!("Equals"),
             Node::GreaterThan(_lhs, _rhs) => todo!("GT"),
@@ -141,43 +141,4 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    fn handle_add(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
-        let lhs_value = self.handle_expression(lhs).into_int_value();
-        let rhs_value = self.handle_expression(rhs).into_int_value();
-
-        self.builder
-            .build_int_add(lhs_value, rhs_value, "")
-            .unwrap()
-            .as_any_value_enum()
-    }
-
-    fn handle_subtr(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
-        let lhs_value = self.handle_expression(lhs).into_int_value();
-        let rhs_value = self.handle_expression(rhs).into_int_value();
-
-        self.builder
-            .build_int_sub(lhs_value, rhs_value, "")
-            .unwrap()
-            .as_any_value_enum()
-    }
-
-    fn handle_mult(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
-        let lhs_value = self.handle_expression(lhs).into_int_value();
-        let rhs_value = self.handle_expression(rhs).into_int_value();
-
-        self.builder
-            .build_int_mul(lhs_value, rhs_value, "")
-            .unwrap()
-            .as_any_value_enum()
-    }
-
-    fn handle_div(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
-        let lhs_value = self.handle_expression(lhs).into_int_value();
-        let rhs_value = self.handle_expression(rhs).into_int_value();
-
-        self.builder
-            .build_int_signed_div(lhs_value, rhs_value, "")
-            .unwrap()
-            .as_any_value_enum()
-    }
 }
