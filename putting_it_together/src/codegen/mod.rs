@@ -1,5 +1,6 @@
 mod builtins;
 mod identifier;
+mod handlers;
 
 use dict::{Dict, DictIface};
 use inkwell::context::Context;
@@ -111,8 +112,8 @@ impl<'ctx> CodeGen<'ctx> {
         */
 
         match statement {
-            Node::LetStatement(_, _) => todo!(), // self.let_statement(statement),
-            Node::ReturnStatement(_) => todo!(), // self.return_statement(statement),
+            Node::LetStatement(_, _) => todo!("Let"), // self.let_statement(statement),
+            Node::ReturnStatement(_) => todo!("Return"), // self.return_statement(statement),
             Node::ExpressionStatement(expression) => self.handle_expression(&expression),
             Node::EmptyStatement => return,
             Node::While {
@@ -126,15 +127,16 @@ impl<'ctx> CodeGen<'ctx> {
 
     fn handle_expression(&self, expression: &Node) -> AnyValueEnum<'_> {
         match expression {
-            Node::Equals(_lhs, _rhs) => todo!(),
-            Node::GreaterThan(_lhs, _rhs) => todo!(),
-            Node::LessThan(_lhs, _rhs) => todo!(),
-            Node::GreaterThanOrEquals(_lhs, _rhs) => todo!(),
-            Node::LessThanOrEquals(_lhs, _rhs) => todo!(),
-            Node::NotEquals(_lhs, _rhs) => todo!(),
-            Node::Mult(_lhs, _rhs) => todo!(),
-            Node::Div(_lhs, _rhs) => todo!(),
+            Node::Equals(_lhs, _rhs) => todo!("Equals"),
+            Node::GreaterThan(_lhs, _rhs) => todo!("GT"),
+            Node::LessThan(_lhs, _rhs) => todo!("LT"),
+            Node::GreaterThanOrEquals(_lhs, _rhs) => todo!("GTorEQ"),
+            Node::LessThanOrEquals(_lhs, _rhs) => todo!("LTorEQ"),
+            Node::NotEquals(_lhs, _rhs) => todo!("NEQ"),
+            Node::Mult(lhs, rhs) => self.handle_mult(lhs, rhs),
+            Node::Div(lhs, rhs) => self.handle_div(lhs, rhs),
             Node::Add(lhs, rhs) => self.handle_add(lhs, rhs),
+            Node::Subtr(lhs, rhs) => self.handle_subtr(lhs, rhs),
 
             Node::FunctionCall {
                 callee: _,
@@ -200,6 +202,36 @@ impl<'ctx> CodeGen<'ctx> {
 
         self.builder
             .build_int_add(lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    fn handle_subtr(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_sub(lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    fn handle_mult(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_mul(lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    fn handle_div(&self, lhs: &Node, rhs: &Node) -> AnyValueEnum<'_> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.builder
+            .build_int_signed_div(lhs_value, rhs_value, "")
             .unwrap()
             .as_any_value_enum()
     }
