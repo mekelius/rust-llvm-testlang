@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [[ $1 == "all" ]]; then
+    ./run_tests parse ./test_input/parser
+    echo
+    ./run_tests testc ./test_input
+    exit
+fi
+
 command="cargo run --bin $1"
 [[ $# == 2 ]] && test_dir=$2 || test_dir="test_input"
 
@@ -16,5 +23,6 @@ do
     results=$results$result
 done
 
-echo -------------------------------------------------------------------------------
+echo
+echo ===============================================================================
 echo $results
