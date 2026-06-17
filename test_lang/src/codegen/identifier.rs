@@ -24,8 +24,9 @@ impl<'ctx> Symbol<'ctx> {
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_identifier(&self, identifier: &str, scopes: &mut Scopes<'ctx>) -> Symbol<'ctx> {
-        (*scopes
+    pub fn handle_identifier(&self, identifier: &str) -> Symbol<'ctx> {
+        (self
+            .scopes
             .resolve_identifier(identifier)
             .unwrap_or_else(|| panic!("Attempt to resolve undefined identifier {}", identifier)))
         .clone()

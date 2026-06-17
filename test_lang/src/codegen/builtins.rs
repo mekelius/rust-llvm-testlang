@@ -1,39 +1,44 @@
-use inkwell::{
-    AddressSpace,
-    types::FunctionType,
-    values::FunctionValue,
-};
+use inkwell::{AddressSpace, types::FunctionType, values::FunctionValue};
 
-use crate::codegen::{identifier::Symbol, scope::Scopes};
+use crate::codegen::IR;
 
 use super::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn init_builtins(&self, scopes: &mut Scopes<'ctx>) {
-        let bool_t = self.context.bool_type();
-        let i32_t = self.context.i32_type();
-        let int_t = self.context.i64_type();
-        let void_t = self.context.void_type();
-        let ptr_t = self.context.ptr_type(AddressSpace::default());
+    pub fn init_builtins(&mut self) {
+        let CodeGen { ir, scopes } = self;
+
+        macro_rules! builtin {
+            ($identifier:ident, $signature:expr) => {
+                let $identifier = ir.declare_builtin(stringify!($identifier), $signature);
+                scopes.define_global_function(stringify!($identifier), $identifier);
+            };
+        }
+
+        let bool_t = ir.context.bool_type();
+        let i32_t = ir.context.i32_type();
+        let int_t = ir.context.i64_type();
+        let void_t = ir.context.void_type();
+        let ptr_t = ir.context.ptr_type(AddressSpace::default());
 
         ///////////////////////////////////////// printf //////////////////////////////////////////
-        let printf = self.declare_builtin("printf", &i32_t.fn_type(&[ptr_t.into()], true), scopes);
+        builtin!(printf, &i32_t.fn_type(&[ptr_t.into()], true));
 
         //////////////////////////////////////// print_int ////////////////////////////////////////
         {
-            let print_int =
-                self.declare_builtin("print_int", &void_t.fn_type(&[int_t.into()], false), scopes);
-            let entry_b = self.context.append_basic_block(print_int, "PrintIntEntry");
-            self.builder.position_at_end(entry_b);
+            builtin!(print_int, &void_t.fn_type(&[int_t.into()], false));
 
-            let int_format_string = self
+            let entry_b = ir.context.append_basic_block(print_int, "PrintIntEntry");
+            ir.builder.position_at_end(entry_b);
+
+            let int_format_string = ir
                 .builder
                 .build_global_string_ptr("%d\n", "printf_int_format")
                 .unwrap();
 
             let arg1 = print_int.get_nth_param(0).unwrap();
-            
-            self.builder
+
+            ir.builder
                 .build_call(
                     printf,
                     &[int_format_string.as_pointer_value().into(), arg1.into()],
@@ -41,37 +46,34 @@ impl<'ctx> CodeGen<'ctx> {
                 )
                 .unwrap();
 
-            self.builder.build_return(None).unwrap();
+            ir.builder.build_return(None).unwrap();
         }
 
         //////////////////////////////////////// print_bool ////////////////////////////////////////
         {
-            let print_bool =
-                self.declare_builtin("print_bool", &void_t.fn_type(&[bool_t.into()], false), scopes);
-            let entry_b = self.context.append_basic_block(print_bool, "PrintBoolEntry");
-            self.builder.position_at_end(entry_b);
+            builtin!(print_bool, &void_t.fn_type(&[bool_t.into()], false));
 
-            let string_format_string = self
+            let entry_b = ir.context.append_basic_block(print_bool, "PrintBoolEntry");
+            ir.builder.position_at_end(entry_b);
+
+            let string_format_string = ir
                 .builder
                 .build_global_string_ptr("%s\n", "printf_string_format")
                 .unwrap();
 
-            let true_string = self
-                .builder
-                .build_global_string_ptr("true", "true")
-                .unwrap();
+            let true_string = ir.builder.build_global_string_ptr("true", "true").unwrap();
 
-            let false_string = self
+            let false_string = ir
                 .builder
                 .build_global_string_ptr("false", "false")
                 .unwrap();
 
             let arg1 = print_bool.get_nth_param(0).unwrap().into_int_value();
-            let val_as_string = self
+            let val_as_string = ir
                 .builder
                 .build_select(arg1, true_string, false_string, "val_as_str")
                 .unwrap();
-            self.builder
+            ir.builder
                 .build_call(
                     printf,
                     &[
@@ -82,30 +84,28 @@ impl<'ctx> CodeGen<'ctx> {
                 )
                 .unwrap();
 
-            self.builder.build_return(None).unwrap();
+            ir.builder.build_return(None).unwrap();
         }
 
         ////////////////////////////////////////// print //////////////////////////////////////////
         {
-            let print = self.declare_builtin("print", &void_t.fn_type(&[ptr_t.into()], false), scopes);
-            let entry_b = self.context.append_basic_block(print, "PrintEntry");
-            self.builder.position_at_end(entry_b);
+            builtin!(print, &void_t.fn_type(&[ptr_t.into()], false));
+
+            let entry_b = ir.context.append_basic_block(print, "PrintEntry");
+            ir.builder.position_at_end(entry_b);
 
             let arg1 = print.get_nth_param(0).unwrap();
-            self.builder.build_call(printf, &[arg1.into()], "").unwrap();
+            ir.builder.build_call(printf, &[arg1.into()], "").unwrap();
 
-            self.builder.build_return(None).unwrap();
+            ir.builder.build_return(None).unwrap();
         }
     }
+}
 
-    fn declare_builtin(
-        &self,
-        name: &str,
-        signature: &FunctionType<'ctx>,
-        scopes: &mut Scopes<'ctx>,
-    ) -> FunctionValue<'ctx> {
+impl<'ctx> IR<'ctx> {
+    fn declare_builtin(&self, name: &str, signature: &FunctionType<'ctx>) -> FunctionValue<'ctx> {
         let function = self.module.add_function(name, *signature, None);
-        scopes.define_global_identifier(name, Symbol::Function(function));
+        // scopes.define_global_identifier(name, Symbol::Function(function));
         // .builtins.add(name.to_string(), function);
         function
     }

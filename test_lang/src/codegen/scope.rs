@@ -108,4 +108,10 @@ impl<'ctx> Scopes<'ctx> {
             .identifiers
             .insert(identifier.to_string(), rvalue);
     }
+
+    pub fn define_global_function(&mut self, identifier: &str, function: FunctionValue<'ctx>) {
+        self.get_global_scope_mut()
+            .identifiers
+            .insert(identifier.to_string(), Symbol::Function(function));
+    }
 }

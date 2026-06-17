@@ -2,10 +2,10 @@ use super::CodeGen;
 use crate::{ast::Node, codegen::{identifier::Symbol, scope::Scopes}};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_let(&self, identifier: &str, expression: &Node, scopes: &mut Scopes<'ctx>) {
-        let value = self.handle_expression(expression, scopes);
+    pub fn handle_let(&mut self, identifier: &str, expression: &Node) {
+        let value = self.handle_expression(expression);
         let symbol = Symbol::Value(value);
-        let current_scope = scopes.get_current_scope_mut();
+        let current_scope = self.scopes.get_current_scope_mut();
 
         match current_scope.identifiers.get(identifier) {
             Some(_) => panic!("Attempting to redefine identifier \"{}\"", identifier),
