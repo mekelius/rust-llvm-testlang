@@ -1,6 +1,7 @@
-use crate::lexer;
-use crate::lexer::Token;
-use crate::lexer::TokenData;
+pub mod lexer;
+
+use self::lexer::Token;
+use self::lexer::TokenData;
 use chumsky::prelude::*;
 use std::error::Error;
 

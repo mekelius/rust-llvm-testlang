@@ -1,6 +1,6 @@
 use std::error::Error;
 use std::io;
-use testl::lexer::Token;
+use testl::parser::lexer::Token;
 use logos::Logos;
 
 fn main() -> Result<(), Box<dyn Error>> {
