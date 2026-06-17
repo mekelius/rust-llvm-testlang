@@ -1,4 +1,0 @@
-function testWhile() {
-    while (test) {
-    }
-}

@@ -1,9 +1,0 @@
-test() {
-    return 123;
-}
-
-main() {
-    let joo = test();
-    print(joo);
-    return 0;
-}

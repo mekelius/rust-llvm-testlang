@@ -1,3 +1,0 @@
-function binop() {
-    asd(2/12);
-}

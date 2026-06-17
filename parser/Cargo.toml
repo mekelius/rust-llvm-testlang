@@ -1,9 +1,0 @@
-[package]
-name = "parser"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-cfgrammar = "0.14.2"
-logos = "0.16.1"
-lrpar = "0.14.2"
