@@ -14,7 +14,6 @@ use inkwell::support::LLVMString;
 use inkwell::{builder::Builder, values::FunctionValue};
 use std::error::Error;
 
-use self::scope::{Scope, ScopeID};
 use crate::ast::Node;
 use crate::codegen::scope::Scopes;
 
@@ -28,7 +27,7 @@ pub struct CodeGen<'ctx> {
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn new(context: &'ctx Context, name: &'ctx str) -> CodeGen<'ctx> {
-        let mut codegen = Self {
+        let codegen = Self {
             context,
             module: context.create_module(name),
             builder: context.create_builder(),

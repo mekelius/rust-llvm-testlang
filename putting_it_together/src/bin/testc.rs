@@ -1,6 +1,5 @@
 use testl::codegen::CodeGen;
 use inkwell::context::Context;
-use testl::codegen::scope::Scopes;
 use std::error::Error;
 use std::io;
 use testl::parser;

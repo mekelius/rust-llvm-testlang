@@ -1,4 +1,3 @@
-use dict::DictIface;
 use inkwell::{
     AddressSpace,
     types::FunctionType,
