@@ -1,26 +1,20 @@
+pub mod ir;
+pub mod scope;
+
 mod binop;
 mod builtins;
 mod control;
 mod handlers;
 mod identifier;
 mod literal;
-pub mod scope;
 mod variable;
 
 use inkwell::context::Context;
-use inkwell::module::Module;
-use inkwell::support::LLVMString;
-use inkwell::builder::Builder;
 use std::error::Error;
 
 use crate::ast::Node;
+use crate::codegen::ir::IR;
 use crate::codegen::scope::Scopes;
-
-pub struct IR<'ctx> {
-        pub context: &'ctx Context,
-        pub module: Module<'ctx>,
-        pub builder: Builder<'ctx>,
-    }
 
 pub struct CodeGen<'ctx> {
     pub ir: IR<'ctx>,
@@ -52,27 +46,6 @@ impl<'ctx> CodeGen<'ctx> {
             _ => unreachable!(),
         };
 
-        Ok(())
-    }
-
-    pub fn print(&self) -> Result<(), LLVMString> {
-        let passed = self.ir.module.verify();
-
-        let dump = self.ir.module.print_to_string().to_string();
-        print!("{}", &dump);
-
-        match passed {
-            Err(err) => {
-                print!("{:?}", err);
-                panic!("Module verification failed");
-            }
-            Ok(_) => return Ok(()),
-        };
-    }
-
-    pub fn print_to_file(&self, output_file: &str) -> Result<(), LLVMString> {
-        self.ir.module.verify()?;
-        self.ir.module.print_to_file(output_file)?;
         Ok(())
     }
 }

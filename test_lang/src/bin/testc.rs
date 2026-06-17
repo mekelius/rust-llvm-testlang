@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut codegen = CodeGen::new(&context, "test");
 
     codegen.run(&ast)?;
-    codegen.print()?;
+    codegen.ir.print()?;
 
     Ok(())
 }
