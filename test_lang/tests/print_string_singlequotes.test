@@ -2,10 +2,10 @@
 // RUN: %t | filecheck %s
 
 function test() {
-    print_int(999);
+    print('Hello "oe"\n');
 }
 
 function main() {
-    test();             // CHECK: 999
+    test();                 // CHECK: Hello "oe"\n
 }
 

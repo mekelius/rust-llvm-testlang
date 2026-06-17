@@ -1,7 +1,0 @@
-function test(a) {
-    print_int(a*5);
-}
-
-function main() {
-    test(8);
-}

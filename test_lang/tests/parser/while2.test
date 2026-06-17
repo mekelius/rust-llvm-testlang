@@ -1,0 +1,9 @@
+// RUN: %parse < %s
+
+function testWhile() {
+    while (test == graa) {
+        asok;
+        qwewq;
+        qweqweqwe;
+    }
+}

@@ -1,7 +1,0 @@
-function test() {
-    print_int(1+5-3*2);
-}
-
-function main() {
-    test();
-}

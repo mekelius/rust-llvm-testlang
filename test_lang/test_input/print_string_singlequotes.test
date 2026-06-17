@@ -1,8 +1,0 @@
-function test() {
-    print('Hello "oe"\n');
-}
-
-function main() {
-    test();
-}
-

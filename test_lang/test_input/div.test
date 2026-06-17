@@ -1,7 +1,0 @@
-function test() {
-    print_int(8/2-3/2);
-}
-
-function main() {
-    test();
-}

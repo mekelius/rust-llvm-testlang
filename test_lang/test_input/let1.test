@@ -1,4 +1,0 @@
-function main() {
-    let x = Int 1;
-    print_int(x + 2);
-}

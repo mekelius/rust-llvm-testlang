@@ -2,5 +2,5 @@
 // RUN: %t | filecheck %s
 
 function main() {
-    print_int(123);     // CHECK: 123
+    print_bool(4 != 4); // CHECK: false
 }

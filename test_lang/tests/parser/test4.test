@@ -1,0 +1,13 @@
+// RUN: %parse < %s
+
+function chad(qwe, q, p) {
+    yeah;
+    ok;
+    yepyep;
+}
+
+function chasd() {
+    yeah;
+}
+
+function empty(aaasdasdsad) {}

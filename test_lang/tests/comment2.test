@@ -1,0 +1,14 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+function /* TESTSTE
+adg
+asdttaat
+aststatsattasa
+        tets
+        gigi */ joo() {} 
+function main() { // woo
+    // asdasd
+    print("qwe");           // CHECK: qwe
+}
+//asasaas

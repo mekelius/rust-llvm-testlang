@@ -1,0 +1,17 @@
+// RUN: %parse < %s
+
+function testWhile() {
+    while (test) {
+        asok;
+        qwewq;
+        qweqweqwe;
+    };;;
+    ;;
+
+    ;
+    ;
+    ;
+    asfafsa
+    ;
+    ;asf;
+}

@@ -1,0 +1,10 @@
+// RUN: %parse < %s
+
+function test() {
+    return 123;
+}
+
+function main() {
+    print(joo);
+    return 0;
+}

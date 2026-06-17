@@ -1,5 +1,0 @@
-function main() {
-    while(8 != 9) {
-        print_int(8);
-    }
-}

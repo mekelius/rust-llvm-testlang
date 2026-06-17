@@ -1,6 +1,10 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: %t | filecheck %s
 
+function test() {
+    print_int(8/2-3/2);
+}
+
 function main() {
-    print_int(123);     // CHECK: 123
+    test(); // CHECK: 3
 }

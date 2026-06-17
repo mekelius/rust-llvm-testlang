@@ -1,0 +1,5 @@
+// RUN: %parse < %s
+
+function test() {
+    testCall(x,y,z);
+}
