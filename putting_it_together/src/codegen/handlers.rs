@@ -2,11 +2,18 @@ use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
 use std::error::Error;
 
 use super::CodeGen;
-use crate::{ast::Node, codegen::{identifier::Symbol, scope::Scopes}};
+use crate::{
+    ast::Node,
+    codegen::{identifier::Symbol, scope::Scopes},
+};
 
 impl<'ctx> CodeGen<'ctx> {
     ////////////////////////////////////////// Handlers ///////////////////////////////////////////
-    pub fn handle_function(&self, function: &Node, scopes: &mut Scopes<'ctx>) -> Result<(), Box<dyn Error>> {
+    pub fn handle_function(
+        &self,
+        function: &Node,
+        scopes: &mut Scopes<'ctx>,
+    ) -> Result<(), Box<dyn Error>> {
         let Node::Function {
             name,
             formals: _,
@@ -25,7 +32,6 @@ impl<'ctx> CodeGen<'ctx> {
 
         let entry_b = self.context.append_basic_block(test_f, "Entry");
         self.builder.position_at_end(entry_b);
-
 
         // Prepare function scope -----------------------------------------------------
 
@@ -48,7 +54,9 @@ impl<'ctx> CodeGen<'ctx> {
 
     pub fn handle_statement(&self, statement: &Node, scopes: &mut Scopes<'ctx>) {
         match statement {
-            Node::LetStatement(_, _) => todo!("Let"), // self.let_statement(statement),
+            Node::LetStatement(identifier, expression) => {
+                self.handle_let(identifier, expression, scopes)
+            }
             Node::ReturnStatement(_) => todo!("Return"), // self.return_statement(statement),
             Node::ExpressionStatement(expression) => {
                 self.handle_expression(&expression, scopes);
@@ -75,8 +83,16 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    pub fn handle_expression(&self, expression: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_expression(
+        &self,
+        expression: &Node,
+        scopes: &mut Scopes<'ctx>,
+    ) -> AnyValueEnum<'ctx> {
         match expression {
+            Node::TypedExpression(type_identifier, expression) => {
+                self.handle_typed_expresssion(type_identifier, expression, scopes)
+            }
+
             Node::Equals(lhs, rhs) => self.handle_eq(lhs, rhs, scopes),
             Node::NotEquals(lhs, rhs) => self.handle_neq(lhs, rhs, scopes),
             Node::GreaterThan(lhs, rhs) => self.handle_gt(lhs, rhs, scopes),
@@ -94,7 +110,7 @@ impl<'ctx> CodeGen<'ctx> {
                 argument_list: _,
             } => self.handle_function_call(&expression, scopes),
 
-            Node::Identifier(_value) => todo!("Identifier"),
+            Node::Identifier(value) => self.handle_identifier(value, scopes).as_any_value_enum(),
 
             Node::NumberLiteral(value) => self.handle_number_literal(&value),
             Node::StringLiteral(value) => self.handle_string_literal(&value),
@@ -103,7 +119,22 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn handle_function_call(&self, call_expression: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    fn handle_typed_expresssion(
+        &self,
+        type_identifier: &str,
+        expression: &Node,
+        scopes: &mut Scopes<'ctx>,
+    ) -> AnyValueEnum<'ctx> {
+        // let type_ = scopes.resolve_type(type_identifier);
+        // TODO: type check here
+        self.handle_expression(expression, scopes)
+    }
+
+    fn handle_function_call(
+        &self,
+        call_expression: &Node,
+        scopes: &mut Scopes<'ctx>,
+    ) -> AnyValueEnum<'ctx> {
         let Node::FunctionCall {
             callee: callee_name,
             argument_list,
@@ -115,13 +146,12 @@ impl<'ctx> CodeGen<'ctx> {
         // let mut args = Vec<LLVMVa>::new;
         let args: Vec<BasicMetadataValueEnum> = argument_list
             .into_iter()
-            .map(|arg| BasicMetadataValueEnum::try_from(self.handle_expression(arg, scopes)).unwrap())
+            .map(|arg| {
+                BasicMetadataValueEnum::try_from(self.handle_expression(arg, scopes)).unwrap()
+            })
             .collect();
 
-        print!("{:?}", *scopes);
-
-        let callee = self
-            .resolve_function(callee_name, &scopes)
+        let callee = CodeGen::resolve_function(callee_name, &scopes)
             .unwrap_or_else(|| panic!("Attempt to call nonexistent function {}", callee_name));
 
         self.builder

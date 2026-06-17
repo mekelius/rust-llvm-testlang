@@ -7,7 +7,7 @@ use super::CodeGen;
 use crate::{ast::Node, codegen::scope::Scopes};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_add(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_add(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -17,7 +17,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_sub(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_sub(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -27,7 +27,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_mul(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_mul(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -37,7 +37,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_div(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_div(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -47,7 +47,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_eq(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_eq(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -57,7 +57,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_neq(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_neq(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -67,7 +67,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_gt(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_gt(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -77,7 +77,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_lt(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_lt(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -87,7 +87,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_gteq(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_gteq(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 
@@ -97,7 +97,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_lteq(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'_> {
+    pub fn handle_lteq(&self, lhs: &Node, rhs: &Node, scopes: &mut Scopes<'ctx>) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs, scopes).into_int_value();
         let rhs_value = self.handle_expression(rhs, scopes).into_int_value();
 

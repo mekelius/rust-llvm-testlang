@@ -225,18 +225,15 @@ fn parser<'src>()
         )
         .boxed();
 
+        let name_binding = select! {
+            Token::Identifier(TokenData {value}) => value,
+        };
+
         let let_statement = just(Token::Let)
-            .ignore_then(identifier.clone())
+            .ignore_then(name_binding.clone())
             .then_ignore(just(Token::Assign))
             .then(expression.clone())
-            .map(|(name, value)| {
-                let name = match name {
-                    Node::Identifier(name) => name,
-                    _ => unreachable!(),
-                };
-
-                Node::LetStatement(name, Box::new(value))
-            })
+            .map(|(name, value)| Node::LetStatement(name, Box::new(value)))
             .boxed();
 
         let return_statement = just(Token::Return)
