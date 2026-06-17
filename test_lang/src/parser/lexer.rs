@@ -6,11 +6,17 @@ pub struct TokenData {
 }
 
 use logos::Logos;
+use logos::skip;
 
 #[derive(Logos, Debug, PartialEq, Eq, Hash, Clone)]
 #[logos(skip r"[ \t\n\f]+")]
 #[logos(extras = TokenData)]
 pub enum Token {
+    #[regex(r"//[^\n]*", skip, allow_greedy = true)]
+    LineComment,
+    #[regex(r"(?s)/\*.*\*/", skip, allow_greedy = true)]
+    BlockComment,
+
     #[token("if")]
     If,
     #[token("else")]
@@ -27,7 +33,7 @@ pub enum Token {
     Minus,
     #[token("*")]
     Times,
-    #[token("/")]
+    #[regex("/")]
     Divided,
     #[token("%")]
     Modulo,
