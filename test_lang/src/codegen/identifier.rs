@@ -1,7 +1,5 @@
 use inkwell::values::{AnyValue, AnyValueEnum, FunctionValue};
 
-use crate::codegen::scope::Scopes;
-
 use super::CodeGen;
 
 #[derive(Debug, Clone)]

@@ -1,5 +1,5 @@
 use super::CodeGen;
-use crate::{ast::Node, codegen::scope::Scopes};
+use crate::ast::Node;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_if(&mut self, condition: &Node, body: &Node) {

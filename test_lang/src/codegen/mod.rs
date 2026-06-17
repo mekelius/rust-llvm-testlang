@@ -10,7 +10,7 @@ mod variable;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::support::LLVMString;
-use inkwell::{builder::Builder, values::FunctionValue};
+use inkwell::builder::Builder;
 use std::error::Error;
 
 use crate::ast::Node;

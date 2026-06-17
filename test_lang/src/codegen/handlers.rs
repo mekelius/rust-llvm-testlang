@@ -4,7 +4,7 @@ use std::error::Error;
 use super::CodeGen;
 use crate::{
     ast::Node,
-    codegen::{identifier::Symbol, scope::Scopes},
+    codegen::identifier::Symbol,
 };
 
 impl<'ctx> CodeGen<'ctx> {
