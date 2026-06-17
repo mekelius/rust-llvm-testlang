@@ -1,0 +1,5 @@
+function main() {
+    let x = Int 100;
+    let y = Int 6;
+    print_int(x * y);
+}
