@@ -1,4 +1,4 @@
-use inkwell::values::FunctionValue;
+use inkwell::values::{AnyValueEnum, BasicValueEnum, FunctionValue};
 
 use crate::codegen::identifier::Symbol;
 use std::collections::HashMap;
@@ -22,6 +22,17 @@ impl<'ctx> Scope<'ctx> {
             identifiers: HashMap::new(),
             parent_id,
         }
+    }
+
+    pub fn define_formal(&mut self, identifier: &str, value: BasicValueEnum<'ctx>) {
+        if self.identifiers.contains_key(identifier) {
+            panic!(
+                "Attempt to redefine identifier {} as a formal parameter",
+                identifier
+            );
+        }
+        self.identifiers
+            .insert(identifier.to_string(), Symbol::Formal(value));
     }
 }
 

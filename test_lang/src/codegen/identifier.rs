@@ -1,4 +1,4 @@
-use inkwell::values::{AnyValue, AnyValueEnum, FunctionValue};
+use inkwell::values::{AnyValue, AnyValueEnum, BasicValueEnum, FunctionValue};
 
 use super::CodeGen;
 
@@ -6,7 +6,7 @@ use super::CodeGen;
 pub enum Symbol<'ctx> {
     Function(FunctionValue<'ctx>),
     Variable(AnyValueEnum<'ctx>),
-    Formal(AnyValueEnum<'ctx>),
+    Formal(BasicValueEnum<'ctx>),
     Value(AnyValueEnum<'ctx>),
 }
 
@@ -15,7 +15,7 @@ impl<'ctx> Symbol<'ctx> {
         match self {
             Symbol::Function(value) => value.as_any_value_enum(),
             Symbol::Variable(value) => *value,
-            Symbol::Formal(value) => *value,
+            Symbol::Formal(value) => *&value.as_any_value_enum(),
             Symbol::Value(value) => *value,
         }
     }

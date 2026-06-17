@@ -1,5 +1,5 @@
 function test(a) {
-    print_int(a);
+    print_int(a*5);
 }
 
 function main() {
