@@ -1,3 +1,5 @@
+use inkwell::values::FunctionValue;
+
 use crate::codegen::identifier::Symbol;
 use std::collections::HashMap;
 pub type ScopeID = usize;
@@ -84,6 +86,13 @@ impl<'ctx> Scopes<'ctx> {
     /* Resolves an identifier in the current scope */
     pub fn resolve_identifier(&self, identifier: &str) -> Option<&Symbol<'ctx>> {
         self.resolve_identifier_in_scope(identifier, &self.current_scope_id)
+    }
+
+    pub fn resolve_function(&self, identifier: &str) -> Option<FunctionValue<'ctx>> {
+        match self.resolve_identifier(identifier) {
+            Some(Symbol::Function(function)) => Some(function.clone()),
+            _ => None,
+        }
     }
 
     /* Defines an identifier in the current scope */

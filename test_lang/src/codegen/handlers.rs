@@ -151,7 +151,8 @@ impl<'ctx> CodeGen<'ctx> {
             })
             .collect();
 
-        let callee = CodeGen::resolve_function(callee_name, &scopes)
+        let callee = scopes
+            .resolve_function(callee_name)
             .unwrap_or_else(|| panic!("Attempt to call nonexistent function {}", callee_name));
 
         self.builder

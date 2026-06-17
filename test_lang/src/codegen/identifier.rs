@@ -24,16 +24,6 @@ impl<'ctx> Symbol<'ctx> {
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn resolve_function(
-        identifier: &str,
-        scopes: &Scopes<'ctx>,
-    ) -> Option<FunctionValue<'ctx>> {
-        match scopes.resolve_identifier(identifier) {
-            Some(Symbol::Function(function)) => Some(function.clone()),
-            _ => None,
-        }
-    }
-
     pub fn handle_identifier(&self, identifier: &str, scopes: &mut Scopes<'ctx>) -> Symbol<'ctx> {
         (*scopes
             .resolve_identifier(identifier)
