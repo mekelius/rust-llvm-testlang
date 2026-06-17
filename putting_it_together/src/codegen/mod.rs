@@ -1,9 +1,11 @@
-mod builtins;
-mod identifier;
-mod handlers;
 mod binop;
-mod literal;
+mod builtins;
 mod control;
+mod handlers;
+mod identifier;
+mod literal;
+pub mod scope;
+mod variable;
 
 use dict::Dict;
 use inkwell::context::Context;
@@ -12,7 +14,9 @@ use inkwell::support::LLVMString;
 use inkwell::{builder::Builder, values::FunctionValue};
 use std::error::Error;
 
+use self::scope::{Scope, ScopeID};
 use crate::ast::Node;
+use crate::codegen::scope::Scopes;
 
 pub struct CodeGen<'ctx> {
     pub context: &'ctx Context,
@@ -31,16 +35,19 @@ impl<'ctx> CodeGen<'ctx> {
             builtins: Dict::new(),
             function_identifiers: Dict::new(),
         };
-
-        codegen.init_builtins();
+        
+        // codegen.init_builtins(scopes);
         codegen
     }
 
-    pub fn run(&mut self, ast: &'ctx Node) -> Result<(), Box<dyn Error>> {
+    pub fn run(&self, ast: &Node) -> Result<(), Box<dyn Error>> {
+        let mut scopes = Scopes::new();
+        self.init_builtins(&mut scopes);
+
         match ast {
             Node::Program(program) => {
                 for function in program {
-                    self.handle_function(function)?;
+                    self.handle_function(function, &mut scopes)?;
                 }
             }
             _ => unreachable!(),
@@ -59,8 +66,8 @@ impl<'ctx> CodeGen<'ctx> {
             Err(err) => {
                 print!("{:?}", err);
                 panic!("Module verification failed");
-            },
-            Ok(_) => return Ok(())
+            }
+            Ok(_) => return Ok(()),
         };
     }
 

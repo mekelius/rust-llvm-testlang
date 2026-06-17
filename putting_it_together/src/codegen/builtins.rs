@@ -5,10 +5,12 @@ use inkwell::{
     values::FunctionValue,
 };
 
+use crate::codegen::{identifier::Symbol, scope::Scopes};
+
 use super::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn init_builtins(&mut self) {
+    pub fn init_builtins(&self, scopes: &mut Scopes<'ctx>) {
         let bool_t = self.context.bool_type();
         let i32_t = self.context.i32_type();
         let int_t = self.context.i64_type();
@@ -16,12 +18,12 @@ impl<'ctx> CodeGen<'ctx> {
         let ptr_t = self.context.ptr_type(AddressSpace::default());
 
         ///////////////////////////////////////// printf //////////////////////////////////////////
-        let printf = self.declare_builtin("printf", &i32_t.fn_type(&[ptr_t.into()], true));
+        let printf = self.declare_builtin("printf", &i32_t.fn_type(&[ptr_t.into()], true), scopes);
 
         //////////////////////////////////////// print_int ////////////////////////////////////////
         {
             let print_int =
-                self.declare_builtin("print_int", &void_t.fn_type(&[int_t.into()], false));
+                self.declare_builtin("print_int", &void_t.fn_type(&[int_t.into()], false), scopes);
             let entry_b = self.context.append_basic_block(print_int, "PrintIntEntry");
             self.builder.position_at_end(entry_b);
 
@@ -46,7 +48,7 @@ impl<'ctx> CodeGen<'ctx> {
         //////////////////////////////////////// print_bool ////////////////////////////////////////
         {
             let print_bool =
-                self.declare_builtin("print_bool", &void_t.fn_type(&[bool_t.into()], false));
+                self.declare_builtin("print_bool", &void_t.fn_type(&[bool_t.into()], false), scopes);
             let entry_b = self.context.append_basic_block(print_bool, "PrintBoolEntry");
             self.builder.position_at_end(entry_b);
 
@@ -86,7 +88,7 @@ impl<'ctx> CodeGen<'ctx> {
 
         ////////////////////////////////////////// print //////////////////////////////////////////
         {
-            let print = self.declare_builtin("print", &void_t.fn_type(&[ptr_t.into()], false));
+            let print = self.declare_builtin("print", &void_t.fn_type(&[ptr_t.into()], false), scopes);
             let entry_b = self.context.append_basic_block(print, "PrintEntry");
             self.builder.position_at_end(entry_b);
 
@@ -98,12 +100,14 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     fn declare_builtin(
-        &mut self,
+        &self,
         name: &str,
         signature: &FunctionType<'ctx>,
+        scopes: &mut Scopes<'ctx>,
     ) -> FunctionValue<'ctx> {
         let function = self.module.add_function(name, *signature, None);
-        self.builtins.add(name.to_string(), function);
+        scopes.define_global_identifier(name, Symbol::Function(function));
+        // .builtins.add(name.to_string(), function);
         function
     }
 }

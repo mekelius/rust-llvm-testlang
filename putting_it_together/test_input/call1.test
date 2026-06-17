@@ -1,0 +1,7 @@
+function hmm() {
+    print("Toimii");
+}
+
+function main() {
+    hmm();
+}

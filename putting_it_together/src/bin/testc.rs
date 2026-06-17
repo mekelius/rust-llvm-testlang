@@ -1,5 +1,6 @@
 use testl::codegen::CodeGen;
 use inkwell::context::Context;
+use testl::codegen::scope::Scopes;
 use std::error::Error;
 use std::io;
 use testl::parser;
@@ -9,7 +10,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ast = parser::run(&src)?;
 
     let context = Context::create();
-    let mut codegen = CodeGen::new(&context, "test");
+    let codegen = CodeGen::new(&context, "test");
 
     codegen.run(&ast)?;
     codegen.print()?;

@@ -1,9 +1,9 @@
 use super::CodeGen;
-use crate::ast::Node;
+use crate::{ast::Node, codegen::scope::Scopes};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_if(&self, condition: &Node, body: &Node) {
-        let condition_value = self.handle_expression(condition);
+    pub fn handle_if(&self, condition: &Node, body: &Node, scopes: &mut Scopes<'ctx>) {
+        let condition_value = self.handle_expression(condition, scopes);
 
         let current_function = self
             .builder
@@ -26,7 +26,7 @@ impl<'ctx> CodeGen<'ctx> {
             });
 
         self.builder.position_at_end(then_block);
-        self.handle_statement(body);
+        self.handle_statement(body, scopes);
 
         self.builder
             .build_unconditional_branch(after_block)
@@ -34,7 +34,7 @@ impl<'ctx> CodeGen<'ctx> {
         self.builder.position_at_end(after_block);
     }
 
-    pub fn handle_while(&self, condition: &Node, body: &Node) {
+    pub fn handle_while(&self, condition: &Node, body: &Node, scopes: &mut Scopes<'ctx>) {
         let from_block = self.builder.get_insert_block().unwrap();
         let current_function = from_block.get_parent().unwrap();
 
@@ -51,7 +51,7 @@ impl<'ctx> CodeGen<'ctx> {
         self.builder.build_unconditional_branch(loop_header).unwrap();
 
         self.builder.position_at_end(loop_header);
-        let condition_value = self.handle_expression(condition);
+        let condition_value = self.handle_expression(condition, scopes);
         self.builder
             .build_conditional_branch(condition_value.into_int_value(), loop_body, after_block)
             .unwrap_or_else(|e| {
@@ -62,7 +62,7 @@ impl<'ctx> CodeGen<'ctx> {
             });
 
         self.builder.position_at_end(loop_body);
-        self.handle_statement(body);
+        self.handle_statement(body, scopes);
         self.builder.build_unconditional_branch(loop_header).unwrap();
 
         self.builder.position_at_end(after_block);
