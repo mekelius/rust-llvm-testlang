@@ -1,10 +1,13 @@
 pub mod ir;
 pub mod scope;
 
-mod binop;
 mod builtins;
+
+mod function;
+mod expression;
+mod statement;
+mod binop;
 mod control;
-mod handlers;
 mod identifier;
 mod literal;
 mod variable;
