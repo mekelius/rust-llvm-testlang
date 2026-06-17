@@ -1,1 +1,1 @@
-## Run tests with ```lit tests```
+Run tests with ```lit tests``` (in the test_lang dir)

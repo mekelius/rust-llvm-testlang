@@ -6,5 +6,5 @@ function test() {
 }
 
 function main() {
-    test(); // CHECK: 0
+    test();                 // CHECK: 0
 }
