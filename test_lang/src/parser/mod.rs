@@ -38,6 +38,10 @@ fn parser<'src>()
         Token::False => Node::BooleanLiteral(false),
     };
 
+    let unit_literal = just(Token::LParenthesis)
+        .ignore_then(just(Token::RParenthesis))
+        .to(Node::UnitLiteral);
+
     let type_expression = select! {
         Token::TypeIdentifier(TokenData{value}) => value
     };
@@ -163,15 +167,22 @@ fn parser<'src>()
             )
             .boxed();
 
+        let literal = choice((
+            string_literal,
+            number_literal,
+            boolean_literal,
+            unit_literal,
+        ))
+        .boxed();
+
         let expression = choice((
             binary_expression_3,
             binary_expression_2,
             binary_expression_1,
             unary_expression,
             function_call,
-            string_literal,
-            number_literal,
             identifier,
+            literal.clone(),
             parenthesized!(expr.clone()),
         ))
         .boxed();

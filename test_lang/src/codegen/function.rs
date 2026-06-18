@@ -8,7 +8,7 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::Node,
+    ast::Node::{self, UnitLiteral},
     codegen::{identifier::Symbol, types::SimpleType},
 };
 
@@ -86,12 +86,12 @@ impl<'ctx> CodeGen<'ctx> {
             }
         }
 
-        self.handle_function_body(body);
+        let returned = self.handle_function_body(body);
 
         {
             let CodeGen { ir, scopes } = self;
 
-            if *return_type_string == None {
+            if (!returned && return_type == SimpleType::Void) {
                 ir.builder.build_return(None)?;
             }
             scopes.pop_scope();
@@ -131,16 +131,28 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn handle_function_body(&mut self, body: &Box<Node>) {
+    // Returns true if the body ends with a return statement
+    fn handle_function_body(&mut self, body: &Box<Node>) -> bool {
         let Node::FunctionBody(body) = &**body else {
             unreachable!();
         };
+
         for statement in body {
             self.handle_statement(&statement);
+        }
+
+        match body.last() {
+            Some(Node::ReturnStatement(_)) => true,
+            _ => false
         }
     }
 
     pub fn handle_return(&self, expression: &Node) {
+        if *expression == Node::UnitLiteral {
+            self.ir.builder.build_return(None).unwrap();
+            return;
+        }
+
         // let return_type = self.get_current_function().get_return_type();
         let value: Option<&dyn BasicValue> = match self.handle_expression(expression) {
             AnyValueEnum::IntValue(value) => Some(&value.clone()),

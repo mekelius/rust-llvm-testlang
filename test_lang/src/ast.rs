@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     Program(Vec<Node>),
     Function {
@@ -14,6 +14,7 @@ pub enum Node {
     NumberLiteral(String),
     StringLiteral(String),
     BooleanLiteral(bool),
+    UnitLiteral,
     
     TypedExpression(String, Box<Node>),
 

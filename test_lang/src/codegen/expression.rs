@@ -32,6 +32,7 @@ impl<'ctx> CodeGen<'ctx> {
             Node::NumberLiteral(value) => self.handle_number_literal(&value),
             Node::StringLiteral(value) => self.handle_string_literal(&value),
             Node::BooleanLiteral(value) => self.handle_boolean_literal(&value),
+            Node::UnitLiteral => panic!("UnitLiteral only allowed as return value atm"),
             _ => unreachable!("Unknown AST node type {:?}", expression),
         }
     }

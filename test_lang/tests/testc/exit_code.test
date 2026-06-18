@@ -11,4 +11,3 @@ function main() -> Int
     print_int(returnNumber(123)); //CHECK: 123
     return 0;
 }
-

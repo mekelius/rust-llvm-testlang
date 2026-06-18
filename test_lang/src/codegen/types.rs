@@ -1,5 +1,6 @@
 use crate::codegen::CodeGen;
 
+#[derive(PartialEq)]
 pub enum SimpleType {
     Boolean,
     Int,
