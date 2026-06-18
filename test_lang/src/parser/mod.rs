@@ -251,6 +251,8 @@ fn parser<'src>()
             .map(|(name, value)| Node::LetStatement(name, Box::new(value)))
             .boxed();
 
+        let valueless_return_statement = just(Token::Return).to(Node::ValuelessReturnStatement);
+
         let return_statement = just(Token::Return)
             .ignore_then(expression.clone())
             .map(|expr| Node::ReturnStatement(Box::new(expr)))
@@ -263,6 +265,7 @@ fn parser<'src>()
         let simple_statement = choice((
             let_statement.clone(),
             return_statement.clone(),
+            valueless_return_statement.clone(),
             expression_statement.clone(),
             empty_statement.clone(),
         ))

@@ -8,7 +8,7 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::Node::{self, UnitLiteral},
+    ast::Node::{self},
     codegen::{identifier::Symbol, types::SimpleType},
 };
 
@@ -91,7 +91,7 @@ impl<'ctx> CodeGen<'ctx> {
         {
             let CodeGen { ir, scopes } = self;
 
-            if (!returned && return_type == SimpleType::Void) {
+            if !returned && return_type == SimpleType::Void {
                 ir.builder.build_return(None)?;
             }
             scopes.pop_scope();
@@ -143,7 +143,8 @@ impl<'ctx> CodeGen<'ctx> {
 
         match body.last() {
             Some(Node::ReturnStatement(_)) => true,
-            _ => false
+            Some(Node::ValuelessReturnStatement) => true,
+            _ => false,
         }
     }
 
@@ -161,7 +162,7 @@ impl<'ctx> CodeGen<'ctx> {
             AnyValueEnum::VectorValue(value) => Some(&value.clone()),
             _ => unreachable!("Encountered unsupported return value type"),
         };
-        
+
         self.ir.builder.build_return(value).unwrap();
         // match *return_type {
         //     SimpleType::Boolean => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
@@ -172,6 +173,10 @@ impl<'ctx> CodeGen<'ctx> {
         //     SimpleType::Void => self.ir.builder.build_return(None).unwrap(),
         //     SimpleType::Unknown => panic!("Unknown type as return type"),
         // };
+    }
+
+    pub fn handle_valueless_return(&self) {
+        self.ir.builder.build_return(None).unwrap();
     }
 
     // fn update_return_type(&self, function: FunctionValue<'ctx>, return_type: BasicTypeEnum<'ctx>) -> FunctionValue<'ctx> {

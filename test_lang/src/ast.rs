@@ -41,6 +41,7 @@ pub enum Node {
     EmptyStatement,
     LetStatement(String, Box<Node>),
     ReturnStatement(Box<Node>),
+    ValuelessReturnStatement,
 
     ArgumentList(Vec<Node>),
     FunctionCall {

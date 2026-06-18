@@ -6,6 +6,7 @@ impl<'ctx> CodeGen<'ctx> {
         match statement {
             Node::LetStatement(identifier, expression) => self.handle_let(identifier, expression),
             Node::ReturnStatement(expression) => self.handle_return(expression),
+            Node::ValuelessReturnStatement => self.handle_valueless_return(),
             Node::ExpressionStatement(expression) => {
                 self.handle_expression(&expression);
             }
