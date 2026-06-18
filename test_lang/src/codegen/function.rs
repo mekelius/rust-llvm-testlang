@@ -3,7 +3,7 @@ use std::error::Error;
 use inkwell::{
     AddressSpace,
     types::BasicMetadataTypeEnum,
-    values::{BasicValue, BasicValueEnum},
+    values::{AnyValueEnum, BasicValue, BasicValueEnum},
 };
 
 use super::CodeGen;
@@ -142,9 +142,15 @@ impl<'ctx> CodeGen<'ctx> {
 
     pub fn handle_return(&self, expression: &Node) {
         // let return_type = self.get_current_function().get_return_type();
-        let value = self.handle_expression(expression).into_int_value();
+        let value: Option<&dyn BasicValue> = match self.handle_expression(expression) {
+            AnyValueEnum::IntValue(value) => Some(&value.clone()),
+            AnyValueEnum::FloatValue(value) => Some(&value.clone()),
+            AnyValueEnum::PointerValue(value) => Some(&value.clone()),
+            AnyValueEnum::VectorValue(value) => Some(&value.clone()),
+            _ => unreachable!("Encountered unsupported return value type"),
+        };
         
-        self.ir.builder.build_return(Some(&value)).unwrap();
+        self.ir.builder.build_return(value).unwrap();
         // match *return_type {
         //     SimpleType::Boolean => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
         //     SimpleType::Int => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
