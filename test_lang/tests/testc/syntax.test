@@ -1,0 +1,14 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+function returnNumber(number) -> Int
+{
+    return number;
+}
+
+function main() -> Int
+{
+    print_int(returnNumber(123)); //CHECK: 123
+    return 0;
+}
+
