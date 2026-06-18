@@ -31,6 +31,9 @@ impl<'ctx> CodeGen<'ctx> {
 
         // Special case for main
         if name == "main" {
+            if *return_type_string != Some("Int".to_string()) && *return_type_string != None {
+                panic!("main function is only allowed return type Int (if specified)");
+            }
             self.handle_main_function(formals, body);
             return Ok(());
         }
@@ -116,7 +119,7 @@ impl<'ctx> CodeGen<'ctx> {
             scopes.push_new_scope();
         }
 
-        self.handle_function_body(body);
+        let returned = self.handle_function_body(body);
 
         {
             let CodeGen { ir, scopes } = self;
@@ -126,7 +129,10 @@ impl<'ctx> CodeGen<'ctx> {
                 .i64_type()
                 .const_int(0, false)
                 .as_basic_value_enum();
-            ir.builder.build_return(Some(&exit_code)).unwrap();
+
+            if !returned {
+                ir.builder.build_return(Some(&exit_code)).unwrap();
+            }
             scopes.pop_scope();
         }
     }
