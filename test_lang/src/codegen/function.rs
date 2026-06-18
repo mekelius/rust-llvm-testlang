@@ -1,17 +1,22 @@
 use std::error::Error;
 
-use inkwell::{types::BasicMetadataTypeEnum, values::{BasicValue, BasicValueEnum}};
+use inkwell::{
+    AddressSpace,
+    types::BasicMetadataTypeEnum,
+    values::{BasicValue, BasicValueEnum},
+};
 
 use super::CodeGen;
 use crate::{
     ast::Node,
-    codegen::identifier::{self, Symbol},
+    codegen::{identifier::Symbol, types::SimpleType},
 };
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_function(&mut self, function: &Node) -> Result<(), Box<dyn Error>> {
         let Node::Function {
             name,
+            return_type_string,
             formals,
             body,
         } = function
@@ -19,18 +24,21 @@ impl<'ctx> CodeGen<'ctx> {
             unreachable!();
         };
 
+        let return_type = match return_type_string {
+            Some(string) => self.handle_type_string(string),
+            None => SimpleType::Void,
+        };
+
         // Special case for main
         if name == "main" {
             self.handle_main_function(formals, body);
-            return Ok(())
+            return Ok(());
         }
 
         {
             let CodeGen { ir, scopes } = self;
 
-            let void_t = ir.context.void_type();
             let i64_t = ir.context.i64_type();
-            // let i64_i64_i64_ft = i64_t.fn_type(&[i64_t.into(), i64_t.into(), i64_t.into()], false);
 
             // Process formal params
             let formal_types: Vec<BasicMetadataTypeEnum<'ctx>> = formals
@@ -38,14 +46,25 @@ impl<'ctx> CodeGen<'ctx> {
                 .map(|formal| match formal {
                     Node::UntypedFormal(_) => i64_t.into(),
 
-                    Node::TypedFormal(type_, value) => todo!("typed formals"),
+                    Node::TypedFormal(_type_, _value) => todo!("typed formals"),
                     _ => unreachable!(),
                 })
                 .collect();
 
-            let void_ft = void_t.fn_type(&formal_types, false);
+            let signature = match return_type {
+                SimpleType::Boolean => ir.context.bool_type().fn_type(&formal_types, false),
+                SimpleType::Int => ir.context.i64_type().fn_type(&formal_types, false),
+                SimpleType::Float => ir.context.f64_type().fn_type(&formal_types, false),
+                SimpleType::Char => ir.context.i8_type().fn_type(&formal_types, false),
+                SimpleType::String => ir
+                    .context
+                    .ptr_type(AddressSpace::default())
+                    .fn_type(&formal_types, false),
+                SimpleType::Void => ir.context.void_type().fn_type(&formal_types, false),
+                SimpleType::Unknown => panic!("Unknown type as return type"),
+            };
 
-            let function = ir.module.add_function(&name, void_ft, None);
+            let function = ir.module.add_function(&name, signature, None);
             scopes.define_identifier(&name.to_string(), Symbol::Function(function));
 
             let entry_b = ir.context.append_basic_block(function, "Entry");
@@ -72,13 +91,15 @@ impl<'ctx> CodeGen<'ctx> {
         {
             let CodeGen { ir, scopes } = self;
 
-            ir.builder.build_return(None)?;
+            if *return_type_string == None {
+                ir.builder.build_return(None)?;
+            }
             scopes.pop_scope();
         }
         Ok(())
     }
 
-    fn handle_main_function(&mut self, formals: &Vec<Node>, body: &Box<Node>) {
+    fn handle_main_function(&mut self, _formals: &Vec<Node>, body: &Box<Node>) {
         {
             let CodeGen { ir, scopes } = self;
 
@@ -92,7 +113,7 @@ impl<'ctx> CodeGen<'ctx> {
             ir.builder.position_at_end(entry_b);
 
             // Create function scope and add formal parameters to it
-            let function_scope = scopes.push_new_scope();
+            scopes.push_new_scope();
         }
 
         self.handle_function_body(body);
@@ -100,7 +121,11 @@ impl<'ctx> CodeGen<'ctx> {
         {
             let CodeGen { ir, scopes } = self;
 
-            let exit_code: BasicValueEnum<'ctx> = ir.context.i64_type().const_int(0, false).as_basic_value_enum();
+            let exit_code: BasicValueEnum<'ctx> = ir
+                .context
+                .i64_type()
+                .const_int(0, false)
+                .as_basic_value_enum();
             ir.builder.build_return(Some(&exit_code)).unwrap();
             scopes.pop_scope();
         }
@@ -114,4 +139,30 @@ impl<'ctx> CodeGen<'ctx> {
             self.handle_statement(&statement);
         }
     }
+
+    pub fn handle_return(&self, expression: &Node) {
+        // let return_type = self.get_current_function().get_return_type();
+        let value = self.handle_expression(expression).into_int_value();
+        
+        self.ir.builder.build_return(Some(&value)).unwrap();
+        // match *return_type {
+        //     SimpleType::Boolean => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
+        //     SimpleType::Int => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
+        //     SimpleType::Float => self.ir.builder.build_return(Some(&value.into_float_value())).unwrap(),
+        //     SimpleType::Char => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
+        //     SimpleType::String => self.ir.builder.build_return(Some(&value.into_pointer_value())).unwrap(),
+        //     SimpleType::Void => self.ir.builder.build_return(None).unwrap(),
+        //     SimpleType::Unknown => panic!("Unknown type as return type"),
+        // };
+    }
+
+    // fn update_return_type(&self, function: FunctionValue<'ctx>, return_type: BasicTypeEnum<'ctx>) -> FunctionValue<'ctx> {
+    //     let name = function.get_name().to_str().unwrap();
+    //     function.nam
+    //     let formal_types = function.get_type().get_param_types();
+    //     let new_signature = return_type.fn_type(&formal_types, false);
+    //     let new_function = self.ir.module.add_function(name, new_signature, None);
+
+    //     new_function
+    // }
 }

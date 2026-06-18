@@ -1,0 +1,3 @@
+// Idea would be to make %ir pass a cl option that ignores validation?
+// RUN: %ir < %s | filecheck %s
+

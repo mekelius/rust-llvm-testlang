@@ -1,4 +1,4 @@
-use inkwell::values::{AnyValueEnum, BasicValueEnum, FunctionValue};
+use inkwell::values::{BasicValueEnum, FunctionValue};
 
 use crate::codegen::identifier::Symbol;
 use std::collections::HashMap;

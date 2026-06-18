@@ -5,7 +5,7 @@ impl<'ctx> CodeGen<'ctx> {
     pub fn handle_statement(&mut self, statement: &Node) {
         match statement {
             Node::LetStatement(identifier, expression) => self.handle_let(identifier, expression),
-            Node::ReturnStatement(_) => todo!("Return"), // self.return_statement(statement),
+            Node::ReturnStatement(expression) => self.handle_return(expression),
             Node::ExpressionStatement(expression) => {
                 self.handle_expression(&expression);
             }

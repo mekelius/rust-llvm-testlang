@@ -3,6 +3,7 @@ pub enum Node {
     Program(Vec<Node>),
     Function {
         name: String,
+        return_type_string: Option<String>,
         formals: Vec<Node>,
         body: Box<Node>,
     },

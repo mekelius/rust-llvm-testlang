@@ -2,6 +2,7 @@ pub mod ir;
 pub mod scope;
 
 mod builtins;
+mod types;
 
 mod function;
 mod expression;

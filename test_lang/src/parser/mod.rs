@@ -38,6 +38,10 @@ fn parser<'src>()
         Token::False => Node::BooleanLiteral(false),
     };
 
+    let type_expression = select! {
+        Token::TypeIdentifier(TokenData{value}) => value
+    };
+
     let unary_operator = just(Token::Minus).to(Node::UnaryMinus);
 
     let binary_op_1 = choice((just(Token::Times), just(Token::Divided)));
@@ -96,11 +100,10 @@ fn parser<'src>()
         ))
         .boxed();
 
-        let typed_expression = select! {
-            Token::TypeIdentifier(TokenData{value}) => value
-        }
-        .then(expr.clone())
-        .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)));
+        let typed_expression = type_expression
+            .clone()
+            .then(expr.clone())
+            .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)));
 
         let term = choice((
             unary_expression.clone(),
@@ -293,11 +296,17 @@ fn parser<'src>()
             .map(|e| Node::Formals(e))
     );
 
+    let maybe_return_type = (just(Token::ArrowSingle)
+        .ignore_then(type_expression.clone())
+        .map(|type_| Some(type_)))
+    .or(empty().to(None));
+
     let function = just(Token::Function)
         .ignore_then(identifier)
         .then(formals)
+        .then(maybe_return_type)
         .then(function_body)
-        .map(|((name, formals), function_body)| {
+        .map(|(((name, formals), return_type_string), function_body)| {
             let name = match name {
                 Node::Identifier(value) => value,
                 _ => unreachable!(),
@@ -310,6 +319,7 @@ fn parser<'src>()
 
             Node::Function {
                 name,
+                return_type_string,
                 formals,
                 body: Box::new(function_body),
             }

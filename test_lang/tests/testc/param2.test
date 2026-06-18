@@ -1,0 +1,21 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+function print_positive_int(x, y, z) {
+    if (x >= 0) {
+        print_int(x);
+    }
+
+    if (y >= 0) {
+        print_int(y);
+    }
+
+    if (z >= 0) {
+        print_int(z);
+    }
+}
+
+function main() {
+    // lol unary minus not yet implemented
+    print_positive_int(23, 0-12, 0-1);           // CHECK: 23
+}

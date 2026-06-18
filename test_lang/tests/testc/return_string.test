@@ -1,0 +1,11 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+function test() -> String {
+    return "hihhii";
+}
+
+function main() {
+    let x = test();
+    print(x);           // CHECK: hihhii
+}

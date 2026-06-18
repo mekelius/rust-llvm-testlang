@@ -38,7 +38,7 @@ impl<'ctx> CodeGen<'ctx> {
 
     fn handle_typed_expresssion(
         &self,
-        type_identifier: &str,
+        _type_identifier: &str,
         expression: &Node,
     ) -> AnyValueEnum<'ctx> {
         // let type_ = scopes.resolve_type(type_identifier);

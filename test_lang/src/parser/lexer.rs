@@ -27,6 +27,9 @@ pub enum Token {
     #[token("for")]
     For,
 
+    #[token("->")]
+    ArrowSingle,
+
     #[token("+")]
     Plus,
     #[token("-")]
