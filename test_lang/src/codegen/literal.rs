@@ -3,35 +3,20 @@ use inkwell::{
     types::StringRadix::Decimal,
     values::{AnyValue, AnyValueEnum},
 };
+use regex::Regex;
 
 use super::CodeGen;
 
 /** Unescapes \n, \\ and \r in strings */
 fn unescape(value: &str) -> String {
-    let mut escaping = false;
-    let mut out = "".to_string();
-
-    for char_ in value.seq_iter() {
-        if escaping {
-            match char_ {
-                '\\' => out.push('\\'),
-                'n' => out.push('\n'),
-                'r' => out.push('\r'),
-                _ => panic!("Unsupported character escape \\{} in string literal", char_),
-            }
-            escaping = false;
-            continue;
-        }
-
-        if char_ == '\\' {
-            escaping = true;
-            continue;
-        }
-
-        out.push(char_);
-    }
-
-    out
+    let re_n = Regex::new(r"\\n").unwrap();
+    let re_r = Regex::new(r"\\r").unwrap();
+    let re_bs = Regex::new(r"\\\\").unwrap();
+    
+    let value = re_n.replace_all(value, "\n");
+    let value = re_r.replace_all(&value, "\r");
+    let value = re_bs.replace_all(&value, "\\");
+    value.to_string()
 }
 
 #[cfg(test)]
@@ -42,6 +27,18 @@ mod tests{
     fn unescapes_newline() {
         let escaped = unescape("\\n");
         assert_eq!(escaped, "\n");
+    }
+
+    #[test]
+    fn unescapes_cr() {
+        let escaped = unescape("\\n");
+        assert_eq!(escaped, "\n");
+    }
+
+    #[test]
+    fn unescapes_backslash() {
+        let escaped = unescape("\\\\");
+        assert_eq!(escaped, "\\");
     }
 }
 
