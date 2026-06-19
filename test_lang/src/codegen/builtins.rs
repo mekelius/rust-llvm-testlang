@@ -17,7 +17,7 @@ impl<'ctx> CodeGen<'ctx> {
 
         let bool_t = ir.context.bool_type();
         let i32_t = ir.context.i32_type();
-        let int_t = ir.context.i64_type();
+        let int_t = ir.context.i32_type();
         let void_t = ir.context.void_type();
         let ptr_t = ir.context.ptr_type(AddressSpace::default());
 

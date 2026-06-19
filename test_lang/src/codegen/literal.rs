@@ -45,7 +45,7 @@ impl<'ctx> CodeGen<'ctx> {
     pub fn handle_number_literal(&self, value: &str) -> AnyValueEnum<'ctx> {
         self.ir
             .context
-            .i64_type()
+            .i32_type()
             .const_int_from_string(value, Decimal)
             .unwrap_or_else(|| panic!("Could not create integer from {}", value))
             .as_any_value_enum()

@@ -38,7 +38,7 @@ impl<'ctx> CodeGen<'ctx> {
                 (
                     self.ir
                         .context
-                        .i64_type()
+                        .i32_type()
                         .const_int_from_string(&case_string, Decimal)
                         .unwrap(),
                     *case_block,

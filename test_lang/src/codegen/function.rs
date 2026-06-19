@@ -41,13 +41,13 @@ impl<'ctx> CodeGen<'ctx> {
         {
             let CodeGen { ir, scopes } = self;
 
-            let i64_t = ir.context.i64_type();
+            let i32_t = ir.context.i32_type();
 
             // Process formal params
             let formal_types: Vec<BasicMetadataTypeEnum<'ctx>> = formals
                 .iter()
                 .map(|formal| match formal {
-                    Node::UntypedFormal(_) => i64_t.into(),
+                    Node::UntypedFormal(_) => i32_t.into(),
                     Node::TypedFormal(type_string, _) => ir
                         .type_string_to_ir_type(type_string)
                         .unwrap_or_else(|| panic!("Void is not allowed as a parameter type"))
@@ -59,7 +59,7 @@ impl<'ctx> CodeGen<'ctx> {
 
             let signature = match return_type {
                 SimpleType::Boolean => ir.context.bool_type().fn_type(&formal_types, false),
-                SimpleType::Int => ir.context.i64_type().fn_type(&formal_types, false),
+                SimpleType::Int => ir.context.i32_type().fn_type(&formal_types, false),
                 SimpleType::Float => ir.context.f64_type().fn_type(&formal_types, false),
                 SimpleType::Char => ir.context.i8_type().fn_type(&formal_types, false),
                 SimpleType::String => ir
@@ -112,10 +112,10 @@ impl<'ctx> CodeGen<'ctx> {
         {
             let CodeGen { ir, scopes } = self;
 
-            let i64_t = ir.context.i64_type();
-            let i64_ft = i64_t.fn_type(&[], false);
+            let i32_t = ir.context.i32_type();
+            let i32_ft = i32_t.fn_type(&[], false);
 
-            let main_f = ir.module.add_function("main", i64_ft, None);
+            let main_f = ir.module.add_function("main", i32_ft, None);
             scopes.define_identifier("main", Symbol::Function(main_f));
 
             let entry_b = ir.context.append_basic_block(main_f, "Entry");
@@ -132,7 +132,7 @@ impl<'ctx> CodeGen<'ctx> {
 
             let exit_code: BasicValueEnum<'ctx> = ir
                 .context
-                .i64_type()
+                .i32_type()
                 .const_int(0, false)
                 .as_basic_value_enum();
 
