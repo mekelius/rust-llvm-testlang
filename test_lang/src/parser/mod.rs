@@ -48,10 +48,10 @@ fn parser<'src>()
 
     let unary_operator = just(Token::Minus).to(Node::UnaryMinus);
 
-    let binary_op_1 = choice((just(Token::Times), just(Token::Divided)));
+    let binary_op_1 = choice((just(Token::Asterisk), just(Token::Slash)));
     let binary_op_2 = choice((just(Token::Plus), just(Token::Minus)));
     let binary_op_3 = choice((
-        just(Token::Equals),
+        just(Token::DoubleEquals),
         just(Token::GreaterThan),
         just(Token::LessThan),
         just(Token::GreaterThanOrEquals),
@@ -124,8 +124,8 @@ fn parser<'src>()
             .foldl(
                 binary_op_1.clone().then(term.clone()).repeated(),
                 |lhs, (op, rhs)| match op {
-                    Token::Times => Node::Mul(Box::new(lhs), Box::new(rhs)),
-                    Token::Divided => Node::Div(Box::new(lhs), Box::new(rhs)),
+                    Token::Asterisk => Node::Mul(Box::new(lhs), Box::new(rhs)),
+                    Token::Slash => Node::Div(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
                 },
             )
@@ -154,7 +154,7 @@ fn parser<'src>()
                     .then(binary_expression_2.clone())
                     .repeated(),
                 |lhs, (op, rhs)| match op {
-                    Token::Equals => Node::Equals(Box::new(lhs), Box::new(rhs)),
+                    Token::DoubleEquals => Node::Equals(Box::new(lhs), Box::new(rhs)),
                     Token::GreaterThan => Node::GreaterThan(Box::new(lhs), Box::new(rhs)),
                     Token::LessThan => Node::LessThan(Box::new(lhs), Box::new(rhs)),
                     Token::GreaterThanOrEquals => {
@@ -270,7 +270,7 @@ fn parser<'src>()
         let assignment = (select! {
             Token::Identifier(TokenData {value}) => value,
         })
-        .then_ignore(just(Token::Assign))
+        .then_ignore(just(Token::SingleEquals))
         .then(expression.clone());
 
         let const_statement = just(Token::Const)

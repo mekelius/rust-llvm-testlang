@@ -48,11 +48,11 @@ pub enum Token {
     #[token("-")]
     Minus,
     #[token("*")]
-    Times,
+    Asterisk,
     #[regex("/")]
-    Divided,
+    Slash,
     #[token("%")]
-    Modulo,
+    Percent,
 
     #[token("(")]
     LParenthesis,
@@ -75,7 +75,7 @@ pub enum Token {
     Comma,
 
     #[token("==")]
-    Equals,
+    DoubleEquals,
     #[token("<=")]
     LessThanOrEquals,
     #[token(">=")]
@@ -88,7 +88,7 @@ pub enum Token {
     NotEquals,
 
     #[token("=")]
-    Assign,
+    SingleEquals,
 
     #[token("let")]
     Let,
