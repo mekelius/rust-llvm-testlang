@@ -1,11 +1,11 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: %t | filecheck %s
 
-function test(x) -> Int {
+test(x) -> Int {
     return x+123;
 }
 
-function main() {
+main() {
     let x = test(9);
     print_int(x);           // CHECK: 132
 }

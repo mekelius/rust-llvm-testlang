@@ -1,12 +1,12 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: %t | filecheck %s
 
-function println(String string) {
+println(String string) {
     print(string);
     print("\n");
 }
 
-function main() {
+main() {
     println("Hellouski");           // CHECK-NEXT: Hellouski
     println("Kyl");                 // CHECK-NEXT: Kyl
 }

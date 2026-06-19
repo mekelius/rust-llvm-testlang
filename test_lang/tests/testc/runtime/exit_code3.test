@@ -1,6 +1,6 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: ! %t
 
-function main() {
+main() {
     return 1;
 }

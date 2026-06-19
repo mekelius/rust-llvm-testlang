@@ -1,5 +1,5 @@
 // RUN: %parse < %s
 
-function prec() {
+prec() {
     return 45 + 2 * 2342*2/3 +3 /4;
 }

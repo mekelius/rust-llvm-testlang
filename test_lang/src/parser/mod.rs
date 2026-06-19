@@ -349,8 +349,8 @@ fn parser<'src>()
         .map(|type_| Some(type_)))
     .or(empty().to(None));
 
-    let function = just(Token::Function)
-        .ignore_then(identifier)
+    let function = identifier
+        .clone()
         .then(formals)
         .then(maybe_return_type)
         .then(function_body)

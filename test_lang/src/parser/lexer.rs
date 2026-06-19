@@ -90,8 +90,6 @@ pub enum Token {
 
     #[token("let")]
     Let,
-    #[token("function")]
-    Function,
     #[token("return")]
     Return,
 

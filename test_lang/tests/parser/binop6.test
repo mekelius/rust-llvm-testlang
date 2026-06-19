@@ -1,5 +1,5 @@
 // RUN: %parse < %s
 
-function binop() {
+binop() {
     asd(2-12);
 }

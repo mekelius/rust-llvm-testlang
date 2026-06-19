@@ -1,6 +1,6 @@
 // RUN: %parse < %s
 
-function chad() {
+chad() {
     yeah;
     ok;
     yepyep;

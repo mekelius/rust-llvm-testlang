@@ -1,13 +1,13 @@
 // RUN: %parse < %s
 
-function chad(qwe, q, p) {
+chad(qwe, q, p) {
     yeah;
     ok;
     yepyep;
 }
 
-function chasd() {
+chasd() {
     yeah;
 }
 
-function empty(aaasdasdsad) {}
+empty(aaasdasdsad) {}

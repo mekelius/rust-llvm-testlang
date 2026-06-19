@@ -1,10 +1,10 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: %t | filecheck %s
 
-function hmm() {
+hmm() {
     print("Toimii");
 }
 
-function main() {
+main() {
     hmm(); // CHECK: Toimii
 }

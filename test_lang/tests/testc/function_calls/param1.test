@@ -1,10 +1,10 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: %t | filecheck %s
 
-function test(a) {
+test(a) {
     print_int(a*5);
 }
 
-function main() {
+main() {
     test(8);        // CHECK: 40
 }

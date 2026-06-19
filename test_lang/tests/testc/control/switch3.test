@@ -1,7 +1,7 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: ! %t
 
-function hmm(x) {
+hmm(x) {
     switch x {
         case 1:
             print("one");
@@ -15,6 +15,6 @@ function hmm(x) {
     }
 }
 
-function main() {
+main() {
     hmm(32);
 }

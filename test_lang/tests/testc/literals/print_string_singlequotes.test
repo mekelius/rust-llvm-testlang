@@ -1,11 +1,11 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: %t | filecheck %s
 
-function test() {
+test() {
     print('Hello "oe"\n');
 }
 
-function main() {
+main() {
     test();                 // CHECK: Hello "oe"
 }
 

@@ -3,7 +3,7 @@
 // | filecheck %s
 // This one should fail because mutable variables aren't yet a thing
 
-function main() {
+main() {
     let x = 0;
 
     // while(x != 9) {    

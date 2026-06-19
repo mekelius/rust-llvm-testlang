@@ -1,5 +1,5 @@
 // RUN: %parse < %s
 
-function test() {
+test() {
     testCall(x,y,z);
 }

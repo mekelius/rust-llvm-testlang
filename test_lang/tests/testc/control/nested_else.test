@@ -1,7 +1,7 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
 // RUN: %t | filecheck %s
 
-function test(x) {
+test(x) {
     if (x == 1) {
         print("a");
     } else if (true) { 
@@ -13,7 +13,7 @@ function test(x) {
     }
 }
 
-function main() {
+main() {
     test(2);               // CHECK: b
     test(1);               // CHECK: a
     test(3);               // CHECK: c
