@@ -2,6 +2,6 @@
 // RUN: %t | filecheck %s
 
 function main() {
-    print("1");         // CHECK:       jippii
-    print("2");         // CHECK-NEXT:  www
+    print("1\n");         // CHECK:       1
+    print("2\n");         // CHECK-NEXT:  2
 }

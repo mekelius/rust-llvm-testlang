@@ -6,6 +6,6 @@ function test() {
 }
 
 function main() {
-    test();                 // CHECK: Hello "oe"\n
+    test();                 // CHECK: Hello "oe"
 }
 

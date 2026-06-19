@@ -2,7 +2,7 @@
 // RUN: %t | filecheck %s
 
 function main() {
-    print("jippii");        // CHECK:       jippii
+    print("jippii\n");        // CHECK:       jippii
     if (1 > 2) {
         print("qwewqe");
     } else {
