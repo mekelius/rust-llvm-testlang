@@ -8,4 +8,3 @@ function test() {
 function main() {
     test();             // CHECK: 999
 }
-
