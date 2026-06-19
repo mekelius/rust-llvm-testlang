@@ -102,6 +102,8 @@ pub enum Token {
 
     #[token(";")]
     Semicolon,
+    #[token(":")]
+    Colon,
 
     #[regex("[a-z_][a-zA-Z0-9_']*", |lex| TokenData {value: lex.slice().to_string()})]
     Identifier(TokenData),

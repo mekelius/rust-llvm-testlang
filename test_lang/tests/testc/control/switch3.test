@@ -1,0 +1,20 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: ! %t
+
+function hmm(x) {
+    switch x {
+        case 1:
+            print("one");
+            break;
+        case 2:
+            print("two");
+            break;
+        case 69:
+            print("nice");
+            break;
+    }
+}
+
+function main() {
+    hmm(32);
+}

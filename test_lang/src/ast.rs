@@ -39,14 +39,14 @@ pub enum Node {
     },
     IfElseStatement(Box<Node>, Box<Node>),
     SwitchStatement {
-        expression: Box<Node>,
+        matched_value_expression: Box<Node>,
         cases: Vec<Node>,
     },
     Case {
-        case: Box<Node>,
-        body: Box<Node>,
+        value: String,
+        body: Vec<Node>,
     },
-    DefaultCase(Box<Node>),
+    DefaultCase(Vec<Node>),
 
     ContinueStatement,
     BreakStatement,

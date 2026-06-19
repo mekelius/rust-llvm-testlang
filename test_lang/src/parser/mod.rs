@@ -205,7 +205,9 @@ fn parser<'src>()
             .clone()
             .then_ignore(just(Token::Else))
             .then(p.clone())
-            .map(|(if_branch, else_branch)| Node::IfElseStatement(Box::new(if_branch), Box::new(else_branch)));
+            .map(|(if_branch, else_branch)| {
+                Node::IfElseStatement(Box::new(if_branch), Box::new(else_branch))
+            });
 
         let for_init = p.clone();
         let for_condition = expression.clone();
@@ -236,15 +238,34 @@ fn parser<'src>()
             })
             .boxed();
 
+        let statement_list = p.clone().repeated().collect::<Vec<Node>>();
+
+        let case = just(Token::Case)
+            .ignore_then(select! {
+                Token::NumberLiteral(TokenData{value}) => value,
+            })
+            .then_ignore(just(Token::Colon))
+            .then(statement_list.clone())
+            .map(|(value, body)| Node::Case { value, body });
+
+        let default_case = just(Token::Default)
+            .ignore_then(just(Token::Colon))
+            .ignore_then(statement_list.clone())
+            .map(|case_body| Node::DefaultCase(case_body));
+
+        let switch_statement = just(Token::Switch)
+            .ignore_then(expression.clone())
+            .then(in_curly_braces!(
+                (case.or(default_case)).repeated().collect()
+            ))
+            .map(|(expression, cases)| Node::SwitchStatement {
+                matched_value_expression: Box::new(expression),
+                cases,
+            });
+
         let empty_statement = empty().to(Node::EmptyStatement).boxed();
 
-        let block = in_curly_braces!(
-            p.clone()
-                .repeated()
-                .collect::<Vec<Node>>()
-                .map(|e| Node::Block(e))
-        )
-        .boxed();
+        let block = in_curly_braces!(statement_list.clone().map(|e| Node::Block(e))).boxed();
 
         let name_binding = select! {
             Token::Identifier(TokenData {value}) => value,
@@ -286,7 +307,7 @@ fn parser<'src>()
         let complex_statement = choice((
             if_else_statement.clone(),
             if_statement.clone(),
-            // switch_statement.clone(),
+            switch_statement.clone(),
             while_statement.clone(),
             for_statement.clone(),
         ))

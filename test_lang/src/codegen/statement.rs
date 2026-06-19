@@ -30,6 +30,8 @@ impl<'ctx> CodeGen<'ctx> {
             } => self.handle_for(init, condition, step, body),
 
             Node::Block(statements) => self.handle_block(statements),
+
+            Node::SwitchStatement{matched_value_expression, cases} => self.handle_switch(matched_value_expression, cases),
             _ => unreachable!("Unknown statement type {:?}", statement),
         };
     }
