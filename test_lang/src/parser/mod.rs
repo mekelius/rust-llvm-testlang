@@ -19,11 +19,22 @@ macro_rules! in_curly_braces {
     };
 }
 
-fn parser<'src>()
--> impl Parser<'src, &'src [Token], Node, chumsky::extra::Err<Rich<'src, Token>>> + Clone {
-    let identifier = select! {
+type ParserError<'src> = chumsky::extra::Err<Rich<'src, Token>>;
+
+fn type_expression<'src>() -> impl Parser<'src, &'src [Token], String, ParserError<'src>> + Clone {
+    select! {
+        Token::TypeIdentifier(TokenData{value}) => value
+    }
+}
+
+fn identifier<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
+    select! {
         Token::Identifier(TokenData {value}) => Node::Identifier(value),
-    };
+    }
+}
+
+fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
+    let identifier = identifier();
 
     let number_literal = select! {
         Token::NumberLiteral(TokenData {value}) => Node::NumberLiteral(value),
@@ -42,10 +53,6 @@ fn parser<'src>()
         .ignore_then(just(Token::RParenthesis))
         .to(Node::UnitLiteral);
 
-    let type_expression = select! {
-        Token::TypeIdentifier(TokenData{value}) => value
-    };
-
     let unary_operator = just(Token::Minus).to(Node::UnaryMinus);
 
     let binary_op_1 = choice((just(Token::Asterisk), just(Token::Slash)));
@@ -59,7 +66,7 @@ fn parser<'src>()
         just(Token::NotEquals),
     ));
 
-    let expression = recursive(|expr| {
+    recursive(|expr| {
         let argument_list = parenthesized!(
             expr.clone()
                 .separated_by(just(Token::Comma))
@@ -69,6 +76,7 @@ fn parser<'src>()
         .boxed();
 
         let function_call = identifier
+            .clone()
             .then(argument_list)
             .map(|(identifier, arguments)| {
                 let callee = match identifier {
@@ -104,7 +112,7 @@ fn parser<'src>()
         ))
         .boxed();
 
-        let typed_expression = type_expression
+        let typed_expression = type_expression()
             .clone()
             .then(expr.clone())
             .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)));
@@ -181,7 +189,7 @@ fn parser<'src>()
             binary_expression_1,
             unary_expression,
             function_call,
-            identifier,
+            identifier.clone(),
             literal.clone(),
             parenthesized!(expr.clone()),
         ))
@@ -189,9 +197,11 @@ fn parser<'src>()
 
         expression
     })
-    .boxed();
+}
 
-    let statement = recursive(|p| {
+fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
+    let expression = expression();
+    recursive(|p| {
         let if_statement = just(Token::If)
             .ignore_then(parenthesized!(expression.clone()))
             .then(p.clone())
@@ -327,7 +337,12 @@ fn parser<'src>()
 
         single_statement.or(block).or(complex_statement).boxed()
     })
-    .boxed();
+    .boxed()
+}
+
+fn function<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
+    let identifier = identifier();
+    let statement = statement();
 
     let untyped_formal = select! {
         Token::Identifier(TokenData {value}) => Node::UntypedFormal(value)
@@ -357,7 +372,7 @@ fn parser<'src>()
     );
 
     let maybe_return_type = (just(Token::ArrowSingle)
-        .ignore_then(type_expression.clone())
+        .ignore_then(type_expression())
         .map(|type_| Some(type_)))
     .or(empty().to(None));
 
@@ -385,6 +400,12 @@ fn parser<'src>()
             }
         })
         .boxed();
+
+    function
+}
+
+fn parser<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
+    let function = function();
 
     let program = function
         .repeated()
