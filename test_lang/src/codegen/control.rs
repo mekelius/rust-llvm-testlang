@@ -35,9 +35,9 @@ impl<'ctx> CodeGen<'ctx> {
             });
 
         self.ir.builder.position_at_end(then_block);
-        let returned = self.handle_statement(body);
+        self.handle_statement(body);
 
-        if !returned {
+        if !self.ir.at_terminator() {
             self.ir
                 .builder
                 .build_unconditional_branch(after_block)
@@ -100,9 +100,9 @@ impl<'ctx> CodeGen<'ctx> {
 
         self.ir.builder.position_at_end(else_block);
 
-        let returned = self.handle_statement(else_branch);
+        self.handle_statement(else_branch);
 
-        if !returned {
+        if !self.ir.at_terminator() {
             self.ir.builder.build_unconditional_branch(after_block).unwrap();
         }
         self.ir.builder.position_at_end(after_block);

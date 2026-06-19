@@ -89,12 +89,13 @@ impl<'ctx> CodeGen<'ctx> {
             }
         }
 
-        let returned = self.handle_function_body(body);
+        self.handle_function_body(body);
 
         {
             let CodeGen { ir, scopes } = self;
 
-            if !returned && return_type == SimpleType::Void {
+            // Insert return if return type is Void there isn't one
+            if !ir.at_terminator() && return_type == SimpleType::Void {
                 ir.builder.build_return(None)?;
             }
             scopes.pop_scope();
@@ -119,7 +120,7 @@ impl<'ctx> CodeGen<'ctx> {
             scopes.push_new_scope();
         }
 
-        let returned = self.handle_function_body(body);
+        self.handle_function_body(body);
 
         {
             let CodeGen { ir, scopes } = self;
@@ -130,7 +131,9 @@ impl<'ctx> CodeGen<'ctx> {
                 .const_int(0, false)
                 .as_basic_value_enum();
 
-            if !returned {
+            // Insert return if there isn't one
+
+            if !ir.at_terminator() {
                 ir.builder.build_return(Some(&exit_code)).unwrap();
             }
             scopes.pop_scope();
@@ -138,19 +141,13 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     // Returns true if the body ends with a return statement
-    fn handle_function_body(&mut self, body: &Box<Node>) -> bool {
+    fn handle_function_body(&mut self, body: &Box<Node>) {
         let Node::FunctionBody(body) = &**body else {
             unreachable!();
         };
 
         for statement in body {
             self.handle_statement(&statement);
-        }
-
-        match body.last() {
-            Some(Node::ReturnStatement(_)) => true,
-            Some(Node::ValuelessReturnStatement) => true,
-            _ => false,
         }
     }
 

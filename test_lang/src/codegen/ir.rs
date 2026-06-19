@@ -1,15 +1,27 @@
+use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::support::LLVMString;
-use inkwell::builder::Builder;
 
 pub struct IR<'ctx> {
-        pub context: &'ctx Context,
-        pub module: Module<'ctx>,
-        pub builder: Builder<'ctx>,
+    pub context: &'ctx Context,
+    pub module: Module<'ctx>,
+    pub builder: Builder<'ctx>,
+}
+
+impl<'ctx> IR<'ctx> {
+    /** Helper that returns true if the last instruction in the current block is a terminator 
+     *  (and the block is not empty) */
+    pub fn at_terminator(&self) -> bool {
+        let last_instruction = self
+            .builder
+            .get_insert_block()
+            .unwrap()
+            .get_last_instruction();
+
+        last_instruction.is_some_and(|instruction| instruction.is_terminator())
     }
 
-impl<'ctx> IR<'ctx>{
     pub fn print(&self) -> Result<(), LLVMString> {
         let passed = self.module.verify();
 
@@ -29,5 +41,5 @@ impl<'ctx> IR<'ctx>{
         self.module.verify()?;
         self.module.print_to_file(output_file)?;
         Ok(())
-    }    
+    }
 }
