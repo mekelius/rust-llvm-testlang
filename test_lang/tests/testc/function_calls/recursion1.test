@@ -1,0 +1,21 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+function f(x) {
+    if (x == 0) {
+        print("done\n");
+        return;
+    }
+
+    print_int(x);
+    print("\n");
+    f(x-1);
+}
+
+function main() {
+    f(4);                   // CHECK-NEXT: 4
+                            // CHECK-NEXT: 3
+                            // CHECK-NEXT: 2
+                            // CHECK-NEXT: 1
+                            // CHECK-NEXT: done
+}
