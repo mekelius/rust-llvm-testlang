@@ -48,8 +48,11 @@ impl<'ctx> CodeGen<'ctx> {
                 .iter()
                 .map(|formal| match formal {
                     Node::UntypedFormal(_) => i64_t.into(),
-
-                    Node::TypedFormal(_type_, _value) => todo!("typed formals"),
+                    Node::TypedFormal(type_string, _) => ir
+                        .type_string_to_ir_type(type_string)
+                        .unwrap_or_else(|| panic!("Void is not allowed as a parameter type"))
+                        .try_into()
+                        .unwrap(),
                     _ => unreachable!(),
                 })
                 .collect();
@@ -80,7 +83,9 @@ impl<'ctx> CodeGen<'ctx> {
                 let value = function.get_nth_param(i.try_into()?);
 
                 match formal {
-                    Node::TypedFormal(_type_, _value) => todo!("typed formals"),
+                    Node::TypedFormal(_, identifier) => {
+                        function_scope.define_formal(identifier, value.unwrap())
+                    }
                     Node::UntypedFormal(identifier) => {
                         function_scope.define_formal(identifier, value.unwrap())
                     }

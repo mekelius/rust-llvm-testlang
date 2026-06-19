@@ -1,4 +1,6 @@
-use crate::codegen::CodeGen;
+use inkwell::{AddressSpace, AtomicRMWBinOp::Add, types::{AnyType, AnyTypeEnum}};
+
+use crate::codegen::{CodeGen, ir::IR};
 
 #[derive(PartialEq)]
 pub enum SimpleType {
@@ -31,6 +33,21 @@ impl<'ctx> CodeGen<'ctx> {
             "String" => SimpleType::String,
             "Void" => SimpleType::Void,
             "Unknown" => SimpleType::Unknown,
+            _ => panic!("Unknown type string"),
+        }
+    }
+}
+
+impl<'ctx> IR<'ctx> {
+    pub fn type_string_to_ir_type(&self, type_string: &str) -> Option<AnyTypeEnum<'ctx>> {
+        match type_string {
+            "Boolean" => Some(self.context.bool_type().as_any_type_enum()),
+            "Int" => Some(self.context.i64_type().as_any_type_enum()),
+            "Float" => Some(self.context.f64_type().as_any_type_enum()),
+            "Char" => Some(self.context.i8_type().as_any_type_enum()),
+            "String" => Some(self.context.ptr_type(AddressSpace::default()).as_any_type_enum()),
+            "Void" => None,
+            "Unknown" => panic!("Tried to convern Unknown into llvm type"),
             _ => panic!("Unknown type string"),
         }
     }
