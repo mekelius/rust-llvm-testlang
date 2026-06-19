@@ -33,7 +33,7 @@ impl<'ctx> CodeGen<'ctx> {
 
             let int_format_string = ir
                 .builder
-                .build_global_string_ptr("%d\n", "printf_int_format")
+                .build_global_string_ptr("%d", "printf_int_format")
                 .unwrap();
 
             let arg1 = print_int.get_nth_param(0).unwrap();
@@ -58,7 +58,7 @@ impl<'ctx> CodeGen<'ctx> {
 
             let string_format_string = ir
                 .builder
-                .build_global_string_ptr("%s\n", "printf_string_format")
+                .build_global_string_ptr("%s", "printf_string_format")
                 .unwrap();
 
             let true_string = ir.builder.build_global_string_ptr("true", "true").unwrap();

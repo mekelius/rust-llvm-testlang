@@ -1,0 +1,7 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+function main() {
+    print("1");         // CHECK:       jippii
+    print("2");         // CHECK-NEXT:  www
+}
