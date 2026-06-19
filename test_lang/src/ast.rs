@@ -48,6 +48,9 @@ pub enum Node {
     },
     DefaultCase(Box<Node>),
 
+    ContinueStatement,
+    BreakStatement,
+
     EmptyStatement,
     LetStatement(String, Box<Node>),
     ReturnStatement(Box<Node>),

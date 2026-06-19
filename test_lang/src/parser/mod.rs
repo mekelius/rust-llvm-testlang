@@ -264,6 +264,9 @@ fn parser<'src>()
             .map(|expr| Node::ReturnStatement(Box::new(expr)))
             .boxed();
 
+        let continue_statement = just(Token::Continue).to(Node::ContinueStatement);
+        let break_statement = just(Token::Break).to(Node::BreakStatement);
+
         let expression_statement = expression
             .clone()
             .map(|e| Node::ExpressionStatement(Box::new(e)));
@@ -271,6 +274,8 @@ fn parser<'src>()
         let simple_statement = choice((
             let_statement.clone(),
             return_statement.clone(),
+            continue_statement.clone(),
+            break_statement.clone(),
             valueless_return_statement.clone(),
             expression_statement.clone(),
             empty_statement.clone(),

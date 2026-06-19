@@ -30,6 +30,8 @@ pub enum Token {
     Default,
     #[token("break")]
     Break,
+    #[token("continue")]
+    Continue,
 
     #[token("while")]
     While,
