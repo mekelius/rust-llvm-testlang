@@ -1,10 +1,12 @@
+use std::default;
+
 use inkwell::{basic_block::BasicBlock, types::StringRadix::Decimal, values::IntValue};
 
 use crate::{ast::Node, codegen::CodeGen};
 
-struct HandleCasesReturn<'a, 'ctx> {
+struct HandleCasesReturn<'ctx> {
     cases: Vec<(String, BasicBlock<'ctx>)>,
-    default_block: &'a BasicBlock<'ctx>,
+    default_block: BasicBlock<'ctx>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -28,7 +30,7 @@ impl<'ctx> CodeGen<'ctx> {
         let HandleCasesReturn {
             cases,
             default_block,
-        } = self.handle_cases(body, &after_block);
+        } = self.handle_cases(body, after_block);
 
         self.ir.builder.position_at_end(entry_block);
 
@@ -50,7 +52,7 @@ impl<'ctx> CodeGen<'ctx> {
 
         self.ir
             .builder
-            .build_switch(matched_value, *default_block, &cases)
+            .build_switch(matched_value, default_block, &cases)
             .unwrap();
 
         self.ir.builder.position_at_end(after_block);
@@ -61,12 +63,12 @@ impl<'ctx> CodeGen<'ctx> {
     fn handle_cases<'a>(
         &mut self,
         cases_body: &Vec<Node>,
-        after_block: &'a BasicBlock<'ctx>,
-    ) -> HandleCasesReturn<'a, 'ctx> {
+        after_block: BasicBlock<'ctx>,
+    ) -> HandleCasesReturn<'ctx> {
         let entry_block = self.ir.builder.get_insert_block().unwrap();
         let current_function = entry_block.get_parent().unwrap();
         let mut next_block = self.ir.context.append_basic_block(current_function, "case");
-        let mut default_block = after_block;
+        let mut default_block = None;
         let mut cases = Vec::<(String, BasicBlock)>::new();
 
         for case in cases_body {
@@ -82,7 +84,16 @@ impl<'ctx> CodeGen<'ctx> {
                     self.ir.builder.position_at_end(case_block);
                     self.handle_case(case_body, &next_block, &after_block);
                 }
-                Node::DefaultCase(_body) => todo!("Default case"),
+                Node::DefaultCase(case_body) => {
+                    // Check no duplicate default
+                    if default_block.is_some() {
+                        panic!("Multiple default cases in one switch statement");
+                    }
+
+                    default_block = Some(case_block.clone());
+                    self.ir.builder.position_at_end(case_block);
+                    self.handle_case(case_body, &next_block, &after_block);
+                },
                 _ => unreachable!(
                     "Switch statement body contained something other than a Case or DefaultCase"
                 ),
@@ -90,14 +101,14 @@ impl<'ctx> CodeGen<'ctx> {
         }
 
         // Slightly hacky way to implement fallthrough from cases
-        next_block.replace_all_uses_with(after_block);
+        next_block.replace_all_uses_with(&after_block);
         unsafe {
             next_block.delete().unwrap();
         }
 
         HandleCasesReturn {
             cases,
-            default_block,
+            default_block: default_block.unwrap_or(after_block),
         }
     }
 
@@ -120,4 +131,4 @@ impl<'ctx> CodeGen<'ctx> {
             .build_unconditional_branch(*next_block)
             .unwrap();
     }
-} 
+}

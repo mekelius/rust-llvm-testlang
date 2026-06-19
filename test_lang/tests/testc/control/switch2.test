@@ -4,16 +4,16 @@
 function hmm(x) {
     switch x {
         case 1:
-            print("one");
+            print("one\n");
             break;
         case 2:
-            print("two");
+            print("two\n");
             break;
         case 69:
-            print("nice");
+            print("nice\n");
             break;
         default:
-            print("something else");
+            print("something else\n");
     }
 }
 
