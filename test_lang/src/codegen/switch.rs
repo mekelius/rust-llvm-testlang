@@ -1,5 +1,3 @@
-use std::default;
-
 use inkwell::{basic_block::BasicBlock, types::StringRadix::Decimal, values::IntValue};
 
 use crate::{ast::Node, codegen::CodeGen};
