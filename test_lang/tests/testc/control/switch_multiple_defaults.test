@@ -1,0 +1,17 @@
+// RUN: ! %testc < %s
+
+function hmm(x) {
+    switch x {
+        case 1:
+            print("one");
+            break;
+        default:
+            break;
+        default:
+            break;
+    }
+}
+
+function main() {
+    hmm(1);
+}
