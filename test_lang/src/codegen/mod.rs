@@ -12,6 +12,7 @@ mod control;
 mod identifier;
 mod literal;
 mod variable;
+mod switch;
 
 use inkwell::context::Context;
 use std::error::Error;
