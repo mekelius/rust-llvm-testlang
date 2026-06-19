@@ -15,7 +15,7 @@ pub enum Node {
     StringLiteral(String),
     BooleanLiteral(bool),
     UnitLiteral,
-    
+
     TypedExpression(String, Box<Node>),
 
     Formals(Vec<Node>),
@@ -23,20 +23,30 @@ pub enum Node {
     TypedFormal(String, String),
     FunctionBody(Vec<Node>),
 
-    While {
+    WhileStatement {
         condition: Box<Node>,
         body: Box<Node>,
     },
-    For {
+    ForStatement {
         init: Box<Node>,
         condition: Box<Node>,
         step: Box<Node>,
         body: Box<Node>,
     },
-    If {
+    IfStatement {
         condition: Box<Node>,
         body: Box<Node>,
     },
+    IfElseStatement(Box<Node>, Box<Node>),
+    SwitchStatement {
+        expression: Box<Node>,
+        cases: Vec<Node>,
+    },
+    Case {
+        case: Box<Node>,
+        body: Box<Node>,
+    },
+    DefaultCase(Box<Node>),
 
     EmptyStatement,
     LetStatement(String, Box<Node>),

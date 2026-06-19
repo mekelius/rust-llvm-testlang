@@ -2,19 +2,29 @@ use super::CodeGen;
 use crate::ast::Node;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_statement(&mut self, statement: &Node) {
+    /* Return true if was a return statement */
+    pub fn handle_statement(&mut self, statement: &Node) -> bool {
         match statement {
             Node::LetStatement(identifier, expression) => self.handle_let(identifier, expression),
-            Node::ReturnStatement(expression) => self.handle_return(expression),
-            Node::ValuelessReturnStatement => self.handle_valueless_return(),
+            Node::ReturnStatement(expression) => {
+                self.handle_return(expression);
+                return true;
+            }
+            Node::ValuelessReturnStatement => {
+                self.handle_valueless_return();
+                return true;
+            }
             Node::ExpressionStatement(expression) => {
                 self.handle_expression(&expression);
             }
-            Node::EmptyStatement => return,
+            Node::EmptyStatement => return false,
 
-            Node::If { condition, body } => self.handle_if(condition, body),
-            Node::While { condition, body } => self.handle_while(condition, body),
-            Node::For {
+            Node::IfStatement { condition, body } => self.handle_if(condition, body),
+            Node::IfElseStatement(if_branch, else_branch) => {
+                self.handle_if_else(if_branch, else_branch)
+            }
+            Node::WhileStatement { condition, body } => self.handle_while(condition, body),
+            Node::ForStatement {
                 init,
                 condition,
                 step,
@@ -24,6 +34,7 @@ impl<'ctx> CodeGen<'ctx> {
             Node::Block(statements) => self.handle_block(statements),
             _ => unreachable!("Unknown statement type {:?}", statement),
         };
+        false
     }
 
     pub fn handle_block(&mut self, statements: &Vec<Node>) {

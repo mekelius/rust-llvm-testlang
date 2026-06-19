@@ -1,0 +1,26 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+function hmm(x) {
+    switch x {
+        case 1:
+            print("one");
+            break;
+        case 2:
+            print("two");
+            break;
+        case 69:
+            print("nice");
+            break;
+        default:
+            print("something else");
+    }
+}
+
+function main() {
+    hmm(99);                            // CHECK-NEXT: something else
+    hmm(2);                             // CHECK-NEXT: two
+    hmm(222);                           // CHECK-NEXT: something else
+    hmm(1);                             // CHECK-NEXT: one
+    hmm(69);                            // CHECK-NEXT: nice
+}

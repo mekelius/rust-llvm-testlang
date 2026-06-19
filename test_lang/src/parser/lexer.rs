@@ -22,6 +22,15 @@ pub enum Token {
     #[token("else")]
     Else,
 
+    #[token("switch")]
+    Switch,
+    #[token("case")]
+    Case,
+    #[token("default")]
+    Default,
+    #[token("break")]
+    Break,
+
     #[token("while")]
     While,
     #[token("for")]

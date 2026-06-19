@@ -195,11 +195,17 @@ fn parser<'src>()
         let if_statement = just(Token::If)
             .ignore_then(parenthesized!(expression.clone()))
             .then(p.clone())
-            .map(|(condition, body)| Node::If {
+            .map(|(condition, body)| Node::IfStatement {
                 condition: Box::new(condition),
                 body: Box::new(body),
             })
             .boxed();
+
+        let if_else_statement = if_statement
+            .clone()
+            .then_ignore(just(Token::Else))
+            .then(p.clone())
+            .map(|(if_branch, else_branch)| Node::IfElseStatement(Box::new(if_branch), Box::new(else_branch)));
 
         let for_init = p.clone();
         let for_condition = expression.clone();
@@ -213,7 +219,7 @@ fn parser<'src>()
                     .then(for_step.clone())
             ))
             .then(p.clone())
-            .map(|(((init, condition), step), body)| Node::For {
+            .map(|(((init, condition), step), body)| Node::ForStatement {
                 init: Box::new(init),
                 condition: Box::new(condition),
                 step: Box::new(step),
@@ -224,7 +230,7 @@ fn parser<'src>()
         let while_statement = just(Token::While)
             .ignore_then(parenthesized!(expression.clone()))
             .then(p.clone())
-            .map(|(condition, body)| Node::While {
+            .map(|(condition, body)| Node::WhileStatement {
                 condition: Box::new(condition),
                 body: Box::new(body),
             })
@@ -273,7 +279,9 @@ fn parser<'src>()
         let single_statement = simple_statement.then_ignore(just(Token::Semicolon)).boxed();
 
         let complex_statement = choice((
+            if_else_statement.clone(),
             if_statement.clone(),
+            // switch_statement.clone(),
             while_statement.clone(),
             for_statement.clone(),
         ))
