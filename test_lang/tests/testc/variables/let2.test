@@ -2,7 +2,7 @@
 // RUN: %t | filecheck %s
 
 main() {
-    let x = Int 100;
-    let y = Int 6;
+    const x = Int 100;
+    const y = Int 6;
     print_int(x * y); // CHECK: 600
 }

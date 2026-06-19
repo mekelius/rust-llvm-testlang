@@ -4,7 +4,7 @@
 // This one should fail because mutable variables aren't yet a thing
 
 main() {
-    let x = 0;
+    const x = 0;
 
     // while(x != 9) {    
     //    print_int(8);

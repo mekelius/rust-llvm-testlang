@@ -52,7 +52,11 @@ pub enum Node {
     BreakStatement,
 
     EmptyStatement,
+    
     LetStatement(String, Box<Node>),
+    ConstStatement(String, Box<Node>),
+    AssignmentStatement(String, Box<Node>),
+
     ReturnStatement(Box<Node>),
     ValuelessReturnStatement,
 

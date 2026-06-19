@@ -6,6 +6,6 @@ test(x) -> Int {
 }
 
 main() {
-    let x = test(9);
+    const x = test(9);
     print_int(x);           // CHECK: 132
 }

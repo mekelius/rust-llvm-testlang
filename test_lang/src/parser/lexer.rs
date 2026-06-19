@@ -30,6 +30,8 @@ pub enum Token {
     Default,
     #[token("break")]
     Break,
+    #[token("return")]
+    Return,
     #[token("continue")]
     Continue,
 
@@ -90,8 +92,8 @@ pub enum Token {
 
     #[token("let")]
     Let,
-    #[token("return")]
-    Return,
+    #[token("const")]
+    Const,
 
     #[token("true")]
     True,

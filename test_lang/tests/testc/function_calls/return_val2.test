@@ -6,6 +6,6 @@ test() -> Boolean {
 }
 
 main() {
-    let x = test();
+    const x = test();
     print_bool(x);           // CHECK: false
 }

@@ -2,6 +2,6 @@
 // RUN: %t | filecheck %s
 
 main() {
-    let x = Int 1;
+    const x = Int 1;
     print_int(x + 2); // CHECK: 3
 }

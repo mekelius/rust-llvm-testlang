@@ -267,15 +267,25 @@ fn parser<'src>()
 
         let block = in_curly_braces!(statement_list.clone().map(|e| Node::Block(e))).boxed();
 
-        let name_binding = select! {
+        let assignment = (select! {
             Token::Identifier(TokenData {value}) => value,
-        };
+        })
+        .then_ignore(just(Token::Assign))
+        .then(expression.clone());
+
+        let const_statement = just(Token::Const)
+            .ignore_then(assignment.clone())
+            .map(|(name, value)| Node::ConstStatement(name, Box::new(value)))
+            .boxed();
 
         let let_statement = just(Token::Let)
-            .ignore_then(name_binding.clone())
-            .then_ignore(just(Token::Assign))
-            .then(expression.clone())
+            .ignore_then(assignment.clone())
             .map(|(name, value)| Node::LetStatement(name, Box::new(value)))
+            .boxed();
+
+        let assignment_statement = assignment
+            .clone()
+            .map(|(name, value)| Node::AssignmentStatement(name, Box::new(value)))
             .boxed();
 
         let valueless_return_statement = just(Token::Return).to(Node::ValuelessReturnStatement);
@@ -294,6 +304,8 @@ fn parser<'src>()
 
         let simple_statement = choice((
             let_statement.clone(),
+            const_statement.clone(),
+            assignment_statement.clone(),
             return_statement.clone(),
             continue_statement.clone(),
             break_statement.clone(),

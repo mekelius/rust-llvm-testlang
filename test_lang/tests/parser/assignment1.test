@@ -1,12 +1,12 @@
 // RUN: %parse < %s | filecheck %s
 
 main() {
-    let joo = test;
+    const joo = test;
 }
 
 // CHECK: Function {
 // CHECK: name: "main"
-// CHECK: LetStatement
+// CHECK: ConstStatement
 // CHECK: "joo"
 // CHECK: Identifier
 // CHECK: "test"

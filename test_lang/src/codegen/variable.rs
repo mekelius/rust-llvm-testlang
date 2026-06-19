@@ -2,7 +2,7 @@ use super::CodeGen;
 use crate::{ast::Node, codegen::identifier::Symbol};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_let(&mut self, identifier: &str, expression: &Node) {
+    pub fn handle_const(&mut self, identifier: &str, expression: &Node) {
         let value = self.handle_expression(expression);
         let symbol = Symbol::Value(value);
         let current_scope = self.scopes.get_current_scope_mut();

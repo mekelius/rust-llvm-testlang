@@ -6,6 +6,6 @@ test() -> String {
 }
 
 main() {
-    let x = test();
+    const x = test();
     print(x);           // CHECK: hihhii
 }
