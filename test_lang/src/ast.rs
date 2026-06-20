@@ -52,7 +52,7 @@ pub enum Node {
     BreakStatement,
 
     EmptyStatement,
-    
+
     LetStatement(String, Box<Node>),
     ConstStatement(String, Box<Node>),
     AssignmentStatement(String, Box<Node>),
@@ -66,11 +66,7 @@ pub enum Node {
         argument_list: Vec<Node>,
     },
 
-    UnaryOperator {
-        op: Box<Node>,
-        rhs: Box<Node>,
-    },
-    UnaryMinus,
+    UnaryMinus(Box<Node>),
 
     Equals(Box<Node>, Box<Node>),
     GreaterThan(Box<Node>, Box<Node>),

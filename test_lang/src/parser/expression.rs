@@ -30,8 +30,6 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
         .ignore_then(just(Token::RParenthesis))
         .to(Node::UnitLiteral);
 
-    let unary_operator = just(Token::Minus).to(Node::UnaryMinus);
-
     let binary_op_1 = choice((just(Token::Asterisk), just(Token::Slash)));
     let binary_op_2 = choice((just(Token::Plus), just(Token::Minus)));
     let binary_op_3 = choice((
@@ -73,14 +71,11 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
             })
             .boxed();
 
-        let unary_expression = unary_operator
-            .clone()
-            .then(expr.clone())
-            .map(|(op, rhs)| Node::UnaryOperator {
-                op: Box::new(op),
-                rhs: Box::new(rhs),
-            })
-            .boxed();
+        let unary_minus_expression = just(Token::Minus)
+            .ignore_then(expr.clone())
+            .map(|expression| Node::UnaryMinus(Box::new(expression)));
+
+        let unary_expression = unary_minus_expression;
 
         let literal = choice((
             string_literal.clone(),
@@ -161,10 +156,10 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
         .boxed();
 
         let expression = choice((
+            unary_expression,
             binary_expression_3,
             binary_expression_2,
             binary_expression_1,
-            unary_expression,
             function_call,
             identifier.clone(),
             literal.clone(),

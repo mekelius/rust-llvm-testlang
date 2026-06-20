@@ -7,5 +7,5 @@ test() {
 }
 
 main() {
-    test(); // CHECK: 3
+    test();                 // CHECK: 3
 }

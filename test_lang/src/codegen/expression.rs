@@ -1,7 +1,7 @@
 use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
 
 use super::CodeGen;
-use crate::ast::Node;
+use crate::{ast::Node, codegen::expression};
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_expression(&self, expression: &Node) -> AnyValueEnum<'ctx> {
@@ -21,6 +21,8 @@ impl<'ctx> CodeGen<'ctx> {
             Node::Div(lhs, rhs) => self.handle_div(lhs, rhs),
             Node::Add(lhs, rhs) => self.handle_add(lhs, rhs),
             Node::Sub(lhs, rhs) => self.handle_sub(lhs, rhs),
+
+            Node::UnaryMinus(expression) => self.handle_unary_minus(expression),
 
             Node::FunctionCall {
                 callee: _,
@@ -56,7 +58,6 @@ impl<'ctx> CodeGen<'ctx> {
             unreachable!();
         };
 
-        // let mut args = Vec<LLVMVa>::new;
         let args: Vec<BasicMetadataValueEnum> = argument_list
             .into_iter()
             .map(|arg| BasicMetadataValueEnum::try_from(self.handle_expression(arg)).unwrap())

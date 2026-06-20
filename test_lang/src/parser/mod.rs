@@ -1,11 +1,10 @@
+pub mod common;
+pub mod expression;
+pub mod function;
 pub mod lexer;
-mod function;
-mod common;
-mod statement;
-mod expression;
+pub mod statement;
 
 use self::lexer::Token;
-use self::lexer::TokenData;
 use chumsky::prelude::*;
 use std::error::Error;
 
