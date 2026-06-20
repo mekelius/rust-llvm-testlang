@@ -22,10 +22,13 @@
 - invoke clang via api
 - add line numbers
 - improve error handling
+- automatic lossless casts
+- ad hoc polymorfismi
 
 ## Big
 - moduulit
 - lambdat ja closuret
+- REPL
 
 ## Huuge
 - GC
