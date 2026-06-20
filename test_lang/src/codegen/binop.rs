@@ -67,6 +67,21 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
+    pub fn handle_mod(
+        &self,
+        lhs: &Node,
+        rhs: &Node,
+    ) -> AnyValueEnum<'ctx> {
+        let lhs_value = self.handle_expression(lhs).into_int_value();
+        let rhs_value = self.handle_expression(rhs).into_int_value();
+
+        self.ir
+            .builder
+            .build_int_signed_rem(lhs_value, rhs_value, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
     pub fn handle_eq(
         &self,
         lhs: &Node,

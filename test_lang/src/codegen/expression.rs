@@ -21,6 +21,7 @@ impl<'ctx> CodeGen<'ctx> {
             Node::Div(lhs, rhs) => self.handle_div(lhs, rhs),
             Node::Add(lhs, rhs) => self.handle_add(lhs, rhs),
             Node::Sub(lhs, rhs) => self.handle_sub(lhs, rhs),
+            Node::Mod(lhs, rhs) => self.handle_mod(lhs, rhs),
 
             Node::UnaryMinus(expression) => self.handle_unary_minus(expression),
             Node::UnaryNot(expression) => self.handle_unary_not(expression),

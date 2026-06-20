@@ -79,4 +79,5 @@ pub enum Node {
     Div(Box<Node>, Box<Node>),
     Add(Box<Node>, Box<Node>),
     Sub(Box<Node>, Box<Node>),
+    Mod(Box<Node>, Box<Node>),
 }
