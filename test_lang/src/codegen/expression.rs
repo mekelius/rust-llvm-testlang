@@ -1,7 +1,7 @@
 use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
 
 use super::CodeGen;
-use crate::{ast::Node, codegen::expression};
+use crate::ast::Node;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_expression(&self, expression: &Node) -> AnyValueEnum<'ctx> {

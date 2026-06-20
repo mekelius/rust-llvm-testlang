@@ -20,6 +20,8 @@
 - objektit
 - cl args
 - invoke clang via api
+- add line numbers
+- improve error handling
 
 ## Big
 - moduulit
