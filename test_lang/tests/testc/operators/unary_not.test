@@ -1,0 +1,12 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+main() {
+    const x = true;
+    println_bool(!x);                           // CHECK-NEXT: false
+    println_bool(!!x);                          // CHECK-NEXT: true
+    println_bool(!!!x);                         // CHECK-NEXT: false
+    println_bool(!x != x);                      // CHECK-NEXT: true
+    println_bool(!(x != x));                    // CHECK-NEXT: true
+    println_bool((!x == !x) == !(x == x));      // CHECK-NEXT: false
+}

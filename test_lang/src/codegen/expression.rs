@@ -23,6 +23,7 @@ impl<'ctx> CodeGen<'ctx> {
             Node::Sub(lhs, rhs) => self.handle_sub(lhs, rhs),
 
             Node::UnaryMinus(expression) => self.handle_unary_minus(expression),
+            Node::UnaryNot(expression) => self.handle_unary_not(expression),
 
             Node::FunctionCall {
                 callee: _,

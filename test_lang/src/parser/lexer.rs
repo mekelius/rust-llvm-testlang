@@ -53,6 +53,8 @@ pub enum Token {
     Slash,
     #[token("%")]
     Percent,
+    #[token("!")]
+    Bang,
 
     #[token("(")]
     LParenthesis,

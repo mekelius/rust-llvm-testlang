@@ -84,12 +84,16 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
             .then(expr.clone())
             .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)));
 
-        let term = recursive(|term| { 
-            let unary_minus_expression = just(Token::Minus)
+        let term = recursive(|term| {
+            let unary_not_expression = just(Token::Minus)
                 .ignore_then(term.clone())
                 .map(|expression| Node::UnaryMinus(Box::new(expression)));
 
-            let unary_expression = unary_minus_expression;
+            let unary_minus_expression = just(Token::Bang)
+                .ignore_then(term.clone())
+                .map(|expression| Node::UnaryNot(Box::new(expression)));
+
+            let unary_expression = choice((unary_minus_expression, unary_not_expression));
 
             choice((
                 unary_expression.clone(),

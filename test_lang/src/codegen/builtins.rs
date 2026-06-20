@@ -85,6 +85,29 @@ impl<'ctx> CodeGen<'ctx> {
                 .unwrap();
 
             ir.builder.build_return(None).unwrap();
+
+            //////////////////////////////////////// println_bool ////////////////////////////////////////
+            {
+                builtin!(println_bool, &void_t.fn_type(&[bool_t.into()], false));
+
+                let entry_b = ir
+                    .context
+                    .append_basic_block(println_bool, "PrintlnBoolEntry");
+                ir.builder.position_at_end(entry_b);
+
+                let arg1 = println_bool.get_nth_param(0).unwrap().into_int_value();
+                ir.builder
+                    .build_call(print_bool, &[arg1.into()], "")
+                    .unwrap();
+
+                let newline = ir.builder.build_global_string_ptr("\n", "newline").unwrap();
+
+                ir.builder
+                    .build_call(printf, &[newline.as_pointer_value().into()], "")
+                    .unwrap();
+
+                ir.builder.build_return(None).unwrap();
+            }
         }
 
         ////////////////////////////////////////// print //////////////////////////////////////////
@@ -104,7 +127,9 @@ impl<'ctx> CodeGen<'ctx> {
         {
             builtin!(println_int, &void_t.fn_type(&[int_t.into()], false));
 
-            let entry_b = ir.context.append_basic_block(println_int, "PrintlnIntEntry");
+            let entry_b = ir
+                .context
+                .append_basic_block(println_int, "PrintlnIntEntry");
             ir.builder.position_at_end(entry_b);
 
             let lnint_format_string = ir

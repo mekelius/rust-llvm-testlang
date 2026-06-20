@@ -67,6 +67,7 @@ pub enum Node {
     },
 
     UnaryMinus(Box<Node>),
+    UnaryNot(Box<Node>),
 
     Equals(Box<Node>, Box<Node>),
     GreaterThan(Box<Node>, Box<Node>),

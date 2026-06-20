@@ -14,4 +14,12 @@ impl<'ctx> CodeGen<'ctx> {
             .unwrap()
             .as_any_value_enum()
     }
+
+    pub fn handle_unary_not(&self, rhs: &Node) -> AnyValueEnum<'ctx> {
+        self.ir
+            .builder
+            .build_not(self.handle_expression(rhs).into_int_value(), "")
+            .unwrap()
+            .as_any_value_enum()
+    }
 }
