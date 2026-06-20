@@ -71,16 +71,11 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
             })
             .boxed();
 
-        let unary_minus_expression = just(Token::Minus)
-            .ignore_then(expr.clone())
-            .map(|expression| Node::UnaryMinus(Box::new(expression)));
-
-        let unary_expression = unary_minus_expression;
-
         let literal = choice((
             string_literal.clone(),
             number_literal.clone(),
             boolean_literal.clone(),
+            unit_literal,
         ))
         .boxed();
 
@@ -89,15 +84,22 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
             .then(expr.clone())
             .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)));
 
-        let term = choice((
-            unary_expression.clone(),
-            function_call.clone(),
-            identifier.clone(),
-            literal.clone(),
-            typed_expression.clone(),
-            parenthesized!(expr.clone()),
-        ))
-        .boxed();
+        let term = recursive(|term| { 
+            let unary_minus_expression = just(Token::Minus)
+                .ignore_then(term.clone())
+                .map(|expression| Node::UnaryMinus(Box::new(expression)));
+
+            let unary_expression = unary_minus_expression;
+
+            choice((
+                unary_expression.clone(),
+                function_call.clone(),
+                identifier.clone(),
+                literal.clone(),
+                typed_expression.clone(),
+                parenthesized!(expr.clone()),
+            ))
+        });
 
         let binary_expression_1 = term
             .clone()
@@ -147,22 +149,11 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
             )
             .boxed();
 
-        let literal = choice((
-            string_literal,
-            number_literal,
-            boolean_literal,
-            unit_literal,
-        ))
-        .boxed();
-
         let expression = choice((
-            unary_expression,
             binary_expression_3,
             binary_expression_2,
             binary_expression_1,
-            function_call,
-            identifier.clone(),
-            literal.clone(),
+            term,
             parenthesized!(expr.clone()),
         ))
         .boxed();

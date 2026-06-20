@@ -2,10 +2,10 @@
 // RUN: %t | filecheck %s
 
 main() {
-    print("jippii\n");        // CHECK:       jippii
+    print("jippii\n");          // CHECK:      jippii
     if (1 > 2) {
         print("qwewqe");
     } else {
-        print("www");       // CHECK-NEXT:  www
+        print("www");           // CHECK-NEXT: www
     }
 }

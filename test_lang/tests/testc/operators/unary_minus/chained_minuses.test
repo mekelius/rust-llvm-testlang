@@ -1,0 +1,12 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+main() {
+    println_int(--4);           // CHECK-NEXT:  4
+    println_int(---4);          // CHECK-NEXT: -4
+    println_int(----4);         // CHECK-NEXT:  4
+    println_int(-----4);        // CHECK-NEXT: -4
+    println_int(---(--4));      // CHECK-NEXT: -4
+    println_int(-(----4));      // CHECK-NEXT: -4
+    println_int(-----(4));      // CHECK-NEXT: -4
+}

@@ -99,6 +99,31 @@ impl<'ctx> CodeGen<'ctx> {
 
             ir.builder.build_return(None).unwrap();
         }
+
+        //////////////////////////////////////// println_int ////////////////////////////////////////
+        {
+            builtin!(println_int, &void_t.fn_type(&[int_t.into()], false));
+
+            let entry_b = ir.context.append_basic_block(println_int, "PrintlnIntEntry");
+            ir.builder.position_at_end(entry_b);
+
+            let lnint_format_string = ir
+                .builder
+                .build_global_string_ptr("%d\n", "printf_lnint_format")
+                .unwrap();
+
+            let arg1 = println_int.get_nth_param(0).unwrap();
+
+            ir.builder
+                .build_call(
+                    printf,
+                    &[lnint_format_string.as_pointer_value().into(), arg1.into()],
+                    "",
+                )
+                .unwrap();
+
+            ir.builder.build_return(None).unwrap();
+        }
     }
 }
 
