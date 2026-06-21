@@ -1,0 +1,16 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+main() {
+    let x = 5;
+
+    while(x != 9) {    
+        println_int(x);         // CHECK-NEXT: 5       
+                                // CHECK-NEXT: 6       
+                                // CHECK-NEXT: 7       
+                                // CHECK-NEXT: 8       
+        x = x+1;
+    }
+
+    print("done\n");              // CHECK-NEXT: done
+}
