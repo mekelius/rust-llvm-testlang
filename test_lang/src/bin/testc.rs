@@ -6,6 +6,8 @@ use std::error::Error;
 use std::io;
 use testl::parser;
 
+const PASSES: &str = "mem2reg,instcombine,reassociate,simplifycfg";
+
 fn main() -> Result<(), Box<dyn Error>> {
     let src = io::read_to_string(io::stdin())?;
     let ast = parser::run(&src)?;
@@ -23,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     codegen.run(&ast)?;
     
-    codegen.ir.module.run_passes("mem2reg", &target_machine, PassBuilderOptions::create()).unwrap();
+    codegen.ir.module.run_passes(PASSES, &target_machine, PassBuilderOptions::create()).unwrap();
     codegen.ir.print()?;
 
     Ok(())

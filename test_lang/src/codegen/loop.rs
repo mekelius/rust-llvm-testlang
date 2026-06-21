@@ -60,7 +60,7 @@ impl<'ctx> CodeGen<'ctx> {
         let header_block = self
             .ir
             .context
-            .append_basic_block(current_function, "loop_condition");
+            .append_basic_block(current_function, "loop_header");
         let body_block = self
             .ir
             .context
@@ -102,7 +102,7 @@ impl<'ctx> CodeGen<'ctx> {
         let phi = self
             .ir
             .builder
-            .build_phi(phi_type, "for_loop_condition")
+            .build_phi(phi_type, "loop_condition")
             .unwrap();
         phi.add_incoming(&[
             (&condition_value_initial, from_block),
