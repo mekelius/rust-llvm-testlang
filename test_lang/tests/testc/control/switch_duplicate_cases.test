@@ -1,0 +1,16 @@
+// RUN: ! %testc < %s
+
+hmm(x) {
+    switch x {
+        case 1:
+            print("one");
+            break;
+        case 1:
+            print("no");
+            break;
+    }
+}
+
+main() {
+    hmm(1);
+}

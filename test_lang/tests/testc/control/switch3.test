@@ -1,7 +1,8 @@
 // RUN: %testc < %s | clang-22 -x ir - -o %t
-// RUN: ! %t
+// RUN: %t | filecheck %s
 
 hmm(x) {
+    print("before\n");          // CHECK-NEXT: before
     switch x {
         case 1:
             print("one");
@@ -13,6 +14,7 @@ hmm(x) {
             print("nice");
             break;
     }
+    print("after\n");           // CHECK-NEXT: after
 }
 
 main() {
