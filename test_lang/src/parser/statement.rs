@@ -22,35 +22,6 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
                 Node::IfElseStatement(Box::new(if_branch), Box::new(else_branch))
             });
 
-        let for_init = p.clone();
-        let for_condition = expression.clone();
-        let for_step = p.clone();
-
-        let for_statement = just(Token::For)
-            .ignore_then(parenthesized!(
-                for_init
-                    .clone()
-                    .then(for_condition.clone())
-                    .then(for_step.clone())
-            ))
-            .then(p.clone())
-            .map(|(((init, condition), step), body)| Node::ForStatement {
-                init: Box::new(init),
-                condition: Box::new(condition),
-                step: Box::new(step),
-                body: Box::new(body),
-            })
-            .boxed();
-
-        let while_statement = just(Token::While)
-            .ignore_then(parenthesized!(expression.clone()))
-            .then(p.clone())
-            .map(|(condition, body)| Node::WhileStatement {
-                condition: Box::new(condition),
-                body: Box::new(body),
-            })
-            .boxed();
-
         let statement_list = p.clone().repeated().collect::<Vec<Node>>();
 
         let case = just(Token::Case)
@@ -127,7 +98,39 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
             empty_statement.clone(),
         ))
         .boxed();
-        let single_statement = simple_statement.then_ignore(just(Token::Semicolon)).boxed();
+        let single_statement = simple_statement.clone().then_ignore(just(Token::Semicolon)).boxed();
+
+        // For loop
+        let for_init = let_statement.clone().or(assignment_statement.clone());
+        let for_condition = expression.clone();
+        let for_step = simple_statement.clone();
+
+        let for_statement = just(Token::For)
+            .ignore_then(parenthesized!(
+                for_init
+                    .clone()
+                    .then_ignore(just(Token::Semicolon))
+                    .then(for_condition.clone())
+                    .then_ignore(just(Token::Semicolon))
+                    .then(for_step.clone())
+            ))
+            .then(p.clone())
+            .map(|(((init, condition), step), body)| Node::ForStatement {
+                init: Box::new(init),
+                condition: Box::new(condition),
+                step: Box::new(step),
+                body: Box::new(body),
+            })
+            .boxed();
+
+        let while_statement = just(Token::While)
+            .ignore_then(parenthesized!(expression.clone()))
+            .then(p.clone())
+            .map(|(condition, body)| Node::WhileStatement {
+                condition: Box::new(condition),
+                body: Box::new(body),
+            })
+            .boxed();
 
         let complex_statement = choice((
             if_else_statement.clone(),

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -o pipefail
 
 cargo run --bin testc < $1 | clang -x ir - -o testbin/out 
 ./testbin/out

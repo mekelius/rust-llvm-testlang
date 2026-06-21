@@ -4,7 +4,7 @@
 main() {
     let x = 5;
 
-    while(x != 9) {    
+    while (x != 9) {    
         println_int(x);         // CHECK-NEXT: 5       
                                 // CHECK-NEXT: 6       
                                 // CHECK-NEXT: 7       
