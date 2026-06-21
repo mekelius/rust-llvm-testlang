@@ -31,7 +31,7 @@ impl<'ctx> CodeGen<'ctx> {
                 argument_list: _,
             } => self.handle_function_call(&expression),
 
-            Node::Identifier(value) => self.handle_identifier(value).as_any_value_enum(),
+            Node::Identifier(value) => self.handle_identifier(value),
 
             Node::NumberLiteral(value) => self.handle_number_literal(&value),
             Node::StringLiteral(value) => self.handle_string_literal(&value),

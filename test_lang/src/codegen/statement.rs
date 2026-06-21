@@ -1,13 +1,16 @@
-use super::CodeGen;
 use crate::ast::Node;
+
+use super::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
     /* Return true if was a return statement */
     pub fn handle_statement(&mut self, statement: &Node) {
         match statement {
-            Node::ConstStatement(identifier, expression) => self.handle_const(identifier, expression),
-            Node::LetStatement(_identifier, _expression) => todo!("Let statement"),
-            Node::AssignmentStatement(_identifier, _expression) => todo!("Assignment statement"),
+            Node::ConstStatement(identifier, expression) => {
+                self.handle_const(identifier, expression)
+            }
+            Node::LetStatement(identifier, expression) => self.handle_let(identifier, expression),
+            Node::AssignmentStatement(identifier, expression) => self.handle_assignment(identifier, expression),
 
             Node::ReturnStatement(expression) => {
                 self.handle_return(expression);
@@ -34,7 +37,10 @@ impl<'ctx> CodeGen<'ctx> {
 
             Node::Block(statements) => self.handle_block(statements),
 
-            Node::SwitchStatement{matched_value_expression, cases} => self.handle_switch(matched_value_expression, cases),
+            Node::SwitchStatement {
+                matched_value_expression,
+                cases,
+            } => self.handle_switch(matched_value_expression, cases),
             _ => unreachable!("Unknown statement type {:?}", statement),
         };
     }

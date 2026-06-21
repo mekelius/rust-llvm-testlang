@@ -25,7 +25,7 @@ impl<'ctx> CodeGen<'ctx> {
         };
 
         let return_type = match return_type_string {
-            Some(string) => self.handle_type_string(string),
+            Some(string) => SimpleType::from_type_string(string),
             None => SimpleType::Void,
         };
 
