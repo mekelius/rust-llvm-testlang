@@ -37,7 +37,7 @@ impl<'ctx> CodeGen<'ctx> {
             .unwrap();
         let value: BasicValueEnum<'ctx> = self.handle_expression(expression).try_into().unwrap();
         let pointer = self.ir.builder.build_alloca(ir_type, identifier).unwrap();
-        self.ir.builder.build_store(pointer, value);
+        self.ir.builder.build_store(pointer, value).unwrap();
         self.scopes.define_identifier(
             identifier,
             Symbol::Variable {
