@@ -1,0 +1,13 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+times2(x) -> Int {
+    const y = x * 2;
+    return y;
+}
+
+main() {
+    const x = 0;
+    const y = times2(x);
+    println_int(y);   // CHECK-NEXT: 0
+}

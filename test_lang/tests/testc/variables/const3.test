@@ -1,0 +1,8 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+main() {
+    const x = 0;
+    const y = x * 2;
+    println_int(y);   // CHECK-NEXT: 0
+}
