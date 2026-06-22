@@ -1,9 +1,29 @@
 use chumsky::prelude::*;
 
-use crate::{ast::Node, in_curly_braces, parenthesized, parser::{ParserError, expression::expression, lexer::{Token, TokenData}}};
+use crate::{
+    ast::Node,
+    in_curly_braces, parenthesized,
+    parser::{
+        ParserError,
+        common::{identifier, identifier_as_string},
+        expression::expression,
+        lexer::{Token, TokenData},
+    },
+};
 
 pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
     let expression = expression();
+    let identifier_as_string = identifier_as_string();
+
+    let shorthand_assignment_operator = choice((
+        just(Token::PlusEquals),
+        just(Token::MinusEquals),
+        just(Token::AsteriskEquals),
+        just(Token::SlashEquals),
+        just(Token::PercentEquals),
+    ));
+    let postfix_assignment_operator = choice((just(Token::PlusPlus), just(Token::MinusMinus)));
+
     recursive(|p| {
         let if_statement = just(Token::If)
             .ignore_then(parenthesized!(expression.clone()))
@@ -51,11 +71,30 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
 
         let block = in_curly_braces!(statement_list.clone().map(|e| Node::Block(e))).boxed();
 
-        let assignment = (select! {
-            Token::Identifier(TokenData {value}) => value,
-        })
-        .then_ignore(just(Token::SingleEquals))
-        .then(expression.clone());
+        let assignment = identifier_as_string
+            .clone()
+            .then_ignore(just(Token::SingleEquals))
+            .then(expression.clone());
+
+        let shorthand_assignment = identifier_as_string
+            .clone()
+            .then(shorthand_assignment_operator)
+            .then(expression.clone())
+            .map(|((name, operator), rhs)|
+                (name.clone(), match operator {
+                Token::PlusEquals => Node::Add(Box::new(Node::Identifier(name)), Box::new(rhs)),
+                Token::MinusEquals => Node::Sub(Box::new(Node::Identifier(name)), Box::new(rhs)),
+                Token::AsteriskEquals => Node::Mul(Box::new(Node::Identifier(name)), Box::new(rhs)),
+                Token::SlashEquals => Node::Div(Box::new(Node::Identifier(name)), Box::new(rhs)),
+                Token::PercentEquals => Node::Mod(Box::new(Node::Identifier(name)), Box::new(rhs)),
+                _ => unreachable!("Unhandled shorthand assignment operator"),
+            }));
+
+        let postfix_assignment = identifier_as_string.clone().then(postfix_assignment_operator).map(|(name, operator)| (name.clone(), match operator {
+            Token::PlusPlus => Node::Add(Box::new(Node::Identifier(name)), Box::new(Node::NumberLiteral("1".into()))),
+            Token::MinusMinus => Node::Sub(Box::new(Node::Identifier(name)), Box::new(Node::NumberLiteral("1".into()))),
+            _ => unreachable!("Unhandled postfix assignment operator"),
+        }));
 
         let const_statement = just(Token::Const)
             .ignore_then(assignment.clone())
@@ -67,8 +106,7 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
             .map(|(name, value)| Node::LetStatement(name, Box::new(value)))
             .boxed();
 
-        let assignment_statement = assignment
-            .clone()
+        let assignment_statement = choice((assignment.clone(), shorthand_assignment, postfix_assignment))
             .map(|(name, value)| Node::AssignmentStatement(name, Box::new(value)))
             .boxed();
 
@@ -98,7 +136,10 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
             empty_statement.clone(),
         ))
         .boxed();
-        let single_statement = simple_statement.clone().then_ignore(just(Token::Semicolon)).boxed();
+        let single_statement = simple_statement
+            .clone()
+            .then_ignore(just(Token::Semicolon))
+            .boxed();
 
         // For loop
         let for_init = let_statement.clone().or(assignment_statement.clone());

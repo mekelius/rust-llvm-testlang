@@ -1,0 +1,9 @@
+// RUN: %parse < %s
+
+main() {
+    x += w;
+    q -= o;
+    m *= q;
+    a /= l;
+    z %= w;
+}

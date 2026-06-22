@@ -35,7 +35,12 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
         just(Token::Slash),
         just(Token::Percent),
     ));
-    let binary_op_2 = choice((just(Token::Plus), just(Token::Minus)));
+    let binary_op_2 = choice((
+        just(Token::Plus),
+        just(Token::Minus),
+        just(Token::DoubleAmpersand),
+        just(Token::DoublePipe),
+    ));
     let binary_op_3 = choice((
         just(Token::DoubleEquals),
         just(Token::GreaterThan),
@@ -132,6 +137,8 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
                 |lhs, (op, rhs)| match op {
                     Token::Plus => Node::Add(Box::new(lhs), Box::new(rhs)),
                     Token::Minus => Node::Sub(Box::new(lhs), Box::new(rhs)),
+                    Token::DoubleAmpersand => Node::And(Box::new(lhs), Box::new(rhs)),
+                    Token::DoublePipe => Node::Or(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
                 },
             )

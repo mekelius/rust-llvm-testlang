@@ -89,6 +89,36 @@ pub enum Token {
     #[token("!=")]
     NotEquals,
 
+    #[token("+=")]
+    PlusEquals,
+    #[token("-=")]
+    MinusEquals,
+    #[token("*=")]
+    AsteriskEquals,
+    #[token("/=")]
+    SlashEquals,
+    #[token("%=")]
+    PercentEquals,
+
+    #[token("++")]
+    PlusPlus,
+    #[token("--")]
+    MinusMinus,
+
+    #[token("&&")]
+    DoubleAmpersand,
+    #[token("||")]
+    DoublePipe,
+
+    #[token("&")]
+    Ampersand,
+    #[token("|")]
+    Pipe,
+    #[token("~")]
+    Tilde,
+    #[token("^")]
+    Caret,
+
     #[token("=")]
     SingleEquals,
 
