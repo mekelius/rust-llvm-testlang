@@ -100,11 +100,6 @@ pub enum Token {
     #[token("%=")]
     PercentEquals,
 
-    #[token("++")]
-    PlusPlus,
-    #[token("--")]
-    MinusMinus,
-
     #[token("&&")]
     DoubleAmpersand,
     #[token("||")]

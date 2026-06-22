@@ -1,0 +1,12 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+main() {
+    let x = 9;
+    x += 5;
+    x *= -6;
+    x -= 8;
+    x /= -2;
+    x %= 22;
+    print_int(x);   // CHECK: 2
+}
