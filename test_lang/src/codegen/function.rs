@@ -62,6 +62,7 @@ impl<'ctx> CodeGen<'ctx> {
                 SimpleType::Int => ir.context.i32_type().fn_type(&formal_types, false),
                 SimpleType::Float => ir.context.f64_type().fn_type(&formal_types, false),
                 SimpleType::Char => ir.context.i8_type().fn_type(&formal_types, false),
+                SimpleType::Byte => ir.context.i8_type().fn_type(&formal_types, false),
                 SimpleType::String => ir
                     .context
                     .ptr_type(AddressSpace::default())

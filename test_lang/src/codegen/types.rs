@@ -11,6 +11,7 @@ pub enum SimpleType {
     Int,
     Float,
     Char,
+    Byte,
     String,
     Void,
     Unknown,
@@ -30,9 +31,11 @@ impl SimpleType {
     pub fn from_type_string(type_string: &str) -> SimpleType {
         match type_string {
             "Boolean" => SimpleType::Boolean,
+            "Bool" => SimpleType::Boolean,
             "Int" => SimpleType::Int,
             "Float" => SimpleType::Float,
             "Char" => SimpleType::Char,
+            "Byte" => SimpleType::Byte,
             "String" => SimpleType::String,
             "Void" => SimpleType::Void,
             "Unknown" => SimpleType::Unknown,
@@ -48,6 +51,7 @@ impl<'ctx> IR<'ctx> {
             SimpleType::Int => Some(self.context.i32_type().as_any_type_enum()),
             SimpleType::Float => Some(self.context.f64_type().as_any_type_enum()),
             SimpleType::Char => Some(self.context.i8_type().as_any_type_enum()),
+            SimpleType::Byte => Some(self.context.i8_type().as_any_type_enum()),
             SimpleType::String => Some(
                 self.context
                     .ptr_type(AddressSpace::default())
