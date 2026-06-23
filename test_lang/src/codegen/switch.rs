@@ -10,7 +10,7 @@ struct HandleCasesReturn<'ctx> {
 
 impl<'ctx> CodeGen<'ctx> {
     /** Returns true if the block all_cases_returned */
-    pub fn handle_switch(&mut self, matched_value_expression: &Node, body: &Vec<Spanned<Node>>) {
+    pub fn handle_switch<S>(&mut self, matched_value_expression: &Node, body: &Vec<Spanned<Node, S>>) {
         let matched_value = self.handle_expression(matched_value_expression);
 
         self.scopes.push_new_scope();
@@ -59,9 +59,9 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     /** Returned default block will be the after_block if no default case was encountered */
-    fn handle_cases<'a>(
+    fn handle_cases<'a, S>(
         &mut self,
-        cases_body: &Vec<Spanned<Node>>,
+        cases_body: &Vec<Spanned<Node, S>>,
         after_block: BasicBlock<'ctx>,
     ) -> HandleCasesReturn<'ctx> {
         let entry_block = self.ir.builder.get_insert_block().unwrap();
@@ -111,7 +111,7 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn handle_case(&mut self, body: &Vec<Spanned<Node>>, next_block: &BasicBlock, after_block: &BasicBlock) {
+    fn handle_case<S>(&mut self, body: &Vec<Spanned<Node, S>>, next_block: &BasicBlock, after_block: &BasicBlock) {
         for statement in body {
             match statement.inner {
                 Node::BreakStatement => {

@@ -110,7 +110,7 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(())
     }
 
-    fn handle_main_function(&mut self, _formals: &Vec<Spanned<Node>>, body: &Spanned<Node>) {
+    fn handle_main_function<S>(&mut self, _formals: &Vec<Spanned<Node, S>>, body: &Spanned<Node, S>) {
         {
             let CodeGen { ir, scopes } = self;
 
@@ -148,7 +148,7 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     // Returns true if the body ends with a return statement
-    fn handle_function_body(&mut self, body: &Spanned<Node>) {
+    fn handle_function_body<S>(&mut self, body: &Spanned<Node, S>) {
         let Node::FunctionBody(body) = &body.inner else {
             unreachable!();
         };

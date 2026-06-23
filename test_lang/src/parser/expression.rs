@@ -1,7 +1,7 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::Node,
+    ast::{Node, SourceIDSpan, SpannedNode},
     parenthesized,
     parser::{
         ParserError,
@@ -10,9 +10,9 @@ use crate::{
     },
 };
 
-pub fn number_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
+pub fn number_literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
         Token::NumberLiteral(value) => Node::NumberLiteral(value),
@@ -20,9 +20,9 @@ where
     .spanned()
 }
 
-pub fn string_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
+pub fn string_literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
         Token::StringLiteral(value) => Node::StringLiteral(value),
@@ -30,9 +30,9 @@ where
     .spanned()
 }
 
-pub fn boolean_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
+pub fn boolean_literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
         Token::True => Node::BooleanLiteral(true),
@@ -41,18 +41,18 @@ where
     .spanned()
 }
 
-pub fn unit_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
+pub fn unit_literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::LParenthesis)
         .ignore_then(just(Token::RParenthesis))
         .to(Node::UnitLiteral)
         .spanned()
 }
-pub fn binary_op_1<'src, I>() -> impl Parser<'src, I, Spanned<Token>, ParserError<'src>> + Clone
+pub fn binary_op_1<'src, I>() -> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     choice((
         just(Token::Asterisk),
@@ -62,9 +62,9 @@ where
     .spanned()
 }
 
-pub fn binary_op_2<'src, I>() -> impl Parser<'src, I, Spanned<Token>, ParserError<'src>> + Clone
+pub fn binary_op_2<'src, I>() -> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     choice((
         just(Token::Plus),
@@ -75,9 +75,9 @@ where
     .spanned()
 }
 
-pub fn binary_op_3<'src, I>() -> impl Parser<'src, I, Spanned<Token>, ParserError<'src>> + Clone
+pub fn binary_op_3<'src, I>() -> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     choice((
         just(Token::DoubleEquals),
@@ -90,9 +90,9 @@ where
     .spanned()
 }
 
-pub fn literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
+pub fn literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     choice((
         string_literal(),
@@ -102,9 +102,9 @@ where
     ))
 }
 
-pub fn expression<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
+pub fn expression<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SimpleSpan>,
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     let identifier = identifier();
 
@@ -112,7 +112,7 @@ where
         let argument_list = parenthesized!(
             expr.clone()
                 .separated_by(just(Token::Comma))
-                .collect::<Vec<Spanned<Node>>>()
+                .collect::<Vec<SpannedNode>>()
                 .map(|e| Node::ArgumentList(e))
         );
 

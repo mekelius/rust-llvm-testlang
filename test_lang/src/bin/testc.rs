@@ -10,7 +10,7 @@ const PASSES: &str = "mem2reg,instcombine,reassociate,simplifycfg";
 
 fn main() -> Result<(), Box<dyn Error>> {
     let src = io::read_to_string(io::stdin())?;
-    let ast = parser::run(&src)?;
+    let ast = parser::run(&src, 0)?;
 
     Target::initialize_native(&InitializationConfig::default()).unwrap();
 

@@ -47,7 +47,7 @@ impl<'ctx> CodeGen<'ctx> {
         };
     }
 
-    pub fn handle_block(&mut self, statements: &Vec<Spanned<Node>>) {
+    pub fn handle_block<S>(&mut self, statements: &Vec<Spanned<Node, S>>) {
         for statement in statements {
             self.handle_statement(statement);
         }

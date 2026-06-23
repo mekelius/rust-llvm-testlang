@@ -9,27 +9,27 @@ use chumsky::input::IterInput;
 use chumsky::prelude::*;
 use std::error::Error;
 
-use crate::ast::Node;
+use crate::ast::{Node, SourceID, SourceIDSpan, SpannedNode};
 use crate::parser::function::function;
 
-type ParserError<'tokens> = chumsky::extra::Err<Rich<'tokens, Token>>;
+type ParserError<'tokens> = chumsky::extra::Err<Rich<'tokens, Token, SourceIDSpan>>;
 
-fn parser<'tokens, I>() -> impl Parser<'tokens, I, Spanned<Node>, ParserError<'tokens>> + Clone
+fn parser<'tokens, I>() -> impl Parser<'tokens, I, SpannedNode, ParserError<'tokens>> + Clone
 where
-    I: Input<'tokens, Token = Token, Span = SimpleSpan>,
+    I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
     let function = function();
 
     let program = function
         .repeated()
-        .collect::<Vec<Spanned<Node>>>()
+        .collect::<Vec<SpannedNode>>()
         .map(|e| Node::Program(e));
 
     program.spanned()
 }
 
-pub fn run(src: &str) -> Result<Spanned<Node>, Box<dyn Error>> {
-    let tokens = match lexer::run(src) {
+pub fn run(src: &str, source_id: SourceID) -> Result<SpannedNode, Box<dyn Error>> {
+    let tokens = match lexer::run(src, source_id) {
         Ok(tokens) => tokens,
         Err(_) => unreachable!(),
     };

@@ -1,4 +1,10 @@
-use chumsky::span::Spanned;
+use chumsky::span::{SimpleSpan, Spanned};
+
+pub type ByteOffset = usize;
+pub type SourceID = usize;
+pub type SourceIDSpan = SimpleSpan<ByteOffset, SourceID>;
+pub type SpannedNode = Spanned<Node, SourceIDSpan>;
+pub type SpannedString = Spanned<String, SourceIDSpan>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SourceLocation {
@@ -9,13 +15,13 @@ pub struct SourceLocation {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
-    Program(Vec<Spanned<Node>>),
+    Program(Vec<SpannedNode>),
 
     Function {
-        name: Spanned<String>,
-        return_type_string: Option<Spanned<String>>,
-        formals: Vec<Spanned<Node>>,
-        body: Box<Spanned<Node>>,
+        name: SpannedString,
+        return_type_string: Option<SpannedString>,
+        formals: Vec<SpannedNode>,
+        body: Box<SpannedNode>,
     },
     
     Identifier(String),
@@ -25,74 +31,74 @@ pub enum Node {
     BooleanLiteral(bool),
     UnitLiteral,
 
-    TypedExpression(String, Box<Spanned<Node>>),
+    TypedExpression(String, Box<SpannedNode>),
 
-    Formals(Vec<Spanned<Node>>),
+    Formals(Vec<SpannedNode>),
     UntypedFormal(String),
     TypedFormal(String, String),
-    FunctionBody(Vec<Spanned<Node>>),
+    FunctionBody(Vec<SpannedNode>),
     
-    Block(Vec<Spanned<Node>>),
-    ExpressionStatement(Box<Spanned<Node>>),
+    Block(Vec<SpannedNode>),
+    ExpressionStatement(Box<SpannedNode>),
 
     WhileStatement {
-        condition: Box<Spanned<Node>>,
-        body: Box<Spanned<Node>>,
+        condition: Box<SpannedNode>,
+        body: Box<SpannedNode>,
     },
     ForStatement {
-        init: Box<Spanned<Node>>,
-        condition: Box<Spanned<Node>>,
-        step: Box<Spanned<Node>>,
-        body: Box<Spanned<Node>>,
+        init: Box<SpannedNode>,
+        condition: Box<SpannedNode>,
+        step: Box<SpannedNode>,
+        body: Box<SpannedNode>,
     },
     IfStatement {
-        condition: Box<Spanned<Node>>,
-        body: Box<Spanned<Node>>,
+        condition: Box<SpannedNode>,
+        body: Box<SpannedNode>,
     },
-    IfElseStatement(Box<Spanned<Node>>, Box<Spanned<Node>>),
+    IfElseStatement(Box<SpannedNode>, Box<SpannedNode>),
     SwitchStatement {
-        matched_value_expression: Box<Spanned<Node>>,
-        cases: Vec<Spanned<Node>>,
+        matched_value_expression: Box<SpannedNode>,
+        cases: Vec<SpannedNode>,
     },
     Case {
         value: String,
-        body: Vec<Spanned<Node>>,
+        body: Vec<SpannedNode>,
     },
-    DefaultCase(Vec<Spanned<Node>>),
+    DefaultCase(Vec<SpannedNode>),
 
     ContinueStatement,
     BreakStatement,
 
     EmptyStatement,
 
-    LetStatement(String, Box<Spanned<Node>>),
-    ConstStatement(String, Box<Spanned<Node>>),
-    AssignmentStatement(String, Box<Spanned<Node>>),
+    LetStatement(String, Box<SpannedNode>),
+    ConstStatement(String, Box<SpannedNode>),
+    AssignmentStatement(String, Box<SpannedNode>),
 
-    ReturnStatement(Box<Spanned<Node>>),
+    ReturnStatement(Box<SpannedNode>),
     ValuelessReturnStatement,
 
-    ArgumentList(Vec<Spanned<Node>>),
+    ArgumentList(Vec<SpannedNode>),
     FunctionCall {
         callee: String,
-        argument_list: Vec<Spanned<Node>>,
+        argument_list: Vec<SpannedNode>,
     },
 
-    UnaryMinus(Box<Spanned<Node>>),
-    UnaryNot(Box<Spanned<Node>>),
+    UnaryMinus(Box<SpannedNode>),
+    UnaryNot(Box<SpannedNode>),
 
-    Equals(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    GreaterThan(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    LessThan(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    GreaterThanOrEquals(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    LessThanOrEquals(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    NotEquals(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    And(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    Or(Box<Spanned<Node>>, Box<Spanned<Node>>),
+    Equals(Box<SpannedNode>, Box<SpannedNode>),
+    GreaterThan(Box<SpannedNode>, Box<SpannedNode>),
+    LessThan(Box<SpannedNode>, Box<SpannedNode>),
+    GreaterThanOrEquals(Box<SpannedNode>, Box<SpannedNode>),
+    LessThanOrEquals(Box<SpannedNode>, Box<SpannedNode>),
+    NotEquals(Box<SpannedNode>, Box<SpannedNode>),
+    And(Box<SpannedNode>, Box<SpannedNode>),
+    Or(Box<SpannedNode>, Box<SpannedNode>),
 
-    Mul(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    Div(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    Add(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    Sub(Box<Spanned<Node>>, Box<Spanned<Node>>),
-    Mod(Box<Spanned<Node>>, Box<Spanned<Node>>),
+    Mul(Box<SpannedNode>, Box<SpannedNode>),
+    Div(Box<SpannedNode>, Box<SpannedNode>),
+    Add(Box<SpannedNode>, Box<SpannedNode>),
+    Sub(Box<SpannedNode>, Box<SpannedNode>),
+    Mod(Box<SpannedNode>, Box<SpannedNode>),
 }

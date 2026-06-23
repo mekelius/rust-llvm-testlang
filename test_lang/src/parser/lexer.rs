@@ -1,8 +1,10 @@
 use std::error::Error;
 
-use chumsky::span::SimpleSpan;
 use logos::Logos;
 use logos::skip;
+
+use crate::ast::SourceID;
+use crate::ast::SourceIDSpan;
 
 #[derive(Logos, Debug, PartialEq, Eq, Hash, Clone)]
 #[logos(skip r"[ \t\n\f]+")]
@@ -146,16 +148,20 @@ pub enum Token {
     NumberLiteral(String),
 }
 
-pub fn run(src: &str) -> Result<Vec<(Token, SimpleSpan)>, Box<dyn Error>> {
+pub fn run(src: &str, source_id: SourceID) -> Result<Vec<(Token, SourceIDSpan)>, Box<dyn Error>> {
     let lexer = Token::lexer(&src);
 
     let mut tokens = vec![];
     for (token, span) in lexer.spanned() {
         match token {
-            Ok(token) => tokens.push((token, span.into())),
-            // {
-                // let simple_span: SimpleSpan = span.into();
-                // tokens.push(token.with_span(simple_span))},
+            Ok(token) => tokens.push((
+                token,
+                SourceIDSpan {
+                    start: span.start,
+                    end: span.end,
+                    context: source_id,
+                },
+            )),
             Err(e) => {
                 panic!("lexer error at {:?}: {:?}", span, e);
             }
