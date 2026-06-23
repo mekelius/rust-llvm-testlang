@@ -19,7 +19,7 @@ macro_rules! in_curly_braces {
     };
 }
 
-pub fn type_expression<'src, I>() -> impl Parser<'src, I, Spanned<String>> + Clone
+pub fn type_expression<'src, I>() -> impl Parser<'src, I, Spanned<String>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -28,7 +28,7 @@ where
     }.spanned()
 }
 
-pub fn identifier<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn identifier<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -38,7 +38,7 @@ where
     .spanned()
 }
 
-pub fn identifier_as_string<'src, I>() -> impl Parser<'src, I, Spanned<String>> + Clone
+pub fn identifier_as_string<'src, I>() -> impl Parser<'src, I, Spanned<String>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {

@@ -6,9 +6,7 @@ pub mod statement;
 
 use self::lexer::Token;
 use chumsky::input::IterInput;
-use chumsky::input::ValueInput;
 use chumsky::prelude::*;
-use chumsky::span::Span;
 use std::error::Error;
 
 use crate::ast::Node;
@@ -16,7 +14,7 @@ use crate::parser::function::function;
 
 type ParserError<'tokens> = chumsky::extra::Err<Rich<'tokens, Token>>;
 
-fn parser<'tokens, I>() -> impl Parser<'tokens, I, Spanned<Node>> + Clone
+fn parser<'tokens, I>() -> impl Parser<'tokens, I, Spanned<Node>, ParserError<'tokens>> + Clone
 where
     I: Input<'tokens, Token = Token, Span = SimpleSpan>,
 {

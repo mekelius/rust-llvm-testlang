@@ -1,10 +1,6 @@
 use std::error::Error;
 
 use chumsky::span::SimpleSpan;
-use chumsky::span::SimpleSpanned;
-use chumsky::span::Span;
-use chumsky::span::SpanWrap;
-use chumsky::span::Spanned;
 use logos::Logos;
 use logos::skip;
 

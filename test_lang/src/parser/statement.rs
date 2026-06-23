@@ -13,7 +13,7 @@ enum PostfixAssignment {
     Negate,
 }
 
-fn plus_plus<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>> + Clone
+fn plus_plus<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -23,7 +23,7 @@ where
         .spanned()
 }
 
-fn minus_minus<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>> + Clone
+fn minus_minus<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -33,7 +33,7 @@ where
         .spanned()
 }
 
-fn bang_bang<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>> + Clone
+fn bang_bang<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -43,7 +43,7 @@ where
         .spanned()
 }
 
-pub fn shorthand_assignment_operator<'src, I>() -> impl Parser<'src, I, Spanned<Token>> + Clone
+pub fn shorthand_assignment_operator<'src, I>() -> impl Parser<'src, I, Spanned<Token>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -57,28 +57,28 @@ where
     .spanned()
 }
 
-fn postfix_assignment_operator<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>> + Clone
+fn postfix_assignment_operator<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
     choice((plus_plus(), minus_minus(), bang_bang()))
 }
 
-pub fn break_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn break_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
     just(Token::Break).to(Node::BreakStatement).spanned()
 }
 
-pub fn empty_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn empty_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
     empty().to(Node::EmptyStatement).spanned()
 }
 
-pub fn expression_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn expression_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -87,7 +87,7 @@ where
         .spanned()
 }
 
-pub fn assignment<'src, I>() -> impl Parser<'src, I, (Spanned<String>, Spanned<Node>)> + Clone
+pub fn assignment<'src, I>() -> impl Parser<'src, I, (Spanned<String>, Spanned<Node>), ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -97,7 +97,7 @@ where
 }
 
 pub fn shorthand_assignment<'src, I>()
--> impl Parser<'src, I, (Spanned<String>, Spanned<Node>)> + Clone
+-> impl Parser<'src, I, (Spanned<String>, Spanned<Node>), ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -137,7 +137,7 @@ where
 }
 
 pub fn postfix_assignment<'src, I>()
--> impl Parser<'src, I, (Spanned<String>, Spanned<Node>)> + Clone
+-> impl Parser<'src, I, (Spanned<String>, Spanned<Node>), ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -166,7 +166,7 @@ where
         })
 }
 
-pub fn const_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn const_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -176,7 +176,7 @@ where
         .spanned()
 }
 
-pub fn let_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn let_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -186,7 +186,7 @@ where
         .spanned()
 }
 
-pub fn assignment_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn assignment_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -195,7 +195,7 @@ where
         .spanned()
 }
 
-pub fn valueless_return_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn valueless_return_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -204,7 +204,7 @@ where
         .spanned()
 }
 
-pub fn return_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn return_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -214,14 +214,14 @@ where
         .spanned()
 }
 
-pub fn continue_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn continue_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
     just(Token::Continue).to(Node::ContinueStatement).spanned()
 }
 
-pub fn statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {

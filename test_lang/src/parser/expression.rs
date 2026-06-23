@@ -10,7 +10,7 @@ use crate::{
     },
 };
 
-pub fn number_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn number_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -20,7 +20,7 @@ where
     .spanned()
 }
 
-pub fn string_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn string_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -30,7 +30,7 @@ where
     .spanned()
 }
 
-pub fn boolean_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn boolean_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -41,7 +41,7 @@ where
     .spanned()
 }
 
-pub fn unit_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn unit_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -50,7 +50,7 @@ where
         .to(Node::UnitLiteral)
         .spanned()
 }
-pub fn binary_op_1<'src, I>() -> impl Parser<'src, I, Spanned<Token>> + Clone
+pub fn binary_op_1<'src, I>() -> impl Parser<'src, I, Spanned<Token>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -62,7 +62,7 @@ where
     .spanned()
 }
 
-pub fn binary_op_2<'src, I>() -> impl Parser<'src, I, Spanned<Token>> + Clone
+pub fn binary_op_2<'src, I>() -> impl Parser<'src, I, Spanned<Token>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -75,7 +75,7 @@ where
     .spanned()
 }
 
-pub fn binary_op_3<'src, I>() -> impl Parser<'src, I, Spanned<Token>> + Clone
+pub fn binary_op_3<'src, I>() -> impl Parser<'src, I, Spanned<Token>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -90,7 +90,7 @@ where
     .spanned()
 }
 
-pub fn literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
@@ -102,7 +102,7 @@ where
     ))
 }
 
-pub fn expression<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn expression<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {

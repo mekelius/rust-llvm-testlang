@@ -5,13 +5,13 @@ use crate::{
     in_curly_braces, parenthesized,
     parser::{
         ParserError,
-        common::{identifier, identifier_as_string, type_expression},
+        common::{identifier_as_string, type_expression},
         lexer::Token,
         statement::statement,
     },
 };
 
-pub fn function<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+pub fn function<'src, I>() -> impl Parser<'src, I, Spanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SimpleSpan>,
 {
