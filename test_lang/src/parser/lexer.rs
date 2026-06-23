@@ -3,8 +3,8 @@ use std::error::Error;
 use logos::Logos;
 use logos::skip;
 
-use crate::ast::SourceID;
-use crate::ast::SourceIDSpan;
+use crate::span::SourceID;
+use crate::span::SourceIDSpan;
 
 #[derive(Logos, Debug, PartialEq, Eq, Hash, Clone)]
 #[logos(skip r"[ \t\n\f]+")]

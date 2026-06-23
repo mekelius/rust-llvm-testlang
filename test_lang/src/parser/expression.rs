@@ -1,16 +1,18 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::{Node, SourceIDSpan, SpannedNode},
+    ast::Node,
     parenthesized,
     parser::{
         ParserError,
         common::{identifier, type_expression},
         lexer::Token,
     },
+    span::{SourceIDSpan, SourceIDSpanned},
 };
 
-pub fn number_literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn number_literal<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -20,7 +22,8 @@ where
     .spanned()
 }
 
-pub fn string_literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn string_literal<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -30,7 +33,8 @@ where
     .spanned()
 }
 
-pub fn boolean_literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn boolean_literal<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -41,7 +45,8 @@ where
     .spanned()
 }
 
-pub fn unit_literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn unit_literal<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -50,7 +55,8 @@ where
         .to(Node::UnitLiteral)
         .spanned()
 }
-pub fn binary_op_1<'src, I>() -> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
+pub fn binary_op_1<'src, I>()
+-> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -62,7 +68,8 @@ where
     .spanned()
 }
 
-pub fn binary_op_2<'src, I>() -> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
+pub fn binary_op_2<'src, I>()
+-> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -75,7 +82,8 @@ where
     .spanned()
 }
 
-pub fn binary_op_3<'src, I>() -> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
+pub fn binary_op_3<'src, I>()
+-> impl Parser<'src, I, Spanned<Token, SourceIDSpan>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -90,7 +98,7 @@ where
     .spanned()
 }
 
-pub fn literal<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn literal<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -102,7 +110,8 @@ where
     ))
 }
 
-pub fn expression<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn expression<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -112,7 +121,7 @@ where
         let argument_list = parenthesized!(
             expr.clone()
                 .separated_by(just(Token::Comma))
-                .collect::<Vec<SpannedNode>>()
+                .collect::<Vec<SourceIDSpanned<Node>>>()
                 .map(|e| Node::ArgumentList(e))
         );
 

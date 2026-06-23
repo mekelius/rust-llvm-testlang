@@ -1,17 +1,18 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::{Node, SourceIDSpan, SpannedString},
+    ast::Node,
     in_curly_braces, parenthesized,
     parser::{
-        ParserError, SpannedNode,
+        ParserError,
         common::{identifier_as_string, type_expression},
         lexer::Token,
         statement::statement,
     },
+    span::{SourceIDSpan, SourceIDSpanned},
 };
 
-pub fn function<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn function<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -35,7 +36,7 @@ where
     let function_body = in_curly_braces!(
         statement
             .repeated()
-            .collect::<Vec<SpannedNode>>()
+            .collect::<Vec<SourceIDSpanned<Node>>>()
             .map(|e| Node::FunctionBody(e))
     )
     .spanned();
@@ -43,7 +44,7 @@ where
     let formals = parenthesized!(
         formal
             .separated_by(just(Token::Comma))
-            .collect::<Vec<SpannedNode>>()
+            .collect::<Vec<SourceIDSpanned<Node>>>()
             .map(|e| Node::Formals(e))
     )
     .spanned();
@@ -59,8 +60,11 @@ where
         .then(function_body)
         .map(
             |(((name, formals), return_type_string), function_body): (
-                ((SpannedString, SpannedNode), Option<SpannedString>),
-                SpannedNode,
+                (
+                    (SourceIDSpanned<String>, SourceIDSpanned<Node>),
+                    Option<SourceIDSpanned<String>>,
+                ),
+                SourceIDSpanned<Node>,
             )| {
                 let formals = match formals.inner {
                     Node::Formals(formals) => formals,

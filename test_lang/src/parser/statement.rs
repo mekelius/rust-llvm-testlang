@@ -1,9 +1,9 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::{Node, SourceIDSpan, SpannedNode, SpannedString},
+    ast::Node,
     in_curly_braces, parenthesized,
-    parser::{ParserError, common::identifier_as_string, expression::expression, lexer::Token},
+    parser::{ParserError, common::identifier_as_string, expression::expression, lexer::Token}, span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[derive(Clone)]
@@ -13,7 +13,7 @@ enum PostfixAssignment {
     Negate,
 }
 
-fn plus_plus<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment, SourceIDSpan>, ParserError<'src>> + Clone
+fn plus_plus<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<PostfixAssignment>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -64,21 +64,21 @@ where
     choice((plus_plus(), minus_minus(), bang_bang()))
 }
 
-pub fn break_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn break_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Break).to(Node::BreakStatement).spanned()
 }
 
-pub fn empty_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn empty_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     empty().to(Node::EmptyStatement).spanned()
 }
 
-pub fn expression_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn expression_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -87,7 +87,7 @@ where
         .spanned()
 }
 
-pub fn assignment<'src, I>() -> impl Parser<'src, I, (SpannedString, SpannedNode), ParserError<'src>> + Clone
+pub fn assignment<'src, I>() -> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Node>), ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -97,7 +97,7 @@ where
 }
 
 pub fn shorthand_assignment<'src, I>()
--> impl Parser<'src, I, (SpannedString, SpannedNode), ParserError<'src>> + Clone
+-> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Node>), ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -137,7 +137,7 @@ where
 }
 
 pub fn postfix_assignment<'src, I>()
--> impl Parser<'src, I, (SpannedString, SpannedNode), ParserError<'src>> + Clone
+-> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Node>), ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -166,7 +166,7 @@ where
         })
 }
 
-pub fn const_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn const_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -176,7 +176,7 @@ where
         .spanned()
 }
 
-pub fn let_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn let_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -186,7 +186,7 @@ where
         .spanned()
 }
 
-pub fn assignment_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn assignment_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -195,7 +195,7 @@ where
         .spanned()
 }
 
-pub fn valueless_return_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn valueless_return_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -204,7 +204,7 @@ where
         .spanned()
 }
 
-pub fn return_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn return_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -214,14 +214,14 @@ where
         .spanned()
 }
 
-pub fn continue_statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn continue_statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Continue).to(Node::ContinueStatement).spanned()
 }
 
-pub fn statement<'src, I>() -> impl Parser<'src, I, SpannedNode, ParserError<'src>> + Clone
+pub fn statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -248,7 +248,7 @@ where
             })
             .spanned();
 
-        let statement_list = p.clone().repeated().collect::<Vec<SpannedNode>>();
+        let statement_list = p.clone().repeated().collect::<Vec<SourceIDSpanned<Node>>>();
 
         let case = just(Token::Case)
             .ignore_then(select! {
