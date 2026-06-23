@@ -1,3 +1,5 @@
+use chumsky::span::Spanned;
+
 use crate::ast::Node;
 
 use super::CodeGen;
@@ -45,7 +47,7 @@ impl<'ctx> CodeGen<'ctx> {
         };
     }
 
-    pub fn handle_block(&mut self, statements: &Vec<Node>) {
+    pub fn handle_block(&mut self, statements: &Vec<Spanned<Node>>) {
         for statement in statements {
             self.handle_statement(statement);
         }

@@ -5,32 +5,40 @@ pub mod lexer;
 pub mod statement;
 
 use self::lexer::Token;
+use chumsky::input::IterInput;
+use chumsky::input::ValueInput;
 use chumsky::prelude::*;
+use chumsky::span::Span;
 use std::error::Error;
 
 use crate::ast::Node;
 use crate::parser::function::function;
 
-type ParserError<'src> = chumsky::extra::Err<Rich<'src, Token>>;
+type ParserError<'tokens> = chumsky::extra::Err<Rich<'tokens, Token>>;
 
-fn parser<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
+fn parser<'tokens, I>() -> impl Parser<'tokens, I, Spanned<Node>> + Clone
+where
+    I: Input<'tokens, Token = Token, Span = SimpleSpan>,
+{
     let function = function();
 
     let program = function
         .repeated()
-        .collect::<Vec<Node>>()
+        .collect::<Vec<Spanned<Node>>>()
         .map(|e| Node::Program(e));
 
-    program.boxed()
+    program.spanned()
 }
 
-pub fn run(src: &str) -> Result<Node, Box<dyn Error>> {
+pub fn run(src: &str) -> Result<Spanned<Node>, Box<dyn Error>> {
     let tokens = match lexer::run(src) {
         Ok(tokens) => tokens,
         Err(_) => unreachable!(),
     };
 
-    match parser().parse(&tokens).into_result() {
+    let input = IterInput::new(tokens.iter().cloned(), tokens.last().unwrap().1);
+
+    match parser().parse(input).into_result() {
         Ok(result) => Ok(result),
         Err(e) => panic!("parse error: {:#?}", e),
     }

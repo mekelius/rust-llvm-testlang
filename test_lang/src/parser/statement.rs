@@ -3,12 +3,7 @@ use chumsky::prelude::*;
 use crate::{
     ast::Node,
     in_curly_braces, parenthesized,
-    parser::{
-        ParserError,
-        common::identifier_as_string,
-        expression::expression,
-        lexer::{Token, TokenData},
-    },
+    parser::{ParserError, common::identifier_as_string, expression::expression, lexer::Token},
 };
 
 #[derive(Clone)]
@@ -18,28 +13,221 @@ enum PostfixAssignment {
     Negate,
 }
 
-pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
-    let expression = expression();
-    let identifier_as_string = identifier_as_string();
-
-    let plus_plus = just(Token::Plus)
+fn plus_plus<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Plus)
         .then(just(Token::Plus))
-        .to(PostfixAssignment::Increment);
-    let minus_minus = just(Token::Minus)
-        .then(just(Token::Minus))
-        .to(PostfixAssignment::Decrement);
-    let bang_bang = just(Token::Bang)
-        .then(just(Token::Bang))
-        .to(PostfixAssignment::Negate);
+        .to(PostfixAssignment::Increment)
+        .spanned()
+}
 
-    let shorthand_assignment_operator = choice((
+fn minus_minus<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Minus)
+        .then(just(Token::Minus))
+        .to(PostfixAssignment::Decrement)
+        .spanned()
+}
+
+fn bang_bang<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Bang)
+        .then(just(Token::Bang))
+        .to(PostfixAssignment::Negate)
+        .spanned()
+}
+
+pub fn shorthand_assignment_operator<'src, I>() -> impl Parser<'src, I, Spanned<Token>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    choice((
         just(Token::PlusEquals),
         just(Token::MinusEquals),
         just(Token::AsteriskEquals),
         just(Token::SlashEquals),
         just(Token::PercentEquals),
-    ));
-    let postfix_assignment_operator = choice((plus_plus, minus_minus, bang_bang));
+    ))
+    .spanned()
+}
+
+fn postfix_assignment_operator<'src, I>() -> impl Parser<'src, I, Spanned<PostfixAssignment>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    choice((plus_plus(), minus_minus(), bang_bang()))
+}
+
+pub fn break_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Break).to(Node::BreakStatement).spanned()
+}
+
+pub fn empty_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    empty().to(Node::EmptyStatement).spanned()
+}
+
+pub fn expression_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    expression()
+        .map(|e| Node::ExpressionStatement(Box::new(e)))
+        .spanned()
+}
+
+pub fn assignment<'src, I>() -> impl Parser<'src, I, (Spanned<String>, Spanned<Node>)> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    identifier_as_string()
+        .then_ignore(just(Token::SingleEquals))
+        .then(expression())
+}
+
+pub fn shorthand_assignment<'src, I>()
+-> impl Parser<'src, I, (Spanned<String>, Spanned<Node>)> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    identifier_as_string()
+        .then(shorthand_assignment_operator())
+        .then(expression())
+        .map(|((name, operator), rhs)| {
+            let rhs_span = rhs.span.clone();
+            (
+                name.clone(),
+                match operator.inner {
+                    Token::PlusEquals => Node::Add(
+                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
+                        Box::new(rhs),
+                    ),
+                    Token::MinusEquals => Node::Sub(
+                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
+                        Box::new(rhs),
+                    ),
+                    Token::AsteriskEquals => Node::Mul(
+                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
+                        Box::new(rhs),
+                    ),
+                    Token::SlashEquals => Node::Div(
+                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
+                        Box::new(rhs),
+                    ),
+                    Token::PercentEquals => Node::Mod(
+                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
+                        Box::new(rhs),
+                    ),
+                    _ => unreachable!("Unhandled shorthand assignment operator"),
+                }
+                .with_span(operator.span.union(rhs_span)),
+            )
+        })
+}
+
+pub fn postfix_assignment<'src, I>()
+-> impl Parser<'src, I, (Spanned<String>, Spanned<Node>)> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    identifier_as_string()
+        .then(postfix_assignment_operator())
+        .map(|(name, operator)| {
+            (
+                name.clone(),
+                match operator.inner {
+                    PostfixAssignment::Increment => Node::Add(
+                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
+                        Box::new(Node::NumberLiteral("1".into()).with_span(operator.span)),
+                    )
+                    .with_span(operator.span),
+                    PostfixAssignment::Decrement => Node::Sub(
+                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
+                        Box::new(Node::NumberLiteral("1".into()).with_span(operator.span)),
+                    )
+                    .with_span(operator.span),
+                    PostfixAssignment::Negate => {
+                        Node::UnaryNot(Box::new(Node::Identifier(name.inner).with_span(name.span)))
+                    }
+                    .with_span(operator.span),
+                },
+            )
+        })
+}
+
+pub fn const_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Const)
+        .ignore_then(assignment())
+        .map(|(name, value)| Node::ConstStatement(name.inner, Box::new(value)))
+        .spanned()
+}
+
+pub fn let_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Let)
+        .ignore_then(assignment())
+        .map(|(name, value)| Node::LetStatement(name.inner, Box::new(value)))
+        .spanned()
+}
+
+pub fn assignment_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    choice((assignment(), shorthand_assignment(), postfix_assignment()))
+        .map(|(name, value)| Node::AssignmentStatement(name.inner, Box::new(value)))
+        .spanned()
+}
+
+pub fn valueless_return_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Return)
+        .to(Node::ValuelessReturnStatement)
+        .spanned()
+}
+
+pub fn return_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Return)
+        .ignore_then(expression())
+        .map(|expr| Node::ReturnStatement(Box::new(expr)))
+        .spanned()
+}
+
+pub fn continue_statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::Continue).to(Node::ContinueStatement).spanned()
+}
+
+pub fn statement<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    let expression = expression();
+    let let_statement = let_statement();
+    let assignment_statement = assignment_statement();
 
     recursive(|p| {
         let if_statement = just(Token::If)
@@ -49,7 +237,7 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
                 condition: Box::new(condition),
                 body: Box::new(body),
             })
-            .boxed();
+            .spanned();
 
         let if_else_statement = if_statement
             .clone()
@@ -57,22 +245,25 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
             .then(p.clone())
             .map(|(if_branch, else_branch)| {
                 Node::IfElseStatement(Box::new(if_branch), Box::new(else_branch))
-            });
+            })
+            .spanned();
 
-        let statement_list = p.clone().repeated().collect::<Vec<Node>>();
+        let statement_list = p.clone().repeated().collect::<Vec<Spanned<Node>>>();
 
         let case = just(Token::Case)
             .ignore_then(select! {
-                Token::NumberLiteral(TokenData{value}) => value,
+                Token::NumberLiteral(value) => value,
             })
             .then_ignore(just(Token::Colon))
             .then(statement_list.clone())
-            .map(|(value, body)| Node::Case { value, body });
+            .map(|(value, body)| Node::Case { value, body })
+            .spanned();
 
         let default_case = just(Token::Default)
             .ignore_then(just(Token::Colon))
             .ignore_then(statement_list.clone())
-            .map(|case_body| Node::DefaultCase(case_body));
+            .map(|case_body| Node::DefaultCase(case_body))
+            .spanned();
 
         let switch_statement = just(Token::Switch)
             .ignore_then(expression.clone())
@@ -82,126 +273,37 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
             .map(|(expression, cases)| Node::SwitchStatement {
                 matched_value_expression: Box::new(expression),
                 cases,
-            });
+            })
+            .spanned();
 
-        let empty_statement = empty().to(Node::EmptyStatement).boxed();
-
-        let block = in_curly_braces!(statement_list.clone().map(|e| Node::Block(e))).boxed();
-
-        let assignment = identifier_as_string
-            .clone()
-            .then_ignore(just(Token::SingleEquals))
-            .then(expression.clone());
-
-        let shorthand_assignment = identifier_as_string
-            .clone()
-            .then(shorthand_assignment_operator)
-            .then(expression.clone())
-            .map(|((name, operator), rhs)| {
-                (
-                    name.clone(),
-                    match operator {
-                        Token::PlusEquals => {
-                            Node::Add(Box::new(Node::Identifier(name)), Box::new(rhs))
-                        }
-                        Token::MinusEquals => {
-                            Node::Sub(Box::new(Node::Identifier(name)), Box::new(rhs))
-                        }
-                        Token::AsteriskEquals => {
-                            Node::Mul(Box::new(Node::Identifier(name)), Box::new(rhs))
-                        }
-                        Token::SlashEquals => {
-                            Node::Div(Box::new(Node::Identifier(name)), Box::new(rhs))
-                        }
-                        Token::PercentEquals => {
-                            Node::Mod(Box::new(Node::Identifier(name)), Box::new(rhs))
-                        }
-                        _ => unreachable!("Unhandled shorthand assignment operator"),
-                    },
-                )
-            });
-
-        let postfix_assignment = identifier_as_string
-            .clone()
-            .then(postfix_assignment_operator)
-            .map(|(name, operator)| {
-                (
-                    name.clone(),
-                    match operator {
-                        PostfixAssignment::Increment => Node::Add(
-                            Box::new(Node::Identifier(name)),
-                            Box::new(Node::NumberLiteral("1".into())),
-                        ),
-                        PostfixAssignment::Decrement => Node::Sub(
-                            Box::new(Node::Identifier(name)),
-                            Box::new(Node::NumberLiteral("1".into())),
-                        ),
-                        PostfixAssignment::Negate => {
-                            Node::UnaryNot(Box::new(Node::Identifier(name)))
-                        }
-                    },
-                )
-            });
-
-        let const_statement = just(Token::Const)
-            .ignore_then(assignment.clone())
-            .map(|(name, value)| Node::ConstStatement(name, Box::new(value)))
-            .boxed();
-
-        let let_statement = just(Token::Let)
-            .ignore_then(assignment.clone())
-            .map(|(name, value)| Node::LetStatement(name, Box::new(value)))
-            .boxed();
-
-        let assignment_statement =
-            choice((assignment.clone(), shorthand_assignment, postfix_assignment))
-                .map(|(name, value)| Node::AssignmentStatement(name, Box::new(value)))
-                .boxed();
-
-        let valueless_return_statement = just(Token::Return).to(Node::ValuelessReturnStatement);
-
-        let return_statement = just(Token::Return)
-            .ignore_then(expression.clone())
-            .map(|expr| Node::ReturnStatement(Box::new(expr)))
-            .boxed();
-
-        let continue_statement = just(Token::Continue).to(Node::ContinueStatement);
-        let break_statement = just(Token::Break).to(Node::BreakStatement);
-
-        let expression_statement = expression
-            .clone()
-            .map(|e| Node::ExpressionStatement(Box::new(e)));
+        let block = in_curly_braces!(statement_list.clone().map(|e| Node::Block(e))).spanned();
 
         let simple_statement = choice((
             let_statement.clone(),
-            const_statement.clone(),
+            const_statement(),
             assignment_statement.clone(),
-            return_statement.clone(),
-            continue_statement.clone(),
-            break_statement.clone(),
-            valueless_return_statement.clone(),
-            expression_statement.clone(),
-            empty_statement.clone(),
-        ))
-        .boxed();
-        let single_statement = simple_statement
-            .clone()
-            .then_ignore(just(Token::Semicolon))
-            .boxed();
+            return_statement(),
+            continue_statement(),
+            break_statement(),
+            valueless_return_statement(),
+            expression_statement(),
+            empty_statement(),
+        ));
+
+        let single_statement = simple_statement.clone().then_ignore(just(Token::Semicolon));
 
         // For loop
-        let for_init = let_statement.clone().or(assignment_statement.clone());
+        let for_init = choice((let_statement.clone(), assignment_statement.clone()));
         let for_condition = expression.clone();
         let for_step = simple_statement.clone();
 
         let for_statement = just(Token::For)
             .ignore_then(parenthesized!(
                 for_init
-                    .clone()
                     .then_ignore(just(Token::Semicolon))
-                    .then(for_condition.clone())
+                    .then(for_condition)
                     .then_ignore(just(Token::Semicolon))
-                    .then(for_step.clone())
+                    .then(for_step)
             ))
             .then(p.clone())
             .map(|(((init, condition), step), body)| Node::ForStatement {
@@ -210,7 +312,7 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
                 step: Box::new(step),
                 body: Box::new(body),
             })
-            .boxed();
+            .spanned();
 
         let while_statement = just(Token::While)
             .ignore_then(parenthesized!(expression.clone()))
@@ -219,18 +321,16 @@ pub fn statement<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'
                 condition: Box::new(condition),
                 body: Box::new(body),
             })
-            .boxed();
+            .spanned();
 
         let complex_statement = choice((
-            if_else_statement.clone(),
-            if_statement.clone(),
-            switch_statement.clone(),
-            while_statement.clone(),
-            for_statement.clone(),
-        ))
-        .boxed();
+            if_else_statement,
+            if_statement,
+            switch_statement,
+            while_statement,
+            for_statement,
+        ));
 
-        single_statement.or(block).or(complex_statement).boxed()
+        choice((single_statement, block, complex_statement))
     })
-    .boxed()
 }

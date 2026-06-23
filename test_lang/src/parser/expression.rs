@@ -6,64 +6,121 @@ use crate::{
     parser::{
         ParserError,
         common::{identifier, type_expression},
-        lexer::{Token, TokenData},
+        lexer::Token,
     },
 };
 
-pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<'src>> + Clone {
-    let identifier = identifier();
+pub fn number_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    select! {
+        Token::NumberLiteral(value) => Node::NumberLiteral(value),
+    }
+    .spanned()
+}
 
-    let number_literal = select! {
-        Token::NumberLiteral(TokenData {value}) => Node::NumberLiteral(value),
-    };
+pub fn string_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    select! {
+        Token::StringLiteral(value) => Node::StringLiteral(value),
+    }
+    .spanned()
+}
 
-    let string_literal = select! {
-        Token::StringLiteral(TokenData {value}) => Node::StringLiteral(value),
-    };
-
-    let boolean_literal = select! {
+pub fn boolean_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    select! {
         Token::True => Node::BooleanLiteral(true),
         Token::False => Node::BooleanLiteral(false),
-    };
+    }
+    .spanned()
+}
 
-    let unit_literal = just(Token::LParenthesis)
+pub fn unit_literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    just(Token::LParenthesis)
         .ignore_then(just(Token::RParenthesis))
-        .to(Node::UnitLiteral);
-
-    let binary_op_1 = choice((
+        .to(Node::UnitLiteral)
+        .spanned()
+}
+pub fn binary_op_1<'src, I>() -> impl Parser<'src, I, Spanned<Token>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    choice((
         just(Token::Asterisk),
         just(Token::Slash),
         just(Token::Percent),
-    ));
-    let binary_op_2 = choice((
+    ))
+    .spanned()
+}
+
+pub fn binary_op_2<'src, I>() -> impl Parser<'src, I, Spanned<Token>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    choice((
         just(Token::Plus),
         just(Token::Minus),
         just(Token::DoubleAmpersand),
         just(Token::DoublePipe),
-    ));
-    let binary_op_3 = choice((
+    ))
+    .spanned()
+}
+
+pub fn binary_op_3<'src, I>() -> impl Parser<'src, I, Spanned<Token>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    choice((
         just(Token::DoubleEquals),
         just(Token::GreaterThan),
         just(Token::LessThan),
         just(Token::GreaterThanOrEquals),
         just(Token::LessThanOrEquals),
         just(Token::NotEquals),
-    ));
+    ))
+    .spanned()
+}
+
+pub fn literal<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    choice((
+        string_literal(),
+        number_literal(),
+        boolean_literal(),
+        unit_literal(),
+    ))
+}
+
+pub fn expression<'src, I>() -> impl Parser<'src, I, Spanned<Node>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SimpleSpan>,
+{
+    let identifier = identifier();
 
     recursive(|expr| {
         let argument_list = parenthesized!(
             expr.clone()
                 .separated_by(just(Token::Comma))
-                .collect::<Vec<Node>>()
+                .collect::<Vec<Spanned<Node>>>()
                 .map(|e| Node::ArgumentList(e))
-        )
-        .boxed();
+        );
 
         let function_call = identifier
             .clone()
             .then(argument_list)
-            .map(|(identifier, arguments)| {
-                let callee = match identifier {
+            .map(|(callee_expression, arguments)| {
+                let callee = match callee_expression.inner {
                     Node::Identifier(value) => value,
                     _ => todo!(),
                 };
@@ -78,80 +135,71 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
                     argument_list,
                 }
             })
-            .boxed();
-
-        let literal = choice((
-            string_literal.clone(),
-            number_literal.clone(),
-            boolean_literal.clone(),
-            unit_literal,
-        ))
-        .boxed();
+            .spanned();
 
         let typed_expression = type_expression()
             .clone()
             .then(expr.clone())
-            .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)));
+            .map(|(type_, expression)| Node::TypedExpression(type_.inner, Box::new(expression)))
+            .spanned();
 
         let term = recursive(|term| {
             let unary_not_expression = just(Token::Minus)
                 .ignore_then(term.clone())
-                .map(|expression| Node::UnaryMinus(Box::new(expression)));
+                .map(|expression| Node::UnaryMinus(Box::new(expression)))
+                .spanned();
 
             let unary_minus_expression = just(Token::Bang)
                 .ignore_then(term.clone())
-                .map(|expression| Node::UnaryNot(Box::new(expression)));
+                .map(|expression| Node::UnaryNot(Box::new(expression)))
+                .spanned();
 
             let unary_expression = choice((unary_minus_expression, unary_not_expression));
 
             choice((
                 unary_expression.clone(),
-                function_call.clone(),
+                function_call,
                 identifier.clone(),
-                literal.clone(),
-                typed_expression.clone(),
+                literal(),
+                typed_expression,
                 parenthesized!(expr.clone()),
             ))
         });
 
-        let binary_expression_1 = term
-            .clone()
-            .foldl(
-                binary_op_1.clone().then(term.clone()).repeated(),
-                |lhs, (op, rhs)| match op {
+        let binary_expression_1 = term.clone().foldl(
+            binary_op_1().then(term.clone()).repeated(),
+            |lhs, (op, rhs)| {
+                let span = lhs.span.union(op.span).union(rhs.span);
+                match op.inner {
                     Token::Asterisk => Node::Mul(Box::new(lhs), Box::new(rhs)),
                     Token::Slash => Node::Div(Box::new(lhs), Box::new(rhs)),
                     Token::Percent => Node::Mod(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
-                },
-            )
-            .boxed();
+                }
+                .with_span(span)
+            },
+        );
 
-        let binary_expression_2 = binary_expression_1
-            .clone()
-            .foldl(
-                binary_op_2
-                    .clone()
-                    .then(binary_expression_1.clone())
-                    .repeated(),
-                |lhs, (op, rhs)| match op {
+        let binary_expression_2 = binary_expression_1.clone().foldl(
+            binary_op_2().then(binary_expression_1.clone()).repeated(),
+            |lhs, (op, rhs)| {
+                let span = lhs.span.union(op.span).union(rhs.span);
+                match op.inner {
                     Token::Plus => Node::Add(Box::new(lhs), Box::new(rhs)),
                     Token::Minus => Node::Sub(Box::new(lhs), Box::new(rhs)),
                     Token::DoubleAmpersand => Node::And(Box::new(lhs), Box::new(rhs)),
                     Token::DoublePipe => Node::Or(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
-                },
-            )
-            .boxed();
+                }
+                .with_span(span)
+            },
+        );
 
-        let binary_expression_3 = binary_expression_2
-            .clone()
-            .foldl(
-                binary_op_3
-                    .clone()
-                    .then(binary_expression_2.clone())
-                    .repeated(),
-                |lhs, (op, rhs)| match op {
+        let binary_expression_3 = binary_expression_2.clone().foldl(
+            binary_op_3().then(binary_expression_2.clone()).repeated(),
+            |lhs, (op, rhs)| {
+                let span = lhs.span.union(op.span).union(rhs.span);
+                match op.inner {
                     Token::DoubleEquals => Node::Equals(Box::new(lhs), Box::new(rhs)),
                     Token::GreaterThan => Node::GreaterThan(Box::new(lhs), Box::new(rhs)),
                     Token::LessThan => Node::LessThan(Box::new(lhs), Box::new(rhs)),
@@ -161,19 +209,17 @@ pub fn expression<'src>() -> impl Parser<'src, &'src [Token], Node, ParserError<
                     Token::LessThanOrEquals => Node::LessThanOrEquals(Box::new(lhs), Box::new(rhs)),
                     Token::NotEquals => Node::NotEquals(Box::new(lhs), Box::new(rhs)),
                     _ => unreachable!(),
-                },
-            )
-            .boxed();
+                }
+                .with_span(span)
+            },
+        );
 
-        let expression = choice((
+        choice((
             binary_expression_3,
             binary_expression_2,
             binary_expression_1,
             term,
             parenthesized!(expr.clone()),
         ))
-        .boxed();
-
-        expression
     })
 }

@@ -1,3 +1,4 @@
+use chumsky::span::Spanned;
 use inkwell::{basic_block::BasicBlock, types::StringRadix::Decimal, values::IntValue};
 
 use crate::{ast::Node, codegen::CodeGen};
@@ -9,7 +10,7 @@ struct HandleCasesReturn<'ctx> {
 
 impl<'ctx> CodeGen<'ctx> {
     /** Returns true if the block all_cases_returned */
-    pub fn handle_switch(&mut self, matched_value_expression: &Node, body: &Vec<Node>) {
+    pub fn handle_switch(&mut self, matched_value_expression: &Node, body: &Vec<Spanned<Node>>) {
         let matched_value = self.handle_expression(matched_value_expression);
 
         self.scopes.push_new_scope();
@@ -60,7 +61,7 @@ impl<'ctx> CodeGen<'ctx> {
     /** Returned default block will be the after_block if no default case was encountered */
     fn handle_cases<'a>(
         &mut self,
-        cases_body: &Vec<Node>,
+        cases_body: &Vec<Spanned<Node>>,
         after_block: BasicBlock<'ctx>,
     ) -> HandleCasesReturn<'ctx> {
         let entry_block = self.ir.builder.get_insert_block().unwrap();
@@ -73,14 +74,14 @@ impl<'ctx> CodeGen<'ctx> {
             let case_block = next_block;
             next_block = self.ir.context.append_basic_block(current_function, "case");
 
-            match case {
+            match &case.inner {
                 Node::Case {
                     value,
                     body: case_body,
                 } => {
                     cases.push((value.clone(), case_block));
                     self.ir.builder.position_at_end(case_block);
-                    self.handle_case(case_body, &next_block, &after_block);
+                    self.handle_case(&case_body, &next_block, &after_block);
                 }
                 Node::DefaultCase(case_body) => {
                     // Check no duplicate default
@@ -90,7 +91,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                     default_block = Some(case_block.clone());
                     self.ir.builder.position_at_end(case_block);
-                    self.handle_case(case_body, &next_block, &after_block);
+                    self.handle_case(&case_body, &next_block, &after_block);
                 },
                 _ => unreachable!(
                     "Switch statement body contained something other than a Case or DefaultCase"
@@ -110,9 +111,9 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn handle_case(&mut self, body: &Vec<Node>, next_block: &BasicBlock, after_block: &BasicBlock) {
+    fn handle_case(&mut self, body: &Vec<Spanned<Node>>, next_block: &BasicBlock, after_block: &BasicBlock) {
         for statement in body {
-            match statement {
+            match statement.inner {
                 Node::BreakStatement => {
                     self.ir
                         .builder
