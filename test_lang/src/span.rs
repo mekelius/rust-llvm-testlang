@@ -1,6 +1,55 @@
-use chumsky::span::{SimpleSpan, Spanned};
+use std::ops::Range;
+
+use chumsky::span::{Span, Spanned, WrappingSpan};
 
 pub type ByteOffset = usize;
 pub type SourceID = usize;
-pub type SourceIDSpan = SimpleSpan<ByteOffset, SourceID>;
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SourceIDSpan {
+    pub context: SourceID,
+    pub start: ByteOffset,
+    pub end: ByteOffset,
+}
+
+impl Span for SourceIDSpan {
+    type Context = SourceID;
+    type Offset = ByteOffset;
+
+    fn new(context: Self::Context, range: Range<Self::Offset>) -> Self {
+        SourceIDSpan {
+            context,
+            start: range.start,
+            end: range.end,
+        }
+    }
+
+    fn context(&self) -> Self::Context {
+        self.context
+    }
+
+    fn start(&self) -> Self::Offset {
+        self.start
+    }
+
+    fn end(&self) -> Self::Offset {
+        self.end
+    }
+}
+
 pub type SourceIDSpanned<T> = Spanned<T, SourceIDSpan>;
+
+impl<T> WrappingSpan<T> for SourceIDSpan {
+    type Spanned = SourceIDSpanned<T>;
+
+    // Required methods
+    fn make_wrapped(self, inner: T) -> Self::Spanned {
+        SourceIDSpanned { inner, span: self }
+    }
+    fn inner_of(spanned: &Self::Spanned) -> &T {
+        &spanned.inner
+    }
+    fn span_of(spanned: &Self::Spanned) -> &Self {
+        &spanned.span
+    }
+}
