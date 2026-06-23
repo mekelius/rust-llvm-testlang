@@ -79,7 +79,7 @@ impl<'ctx> CodeGen<'ctx> {
                     value,
                     body: case_body,
                 } => {
-                    cases.push((value.clone(), case_block));
+                    cases.push((value.inner.clone(), case_block));
                     self.ir.builder.position_at_end(case_block);
                     self.handle_case(&case_body, &next_block, &after_block);
                 }

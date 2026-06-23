@@ -18,11 +18,11 @@ pub enum Node {
     BooleanLiteral(bool),
     UnitLiteral,
 
-    TypedExpression(String, Box<SourceIDSpanned<Node>>),
+    TypedExpression(SourceIDSpanned<String>, Box<SourceIDSpanned<Node>>),
 
     Formals(Vec<SourceIDSpanned<Node>>),
     UntypedFormal(String),
-    TypedFormal(String, String),
+    TypedFormal(SourceIDSpanned<String>, SourceIDSpanned<String>),
     FunctionBody(Vec<SourceIDSpanned<Node>>),
 
     Block(Vec<SourceIDSpanned<Node>>),
@@ -48,7 +48,7 @@ pub enum Node {
         cases: Vec<SourceIDSpanned<Node>>,
     },
     Case {
-        value: String,
+        value: SourceIDSpanned<String>,
         body: Vec<SourceIDSpanned<Node>>,
     },
     DefaultCase(Vec<SourceIDSpanned<Node>>),
@@ -67,7 +67,7 @@ pub enum Node {
 
     ArgumentList(Vec<SourceIDSpanned<Node>>),
     FunctionCall {
-        callee: String,
+        callee: SourceIDSpanned<String>,
         argument_list: Vec<SourceIDSpanned<Node>>,
     },
 

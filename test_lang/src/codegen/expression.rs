@@ -68,7 +68,7 @@ impl<'ctx> CodeGen<'ctx> {
         let callee = self
             .scopes
             .resolve_function(callee_name)
-            .unwrap_or_else(|| panic!("Attempt to call nonexistent function {}", callee_name));
+            .unwrap_or_else(|| panic!("Attempt to call nonexistent function {}", callee_name.inner));
 
         self.ir
             .builder

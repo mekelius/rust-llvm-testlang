@@ -130,7 +130,7 @@ where
             .then(argument_list)
             .map(|(callee_expression, arguments)| {
                 let callee = match callee_expression.inner {
-                    Node::Identifier(value) => value,
+                    Node::Identifier(value) => value.with_span(callee_expression.span),
                     _ => todo!(),
                 };
 
@@ -149,7 +149,7 @@ where
         let typed_expression = type_expression()
             .clone()
             .then(expr.clone())
-            .map(|(type_, expression)| Node::TypedExpression(type_.inner, Box::new(expression)))
+            .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)))
             .spanned();
 
         let term = recursive(|term| {

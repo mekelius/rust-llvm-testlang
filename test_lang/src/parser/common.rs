@@ -1,7 +1,9 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::Node, parser::{ParserError, lexer::Token}, span::{SourceIDSpan, SourceIDSpanned}
+    ast::Node,
+    parser::{ParserError, lexer::Token},
+    span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[macro_export]
@@ -18,16 +20,19 @@ macro_rules! in_curly_braces {
     };
 }
 
-pub fn type_expression<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<String>, ParserError<'src>> + Clone
+pub fn type_expression<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<String>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
         Token::TypeIdentifier(value) => value
-    }.spanned()
+    }
+    .spanned()
 }
 
-pub fn identifier<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+pub fn identifier<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -37,12 +42,24 @@ where
     .spanned()
 }
 
-pub fn identifier_as_string<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<String>, ParserError<'src>> + Clone
+pub fn identifier_as_string<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<String>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
         Token::Identifier(value) => value,
+    }
+    .spanned()
+}
+
+pub fn number_literal_as_string<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<String>, ParserError<'src>> + Clone
+where
+    I: Input<'src, Token = Token, Span = SourceIDSpan>,
+{
+    select! {
+        Token::NumberLiteral(value)=>value,
     }
     .spanned()
 }

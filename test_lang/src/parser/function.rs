@@ -24,10 +24,13 @@ where
     .spanned();
 
     let typed_formal = select! {Token::TypeIdentifier(value) => value}
-        .clone()
-        .then(select! {
-            Token::Identifier(value) => value
-        })
+        .spanned()
+        .then(
+            select! {
+                Token::Identifier(value) => value
+            }
+            .spanned(),
+        )
         .map(|(type_, name)| Node::TypedFormal(type_, name))
         .spanned();
 
