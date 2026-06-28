@@ -305,7 +305,7 @@ mod tests {
             #[test]
             fn calculates_line_and_col_correctly() {
                 let mut sources = SourceStore::new();
-                let source_id = sources.add_source("testfile", "\n\n\nmain(){}\n\nthing(){}\n\n\n");
+                let source_id = sources.add_source("testfile", "\n\n\n3456789A\n\nDEFGHIJKL\n\n\n");
                 let source_location = sources.map_offset(source_id, 15).unwrap();
                 assert_eq!(source_location.line, 6);
                 assert_eq!(source_location.col, 3);
@@ -316,9 +316,9 @@ mod tests {
             fn handles_multiple_files() {
                 let mut sources = SourceStore::new();
                 let source1_id =
-                    sources.add_source("testfile1", "\n\n\nmain(){}\n\nthing(){}\n\n\n");
-                let source2_id = sources.add_source("testfile2", "ng(){}\n\n\n");
-                let source3_id = sources.add_source("testfile3", "(\n2\nthing(){}\n\n\n");
+                    sources.add_source("testfile1", "\n\n\n3456789A\n\nDEFGHIJKL\n\n\n");
+                let source2_id = sources.add_source("testfile2", "012345\n\n\n");
+                let source3_id = sources.add_source("testfile3", "0\n2\n456789ABC\n\n\n");
 
                 let source_location = sources.map_offset(source2_id, 3).unwrap();
                 assert_eq!(source_location.line, 1);
@@ -340,6 +340,34 @@ mod tests {
             fn handles_no_files() {
                 let sources = SourceStore::new();
                 assert_eq!(sources.map_offset(0, 3), None);
+            }
+        }
+
+        mod map_span {
+            use chumsky::span::Span;
+            use std::ops::Range;
+
+            use super::*;
+
+            #[test]
+            fn maps_line_and_col_correctly() {
+                let mut sources = SourceStore::new();
+                let source_id = sources.add_source("testfile", "0\n2\n456789ABC\n\n\n");
+                let span = SourceIDSpan::new(source_id, Range { start: 2, end: 6 });
+
+                let SourceSpan {
+                    source,
+                    start_line,
+                    start_col,
+                    end_line,
+                    end_col,
+                } = sources.map_span(&span);
+
+                assert_eq!(source.filename, "testfile");
+                assert_eq!(start_line, 2);
+                assert_eq!(start_col, 1);
+                assert_eq!(end_line, 3);
+                assert_eq!(end_col, 3);
             }
         }
     }
