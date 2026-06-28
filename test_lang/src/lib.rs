@@ -4,3 +4,4 @@ pub mod ast;
 pub mod span;
 pub mod source;
 pub mod helpers;
+pub mod ast_visitor;
