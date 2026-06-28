@@ -11,7 +11,8 @@ use std::error::Error;
 
 use crate::ast::Node;
 use crate::parser::function::function;
-use crate::span::{SourceID, SourceIDSpan, SourceIDSpanned};
+use crate::source::SourceID;
+use crate::span::{SourceIDSpan, SourceIDSpanned};
 
 type ParserError<'tokens> = chumsky::extra::Err<Rich<'tokens, Token, SourceIDSpan>>;
 

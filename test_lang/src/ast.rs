@@ -102,7 +102,7 @@ pub trait ASTVisitor {
 }
 
 impl Node {
-    fn walk_program(visitor: &mut impl ASTVisitor, program: &SourceIDSpanned<Node>) {
+    pub fn walk_program(visitor: &mut impl ASTVisitor, program: &SourceIDSpanned<Node>) {
         visitor.visit_program(program);
 
         let Node::Program(functions) = &program.inner else {
@@ -113,7 +113,7 @@ impl Node {
         }
     }
 
-    fn walk_function(visitor: &mut impl ASTVisitor, function: &SourceIDSpanned<Node>) {
+    pub fn walk_function(visitor: &mut impl ASTVisitor, function: &SourceIDSpanned<Node>) {
         visitor.visit_function(function);
 
         let Node::Function {
@@ -128,7 +128,7 @@ impl Node {
         Self::walk_statement(visitor, &body);
     }
 
-    fn walk_statement(visitor: &mut impl ASTVisitor, statement: &SourceIDSpanned<Node>) {
+    pub fn walk_statement(visitor: &mut impl ASTVisitor, statement: &SourceIDSpanned<Node>) {
         visitor.visit_statement(statement);
 
         match &statement.inner {
@@ -182,7 +182,7 @@ impl Node {
             Node::ConstStatement(_, expression) => {
                 Self::walk_expression(visitor, &expression);
             }
-            Node::AssignmentStatement(identifier, expression) => {
+            Node::AssignmentStatement(_identifier, expression) => {
                 Self::walk_expression(visitor, &expression);
             }
             Node::ReturnStatement(expression) => {
@@ -194,17 +194,20 @@ impl Node {
         };
     }
 
-    fn walk_expression(visitor: &mut impl ASTVisitor, expression: &SourceIDSpanned<Node>) {}
-    fn walk_case(visitor: &mut impl ASTVisitor, case: &SourceIDSpanned<Node>) {
+    pub fn walk_expression(_visitor: &mut impl ASTVisitor, _expression: &SourceIDSpanned<Node>) {}
+    pub fn walk_case(visitor: &mut impl ASTVisitor, case: &SourceIDSpanned<Node>) {
         visitor.visit_case(case);
 
         match &case.inner {
-            Node::Case { value, body } => {
+            Node::Case {
+                value: _value,
+                body,
+            } => {
                 for statement in body {
                     Self::walk_statement(visitor, &statement);
                 }
             }
-            Node::DefaultCase(body) => {}
+            Node::DefaultCase(_body) => {}
             _ => {
                 unreachable!("Node::walk_case called with a non-case node")
             }
