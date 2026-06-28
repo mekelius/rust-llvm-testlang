@@ -212,6 +212,12 @@ impl<'src> SourceStore {
     }
 }
 
+impl<'src> Display for SourceLocation<'src> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "{}: {}:{}", self.source.filename, self.line, self.col)
+    }
+}
+
 impl<'src> SourceSpan<'src> {
     pub fn get_start(&self) -> SourceLocation<'src> {
         SourceLocation {
@@ -234,8 +240,8 @@ impl<'src> Display for SourceSpan<'src> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         write!(
             f,
-            "{}:{}:{}-{}:{}",
-            self.source.filename, self.start_line, self.start_col, self.end_line, self.end_line
+            "{}: {}:{}-{}:{}",
+            self.source.filename, self.start_line, self.start_col, self.end_line, self.end_col
         )
     }
 }
@@ -244,6 +250,9 @@ impl<'src> Display for SourceSpan<'src> {
 
 #[cfg(test)]
 mod tests {
+    use chumsky::span::Span;
+    use std::ops::Range;
+
     use super::*;
 
     mod source {
@@ -273,7 +282,7 @@ mod tests {
 
             #[test]
             fn handles_first_line() {
-                let source = Source::new("testfile1", "main(){}\n\nthing(){}\n\n\n");
+                let source = Source::new("testfile1", "01234567\n\nthing(){}\n\n\n");
                 assert_eq!(source.map_offset(2), LineCol { line: 1, col: 3 });
             }
 
@@ -344,9 +353,6 @@ mod tests {
         }
 
         mod map_span {
-            use chumsky::span::Span;
-            use std::ops::Range;
-
             use super::*;
 
             #[test]
@@ -369,6 +375,48 @@ mod tests {
                 assert_eq!(end_line, 3);
                 assert_eq!(end_col, 3);
             }
+        }
+    }
+
+    mod source_location {
+        use super::*;
+
+        #[test]
+        fn first_char_formatted_correctly() {
+            let mut sources = SourceStore::new();
+            let source_id = sources.add_source("testfile1", "01234567\n\nthing(){}\n\n\n");
+            let location = sources.map_offset(source_id, 0).unwrap();
+            assert_eq!(location.to_string(), "testfile1: 1:1")
+        }
+
+        #[test]
+        fn end_of_line_formatted_correctly() {
+            let mut sources = SourceStore::new();
+            let source_id = sources.add_source("testfile1", "01234567\n\nthing(){}\n\n\n");
+            let location = sources.map_offset(source_id, 8).unwrap();
+            assert_eq!(location.to_string(), "testfile1: 1:9")
+        }
+
+        #[test]
+        fn formatted_correctly() {
+            let mut sources = SourceStore::new();
+            let source_id = sources.add_source("testfile1", "01234567\n\nABCDEFGHI\n\n\n");
+            let location = sources.map_offset(source_id, 11).unwrap();
+            assert_eq!(location.to_string(), "testfile1: 3:2")
+        }
+    }
+
+    mod source_span {
+        use super::*;
+
+        #[test]
+        fn first_char_formatted_correctly() {
+            let mut sources = SourceStore::new();
+            let source_id = sources.add_source("testfile1", "01234567\n\nABCDEFGHI\n\n\n");
+            let span = SourceIDSpan::new(source_id, Range { start: 2, end: 15 });
+
+            let source_span = sources.map_span(&span);
+            assert_eq!(source_span.to_string(), "testfile1: 1:3-3:6")
         }
     }
 }
