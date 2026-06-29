@@ -1,12 +1,48 @@
 use crate::span::SourceIDSpanned;
 
+// macro_rules! node_types {
+//     ($node: item) => {
+//         #[derive(Debug, Clone, PartialEq)]
+//         pub enum Node {
+//             $node($node),
+//         }
+
+//         #[derive(Debug, Clone, PartialEq)]
+//         pub enum NodeRef {
+//             $node($node)
+//         }
+//     };
+// }
+
+// node_types!(Program, Function);
+
+// node_types!(Program, Function, Statement, Expression, Case);
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
-    Program(Program),
-    Function(Function),
-    Statement(Statement),
-    Expression(Expression),
-    Case(Case),
+    Program(SourceIDSpanned<Program>),
+    Function(SourceIDSpanned<Function>),
+    Statement(SourceIDSpanned<Statement>),
+    Expression(SourceIDSpanned<Expression>),
+    Case(SourceIDSpanned<Case>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum NodeRef<'a> {
+    Program(&'a SourceIDSpanned<Program>),
+    Function(&'a SourceIDSpanned<Function>),
+    Statement(&'a SourceIDSpanned<Statement>),
+    Expression(&'a SourceIDSpanned<Expression>),
+    Case(&'a SourceIDSpanned<Case>),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum NodeRefMut<'a> {
+    Program(&'a mut SourceIDSpanned<Program>),
+    Function(&'a mut SourceIDSpanned<Function>),
+    Statement(&'a mut SourceIDSpanned<Statement>),
+    Expression(&'a mut SourceIDSpanned<Expression>),
+    Case(&'a mut SourceIDSpanned<Case>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -37,7 +73,7 @@ pub enum Statement {
     Empty,
     Block(Vec<SourceIDSpanned<Statement>>),
     ExpressionStatement(Box<SourceIDSpanned<Expression>>),
-    
+
     Let(String, Box<SourceIDSpanned<Expression>>),
     Const(String, Box<SourceIDSpanned<Expression>>),
     Assignment(String, Box<SourceIDSpanned<Expression>>),

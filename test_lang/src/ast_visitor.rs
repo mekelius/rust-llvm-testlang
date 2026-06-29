@@ -1,9 +1,7 @@
-use chumsky::span::SpanWrap;
-
 use crate::{
     ast::{
-        BinopExpression, Call, Case, DEFAULT_CASE, Expression, Function, Node, Program, Statement,
-        UnopExpression,
+        BinopExpression, Call, Case, DEFAULT_CASE, Expression, Function, Node, NodeRef, Program,
+        Statement, UnopExpression,
     },
     span::SourceIDSpanned,
 };
@@ -16,28 +14,28 @@ pub trait ASTVisitor<R> {
     fn visit_case(&mut self, case: &SourceIDSpanned<Case>) -> Option<R>;
 }
 
-pub trait DumbASTVisitor<R>: ASTVisitor<R> {
-    fn visit_node(&mut self, case: &SourceIDSpanned<Node>) -> Option<R>;
+pub trait MatchingASTVisitor<R>: ASTVisitor<R> {
+    fn visit_node(&mut self, case: NodeRef) -> Option<R>;
 }
 
 impl<T, R> ASTVisitor<R> for T
 where
-    T: DumbASTVisitor<R>,
+    T: MatchingASTVisitor<R>,
 {
     fn visit_program(&mut self, program: &SourceIDSpanned<Program>) -> Option<R> {
-        self.visit_node(&Node::Program(program.inner.clone()).with_span(program.span))
+        self.visit_node(NodeRef::Program(program))
     }
     fn visit_function(&mut self, function: &SourceIDSpanned<Function>) -> Option<R> {
-        self.visit_node(&Node::Function(function.inner.clone()).with_span(function.span))
+        self.visit_node(NodeRef::Function(function))
     }
     fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R> {
-        self.visit_node(&Node::Statement(statement.inner.clone()).with_span(statement.span))
+        self.visit_node(NodeRef::Statement(statement))
     }
     fn visit_expression(&mut self, expression: &SourceIDSpanned<Expression>) -> Option<R> {
-        self.visit_node(&Node::Expression(expression.inner.clone()).with_span(expression.span))
+        self.visit_node(NodeRef::Expression(expression))
     }
     fn visit_case(&mut self, case: &SourceIDSpanned<Case>) -> Option<R> {
-        self.visit_node(&Node::Case(case.inner.clone()).with_span(case.span))
+        self.visit_node(NodeRef::Case(case))
     }
 }
 
@@ -48,12 +46,12 @@ trait ASTVisitResult<R> {
     fn into_option(self) -> Option<R>;
 }
 
-impl<T, R, RH> DumbASTVisitor<R> for T
+impl<T, R, RH> MatchingASTVisitor<R> for T
 where
-    T: Fn(&SourceIDSpanned<Node>) -> RH,
+    T: Fn(NodeRef) -> RH,
     RH: ASTVisitResult<R>,
 {
-    fn visit_node(&mut self, node: &SourceIDSpanned<Node>) -> Option<R> {
+    fn visit_node(&mut self, node: NodeRef) -> Option<R> {
         self(node).into_option()
     }
 }
@@ -261,13 +259,8 @@ mod tests {
         .with_span(DUMMY_SPAN);
 
         let first_function_name = Node::walk_program(
-            &mut |node: &SourceIDSpanned<Node>| match &node.inner {
-                Node::Function(Function {
-                    name,
-                    return_type_string: _,
-                    formals: _,
-                    body: _,
-                }) => Some(name.inner.clone()),
+            &mut |node: NodeRef| match node {
+                NodeRef::Function(function) => function.inner.name.inner.clone().into(),
                 _ => None,
             },
             &mut node,
@@ -304,10 +297,11 @@ mod tests {
         .with_span(DUMMY_SPAN);
 
         let first_string_literal_value = Node::walk_program(
-            &mut |node: &SourceIDSpanned<Node>| match &node.inner {
-                Node::Expression(Expression::Literal(Literal::String(value))) => {
-                    Some(value.clone())
-                }
+            &mut |node: NodeRef| match node {
+                NodeRef::Expression(SourceIDSpanned {
+                    inner: Expression::Literal(Literal::String(value)),
+                    span: _,
+                }) => Some(value.clone()),
                 _ => None,
             },
             &mut node,
