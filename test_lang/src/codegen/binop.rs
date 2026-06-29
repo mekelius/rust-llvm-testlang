@@ -4,14 +4,32 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::ast::Node;
+use crate::ast::{BinaryOperator, BinopExpression, Expression};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_add(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_binop(&self, binop: &BinopExpression) -> AnyValueEnum<'ctx> {
+        match binop.op {
+            BinaryOperator::Equals => self.handle_eq(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::GreaterThan => self.handle_gt(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::LessThan => self.handle_lt(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::GreaterThanOrEquals => {
+                self.handle_gteq(&binop.lhs.inner, &binop.rhs.inner)
+            }
+            BinaryOperator::LessThanOrEquals => {
+                self.handle_lteq(&binop.lhs.inner, &binop.rhs.inner)
+            }
+            BinaryOperator::NotEquals => self.handle_neq(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::And => todo!("binary and"), //self.handle_(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::Or => todo!("binary or"), //self.handle_(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::Add => self.handle_add(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::Sub => self.handle_sub(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::Mul => self.handle_mul(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::Div => self.handle_div(&binop.lhs.inner, &binop.rhs.inner),
+            BinaryOperator::Mod => self.handle_mod(&binop.lhs.inner, &binop.rhs.inner),
+        }
+    }
+
+    pub fn handle_add(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -22,11 +40,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_sub(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_sub(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -37,11 +51,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_mul(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_mul(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -52,11 +62,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_div(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_div(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -67,11 +73,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_mod(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_mod(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -82,11 +84,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_eq(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_eq(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -97,11 +95,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_neq(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_neq(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -112,11 +106,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_gt(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_gt(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -127,11 +117,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_lt(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_lt(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -142,11 +128,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_gteq(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_gteq(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 
@@ -157,11 +139,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_lteq(
-        &self,
-        lhs: &Node,
-        rhs: &Node,
-    ) -> AnyValueEnum<'ctx> {
+    pub fn handle_lteq(&self, lhs: &Expression, rhs: &Expression) -> AnyValueEnum<'ctx> {
         let lhs_value = self.handle_expression(lhs).into_int_value();
         let rhs_value = self.handle_expression(rhs).into_int_value();
 

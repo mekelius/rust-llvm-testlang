@@ -1,7 +1,10 @@
 use chumsky::span::Spanned;
 use inkwell::{basic_block::BasicBlock, types::StringRadix::Decimal, values::IntValue};
 
-use crate::{ast::{Node, Statement}, codegen::CodeGen};
+use crate::{
+    ast::{Expression, Node, Statement},
+    codegen::CodeGen,
+};
 
 struct HandleCasesReturn<'ctx> {
     cases: Vec<(String, BasicBlock<'ctx>)>,
@@ -10,7 +13,11 @@ struct HandleCasesReturn<'ctx> {
 
 impl<'ctx> CodeGen<'ctx> {
     /** Returns true if the block all_cases_returned */
-    pub fn handle_switch<S>(&mut self, matched_value_expression: &Node, body: &Vec<Spanned<Node, S>>) {
+    pub fn handle_switch<S>(
+        &mut self,
+        matched_value_expression: &Expression,
+        body: &Vec<Spanned<Node, S>>,
+    ) {
         let matched_value = self.handle_expression(matched_value_expression);
 
         self.scopes.push_new_scope();
@@ -92,7 +99,7 @@ impl<'ctx> CodeGen<'ctx> {
                     default_block = Some(case_block.clone());
                     self.ir.builder.position_at_end(case_block);
                     self.handle_case(&case_body, &next_block, &after_block);
-                },
+                }
                 _ => unreachable!(
                     "Switch statement body contained something other than a Case or DefaultCase"
                 ),
@@ -111,7 +118,12 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn handle_case<S>(&mut self, body: &Vec<Spanned<Statement, S>>, next_block: &BasicBlock, after_block: &BasicBlock) {
+    fn handle_case<S>(
+        &mut self,
+        body: &Vec<Spanned<Statement, S>>,
+        next_block: &BasicBlock,
+        after_block: &BasicBlock,
+    ) {
         for statement in body {
             match statement.inner {
                 Statement::BreakStatement => {

@@ -1,9 +1,7 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::Node,
-    parser::{ParserError, lexer::Token},
-    span::{SourceIDSpan, SourceIDSpanned},
+    ast::{Expression, Node}, parser::{ParserError, lexer::Token}, span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[macro_export]
@@ -32,12 +30,12 @@ where
 }
 
 pub fn identifier<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Expression>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::Identifier(value) => Node::Identifier(value),
+        Token::Identifier(value) => Expression::Identifier(value),
     }
     .spanned()
 }

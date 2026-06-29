@@ -1,8 +1,8 @@
 use super::CodeGen;
-use crate::ast::{Node, Statement};
+use crate::ast::{Expression, Statement};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_if(&mut self, condition: &Node, body: &Statement) {
+    pub fn handle_if(&mut self, condition: &Expression, body: &Statement) {
         let condition_value = self.handle_expression(condition);
 
         let current_function = self

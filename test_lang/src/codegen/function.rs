@@ -9,7 +9,10 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::Node::{self},
+    ast::{
+        Expression, Literal,
+        Node::{self},
+    },
     codegen::{identifier::Symbol, types::SimpleType},
 };
 
@@ -32,7 +35,10 @@ impl<'ctx> CodeGen<'ctx> {
 
         // Special case for main
         if name.inner == "main" {
-            if return_type_string.as_ref().is_some_and(|string| string.inner != "Int") {
+            if return_type_string
+                .as_ref()
+                .is_some_and(|string| string.inner != "Int")
+            {
                 panic!("main function is only allowed return type Int (if specified)");
             }
             self.handle_main_function(formals, &**body);
@@ -110,7 +116,11 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(())
     }
 
-    fn handle_main_function<S>(&mut self, _formals: &Vec<Spanned<Node, S>>, body: &Spanned<Node, S>) {
+    fn handle_main_function<S>(
+        &mut self,
+        _formals: &Vec<Spanned<Node, S>>,
+        body: &Spanned<Node, S>,
+    ) {
         {
             let CodeGen { ir, scopes } = self;
 
@@ -158,8 +168,8 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    pub fn handle_return(&self, expression: &Node) {
-        if *expression == Node::UnitLiteral {
+    pub fn handle_return(&self, expression: &Expression) {
+        if *expression == Expression::Literal(Literal::UnitLiteral) {
             self.ir.builder.build_return(None).unwrap();
             return;
         }

@@ -1,7 +1,10 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::Node,
+    ast::{
+        BinaryOperator, BinopExpression, Expression, FunctionCall, Literal, Node, UnaryOperator,
+        UnopExpression,
+    },
     parenthesized,
     parser::{
         ParserError,
@@ -12,47 +15,47 @@ use crate::{
 };
 
 pub fn number_literal<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Expression>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::NumberLiteral(value) => Node::NumberLiteral(value),
+        Token::NumberLiteral(value) => Expression::Literal(Literal::NumberLiteral(value)),
     }
     .spanned()
 }
 
 pub fn string_literal<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Expression>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::StringLiteral(value) => Node::StringLiteral(value),
+        Token::StringLiteral(value) => Expression::Literal(Literal::StringLiteral(value)),
     }
     .spanned()
 }
 
 pub fn boolean_literal<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Expression>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::True => Node::BooleanLiteral(true),
-        Token::False => Node::BooleanLiteral(false),
+        Token::True => Expression::Literal(Literal::BooleanLiteral(true)),
+        Token::False => Expression::Literal(Literal::BooleanLiteral(false)),
     }
     .spanned()
 }
 
 pub fn unit_literal<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Expression>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::LParenthesis)
         .ignore_then(just(Token::RParenthesis))
-        .to(Node::UnitLiteral)
+        .to(Expression::Literal(Literal::UnitLiteral))
         .spanned()
 }
 pub fn binary_op_1<'src, I>()
@@ -98,7 +101,8 @@ where
     .spanned()
 }
 
-pub fn literal<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+pub fn literal<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<Expression>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -111,7 +115,7 @@ where
 }
 
 pub fn expression<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Expression>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -121,7 +125,7 @@ where
         let argument_list = parenthesized!(
             expr.clone()
                 .separated_by(just(Token::Comma))
-                .collect::<Vec<SourceIDSpanned<Node>>>()
+                .collect::<Vec<SourceIDSpanned<Expression>>>()
                 .map(|e| Node::ArgumentList(e))
         );
 
@@ -130,7 +134,7 @@ where
             .then(argument_list)
             .map(|(callee_expression, arguments)| {
                 let callee = match callee_expression.inner {
-                    Node::Identifier(value) => value.with_span(callee_expression.span),
+                    Expression::Identifier(value) => value.with_span(callee_expression.span),
                     _ => todo!(),
                 };
 
@@ -139,28 +143,38 @@ where
                     _ => todo!(),
                 };
 
-                Node::FunctionCall {
+                Expression::FunctionCall(FunctionCall {
                     callee,
                     argument_list,
-                }
+                })
             })
             .spanned();
 
         let typed_expression = type_expression()
             .clone()
             .then(expr.clone())
-            .map(|(type_, expression)| Node::TypedExpression(type_, Box::new(expression)))
+            .map(|(type_, expression)| Expression::TypedExpression(type_, Box::new(expression)))
             .spanned();
 
         let term = recursive(|term| {
             let unary_not_expression = just(Token::Minus)
                 .ignore_then(term.clone())
-                .map(|expression| Node::UnaryMinus(Box::new(expression)))
+                .map(|expression| {
+                    Expression::Unop(UnopExpression {
+                        op: UnaryOperator::UnaryMinus,
+                        term: Box::new(expression),
+                    })
+                })
                 .spanned();
 
             let unary_minus_expression = just(Token::Bang)
                 .ignore_then(term.clone())
-                .map(|expression| Node::UnaryNot(Box::new(expression)))
+                .map(|expression| {
+                    Expression::Unop(UnopExpression {
+                        op: UnaryOperator::UnaryNot,
+                        term: Box::new(expression),
+                    })
+                })
                 .spanned();
 
             let unary_expression = choice((unary_minus_expression, unary_not_expression));
@@ -179,12 +193,18 @@ where
             binary_op_1().then(term.clone()).repeated(),
             |lhs, (op, rhs)| {
                 let span = lhs.span.union(op.span).union(rhs.span);
-                match op.inner {
-                    Token::Asterisk => Node::Mul(Box::new(lhs), Box::new(rhs)),
-                    Token::Slash => Node::Div(Box::new(lhs), Box::new(rhs)),
-                    Token::Percent => Node::Mod(Box::new(lhs), Box::new(rhs)),
+                let op = match op.inner {
+                    Token::Asterisk => BinaryOperator::Mul,
+                    Token::Slash => BinaryOperator::Div,
+                    Token::Percent => BinaryOperator::Mod,
                     _ => unreachable!(),
-                }
+                };
+
+                Expression::Binop(BinopExpression {
+                    op,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
                 .with_span(span)
             },
         );
@@ -193,13 +213,19 @@ where
             binary_op_2().then(binary_expression_1.clone()).repeated(),
             |lhs, (op, rhs)| {
                 let span = lhs.span.union(op.span).union(rhs.span);
-                match op.inner {
-                    Token::Plus => Node::Add(Box::new(lhs), Box::new(rhs)),
-                    Token::Minus => Node::Sub(Box::new(lhs), Box::new(rhs)),
-                    Token::DoubleAmpersand => Node::And(Box::new(lhs), Box::new(rhs)),
-                    Token::DoublePipe => Node::Or(Box::new(lhs), Box::new(rhs)),
+                let op = match op.inner {
+                    Token::Plus => BinaryOperator::Add,
+                    Token::Minus => BinaryOperator::Sub,
+                    Token::DoubleAmpersand => BinaryOperator::And,
+                    Token::DoublePipe => BinaryOperator::Or,
                     _ => unreachable!(),
-                }
+                };
+
+                Expression::Binop(BinopExpression {
+                    op,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
                 .with_span(span)
             },
         );
@@ -208,17 +234,21 @@ where
             binary_op_3().then(binary_expression_2.clone()).repeated(),
             |lhs, (op, rhs)| {
                 let span = lhs.span.union(op.span).union(rhs.span);
-                match op.inner {
-                    Token::DoubleEquals => Node::Equals(Box::new(lhs), Box::new(rhs)),
-                    Token::GreaterThan => Node::GreaterThan(Box::new(lhs), Box::new(rhs)),
-                    Token::LessThan => Node::LessThan(Box::new(lhs), Box::new(rhs)),
-                    Token::GreaterThanOrEquals => {
-                        Node::GreaterThanOrEquals(Box::new(lhs), Box::new(rhs))
-                    }
-                    Token::LessThanOrEquals => Node::LessThanOrEquals(Box::new(lhs), Box::new(rhs)),
-                    Token::NotEquals => Node::NotEquals(Box::new(lhs), Box::new(rhs)),
+                let op = match op.inner {
+                    Token::DoubleEquals => BinaryOperator::Equals,
+                    Token::GreaterThan => BinaryOperator::GreaterThan,
+                    Token::LessThan => BinaryOperator::LessThan,
+                    Token::GreaterThanOrEquals => BinaryOperator::GreaterThanOrEquals,
+                    Token::LessThanOrEquals => BinaryOperator::LessThanOrEquals,
+                    Token::NotEquals => BinaryOperator::NotEquals,
                     _ => unreachable!(),
-                }
+                };
+
+                Expression::Binop(BinopExpression {
+                    op,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
                 .with_span(span)
             },
         );

@@ -1,12 +1,18 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::{Node, Statement}, in_curly_braces, parenthesized, parser::{
+    ast::{
+        BinaryOperator, BinopExpression, Expression, Literal, Node, Statement, UnaryOperator,
+        UnopExpression,
+    },
+    in_curly_braces, parenthesized,
+    parser::{
         ParserError,
         common::{identifier_as_string, number_literal_as_string},
         expression::expression,
         lexer::Token,
-    }, span::{SourceIDSpan, SourceIDSpanned},
+    },
+    span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[derive(Clone)]
@@ -99,7 +105,8 @@ where
 }
 
 pub fn assignment<'src, I>()
--> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Node>), ParserError<'src>> + Clone
+-> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Expression>), ParserError<'src>>
++ Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -109,7 +116,8 @@ where
 }
 
 pub fn shorthand_assignment<'src, I>()
--> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Node>), ParserError<'src>> + Clone
+-> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Expression>), ParserError<'src>>
++ Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -118,38 +126,27 @@ where
         .then(expression())
         .map(|((name, operator), rhs)| {
             let rhs_span = rhs.span.clone();
-            (
-                name.clone(),
-                match operator.inner {
-                    Token::PlusEquals => Node::Add(
-                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
-                        Box::new(rhs),
-                    ),
-                    Token::MinusEquals => Node::Sub(
-                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
-                        Box::new(rhs),
-                    ),
-                    Token::AsteriskEquals => Node::Mul(
-                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
-                        Box::new(rhs),
-                    ),
-                    Token::SlashEquals => Node::Div(
-                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
-                        Box::new(rhs),
-                    ),
-                    Token::PercentEquals => Node::Mod(
-                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
-                        Box::new(rhs),
-                    ),
-                    _ => unreachable!("Unhandled shorthand assignment operator"),
-                }
-                .with_span(operator.span.union(rhs_span)),
-            )
+            let op = match operator.inner {
+                Token::PlusEquals => BinaryOperator::Add,
+                Token::MinusEquals => BinaryOperator::Sub,
+                Token::AsteriskEquals => BinaryOperator::Mul,
+                Token::SlashEquals => BinaryOperator::Div,
+                Token::PercentEquals => BinaryOperator::Mod,
+                _ => unreachable!("Unhandled shorthand assignment operator"),
+            };
+            let rhs = Expression::Binop(BinopExpression {
+                op,
+                lhs: Box::new(Expression::Identifier(name.inner.clone()).with_span(name.span)),
+                rhs: Box::new(rhs),
+            })
+            .with_span(operator.span.union(rhs_span));
+
+            (name, rhs)
         })
 }
 
 pub fn postfix_assignment<'src, I>()
--> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Node>), ParserError<'src>> + Clone
+-> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Expression>), ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -159,21 +156,28 @@ where
             (
                 name.clone(),
                 match operator.inner {
-                    PostfixAssignment::Increment => Node::Add(
-                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
-                        Box::new(Node::NumberLiteral("1".into()).with_span(operator.span)),
-                    )
-                    .with_span(operator.span),
-                    PostfixAssignment::Decrement => Node::Sub(
-                        Box::new(Node::Identifier(name.inner).with_span(name.span)),
-                        Box::new(Node::NumberLiteral("1".into()).with_span(operator.span)),
-                    )
-                    .with_span(operator.span),
-                    PostfixAssignment::Negate => {
-                        Node::UnaryNot(Box::new(Node::Identifier(name.inner).with_span(name.span)))
-                    }
-                    .with_span(operator.span),
-                },
+                    PostfixAssignment::Increment => Expression::Binop(BinopExpression {
+                        op: BinaryOperator::Add,
+                        lhs: Box::new(Expression::Identifier(name.inner).with_span(name.span)),
+                        rhs: Box::new(
+                            Expression::Literal(Literal::NumberLiteral("1".into()))
+                                .with_span(operator.span),
+                        ),
+                    }),
+                    PostfixAssignment::Decrement => Expression::Binop(BinopExpression {
+                        op: BinaryOperator::Sub,
+                        lhs: Box::new(Expression::Identifier(name.inner).with_span(name.span)),
+                        rhs: Box::new(
+                            Expression::Literal(Literal::NumberLiteral("1".into()))
+                                .with_span(operator.span),
+                        ),
+                    }),
+                    PostfixAssignment::Negate => Expression::Unop(UnopExpression {
+                        op: UnaryOperator::UnaryNot,
+                        term: Box::new(Expression::Identifier(name.inner).with_span(name.span)),
+                    }),
+                }
+                .with_span(operator.span),
             )
         })
 }
@@ -236,10 +240,13 @@ pub fn continue_statement<'src, I>()
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    just(Token::Continue).to(Statement::ContinueStatement).spanned()
+    just(Token::Continue)
+        .to(Statement::ContinueStatement)
+        .spanned()
 }
 
-pub fn statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
+pub fn statement<'src, I>()
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -266,7 +273,10 @@ where
             })
             .spanned();
 
-        let statement_list = p.clone().repeated().collect::<Vec<SourceIDSpanned<Statement>>>();
+        let statement_list = p
+            .clone()
+            .repeated()
+            .collect::<Vec<SourceIDSpanned<Statement>>>();
 
         let case = just(Token::Case)
             .ignore_then(number_literal_as_string())
@@ -322,12 +332,14 @@ where
                     .then(for_step)
             ))
             .then(p.clone())
-            .map(|(((init, condition), step), body)| Statement::ForStatement {
-                init: Box::new(init),
-                condition: Box::new(condition),
-                step: Box::new(step),
-                body: Box::new(body),
-            })
+            .map(
+                |(((init, condition), step), body)| Statement::ForStatement {
+                    init: Box::new(init),
+                    condition: Box::new(condition),
+                    step: Box::new(step),
+                    body: Box::new(body),
+                },
+            )
             .spanned();
 
         let while_statement = just(Token::While)

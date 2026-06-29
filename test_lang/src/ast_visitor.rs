@@ -1,7 +1,7 @@
 use chumsky::span::SpanWrap;
 
 use crate::{
-    ast::{Node, Statement},
+    ast::{BinopExpression, Expression, FunctionCall, Node, Statement, UnopExpression},
     span::SourceIDSpanned,
 };
 
@@ -9,7 +9,7 @@ pub trait ASTVisitor<R> {
     fn visit_program(&mut self, program: &SourceIDSpanned<Node>) -> Option<R>;
     fn visit_function(&mut self, function: &SourceIDSpanned<Node>) -> Option<R>;
     fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R>;
-    fn visit_expression(&mut self, expression: &SourceIDSpanned<Node>) -> Option<R>;
+    fn visit_expression(&mut self, expression: &SourceIDSpanned<Expression>) -> Option<R>;
     fn visit_case(&mut self, case: &SourceIDSpanned<Node>) -> Option<R>;
 }
 
@@ -30,8 +30,8 @@ where
     fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R> {
         self.visit_node(&Node::Statement(statement.inner.clone()).with_span(statement.span))
     }
-    fn visit_expression(&mut self, expression: &SourceIDSpanned<Node>) -> Option<R> {
-        self.visit_node(expression)
+    fn visit_expression(&mut self, expression: &SourceIDSpanned<Expression>) -> Option<R> {
+        self.visit_node(&Node::Expression(expression.inner.clone()).with_span(expression.span))
     }
     fn visit_case(&mut self, case: &SourceIDSpanned<Node>) -> Option<R> {
         self.visit_node(case)
@@ -187,65 +187,28 @@ impl Node {
 
     pub fn walk_expression<R>(
         visitor: &mut impl ASTVisitor<R>,
-        expression: &mut SourceIDSpanned<Node>,
+        expression: &mut SourceIDSpanned<Expression>,
     ) -> Option<R> {
         return visitor
             .visit_expression(expression)
             .or_else(|| match &mut expression.inner {
-                Node::TypedExpression(_type_, expression) => {
-                    Self::walk_expression(visitor, expression)
-                }
-                Node::Identifier(_value) => None,
-                Node::NumberLiteral(_value) => None,
-                Node::StringLiteral(_value) => None,
-                Node::BooleanLiteral(_value) => None,
-                Node::UnaryMinus(rhs) => Self::walk_expression(visitor, rhs),
-                Node::UnaryNot(rhs) => Self::walk_expression(visitor, rhs),
-                Node::Equals(lhs, rhs) => {
+                Expression::Binop(BinopExpression { op: _, lhs, rhs }) => {
                     Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
                 }
-                Node::GreaterThan(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::LessThan(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::GreaterThanOrEquals(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, lhs, rhs)
-                }
-                Node::LessThanOrEquals(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::NotEquals(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::And(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::Or(lhs, rhs) => Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs),
-                Node::Mul(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::Div(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::Add(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::Sub(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::Mod(lhs, rhs) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Node::UnitLiteral => None,
-                Node::FunctionCall {
+                Expression::FunctionCall(FunctionCall {
                     callee: _,
                     argument_list,
-                } => argument_list.iter_mut().find_map(|argument_expression| {
+                }) => argument_list.iter_mut().find_map(|argument_expression| {
                     Self::walk_expression(visitor, argument_expression)
                 }),
-                _ => unreachable!("Node::walk_expression called with a non-expression node"),
+                Expression::Unop(UnopExpression { op: _, term }) => {
+                    Self::walk_expression(visitor, term)
+                }
+                Expression::Literal(_) => None,
+                Expression::Identifier(_) => None,
+                Expression::TypedExpression(_type_, expression) => {
+                    Self::walk_expression(visitor, expression)
+                }
             });
     }
 
@@ -254,8 +217,8 @@ impl Node {
      */
     fn walk_binary_expression<R>(
         visitor: &mut impl ASTVisitor<R>,
-        lhs: &mut SourceIDSpanned<Node>,
-        rhs: &mut SourceIDSpanned<Node>,
+        lhs: &mut SourceIDSpanned<Expression>,
+        rhs: &mut SourceIDSpanned<Expression>,
     ) -> Option<R> {
         Self::walk_expression(visitor, lhs).or_else(|| Self::walk_expression(visitor, rhs))
     }
@@ -289,7 +252,7 @@ impl Node {
 mod tests {
     use super::*;
 
-    use crate::span::SourceIDSpan;
+    use crate::{ast::Literal, span::SourceIDSpan};
     use chumsky::span::SpanWrap;
 
     const DUMMY_SPAN: SourceIDSpan = SourceIDSpan {
@@ -331,7 +294,8 @@ mod tests {
 
     #[test]
     fn finds_a_node() {
-        let string_literal = Node::StringLiteral("test_string".to_string()).with_span(DUMMY_SPAN);
+        let string_literal = Expression::Literal(Literal::StringLiteral("test_string".to_string()))
+            .with_span(DUMMY_SPAN);
         let function1 = Node::Function {
             name: "f1".to_string().with_span(DUMMY_SPAN),
             return_type_string: None,
@@ -359,7 +323,9 @@ mod tests {
 
         let first_string_literal_value = Node::walk_program(
             &mut |node: &SourceIDSpanned<Node>| match &node.inner {
-                Node::StringLiteral(value) => Some(value.clone()),
+                Node::Expression(Expression::Literal(Literal::StringLiteral(value))) => {
+                    Some(value.clone())
+                }
                 _ => None,
             },
             &mut node,

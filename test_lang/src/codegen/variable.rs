@@ -5,12 +5,12 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::Node::{self, TypedExpression},
+    ast::Expression,
     codegen::{identifier::Symbol, types::SimpleType},
 };
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_const(&mut self, identifier: &str, expression: &Node) {
+    pub fn handle_const(&mut self, identifier: &str, expression: &Expression) {
         let value = self.handle_expression(expression);
         let symbol = Symbol::Value(value);
         let current_scope = self.scopes.get_current_scope_mut();
@@ -24,9 +24,11 @@ impl<'ctx> CodeGen<'ctx> {
         };
     }
 
-    pub fn handle_let(&mut self, identifier: &str, expression: &Node) {
+    pub fn handle_let(&mut self, identifier: &str, expression: &Expression) {
         let simple_type = match expression {
-            TypedExpression(type_identifier, _) => SimpleType::from_type_string(type_identifier),
+            Expression::TypedExpression(type_identifier, _) => {
+                SimpleType::from_type_string(type_identifier)
+            }
             _ => SimpleType::Int,
         };
         let ir_type: BasicTypeEnum<'ctx> = self
@@ -65,19 +67,28 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_assignment(&self, identifier: &str, new_value_expression: &Node) {
-        let Symbol::Variable { pointer, type_: old_type } = self.scopes.resolve_identifier(identifier).unwrap() else {
+    pub fn handle_assignment(&self, identifier: &str, new_value_expression: &Expression) {
+        let Symbol::Variable {
+            pointer,
+            type_: old_type,
+        } = self.scopes.resolve_identifier(identifier).unwrap()
+        else {
             panic!();
-        }; 
+        };
         let new_type = match new_value_expression {
-            TypedExpression(type_string, _) => SimpleType::from_type_string(type_string),
+            Expression::TypedExpression(type_string, _) => {
+                SimpleType::from_type_string(type_string)
+            }
             _ => SimpleType::Int,
         };
 
         if new_type != *old_type {
             todo!("Type casts on assignments");
         }
-        let new_value: BasicValueEnum<'ctx> = self.handle_expression(new_value_expression).try_into().unwrap();
+        let new_value: BasicValueEnum<'ctx> = self
+            .handle_expression(new_value_expression)
+            .try_into()
+            .unwrap();
         self.ir.builder.build_store(*pointer, new_value).unwrap();
     }
 }
