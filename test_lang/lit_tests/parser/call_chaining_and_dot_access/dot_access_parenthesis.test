@@ -1,0 +1,8 @@
+// RUN: %parse < %s
+
+main() {
+    (x.w.r.t).a.d.s;
+    (x).w.r.t.a.d.s;
+    (x.w().r.t).a().d.s;
+    (x.w().r+2).a().d.s;
+}
