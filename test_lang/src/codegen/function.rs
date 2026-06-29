@@ -8,7 +8,7 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::{Expression, Formal, FunctionDefinition, Literal, Statement},
+    ast::{Expression, Parameter, Function, Literal, Statement},
     codegen::{identifier::Symbol, types::SimpleType},
     span::SourceIDSpanned,
 };
@@ -16,12 +16,12 @@ use crate::{
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_function(
         &mut self,
-        FunctionDefinition {
+        Function {
             name,
             return_type_string,
             formals,
             body,
-        }: &FunctionDefinition,
+        }: &Function,
     ) -> Result<(), Box<dyn Error>> {
         let return_type = match return_type_string {
             Some(string) => SimpleType::from_type_string(string),
@@ -49,8 +49,8 @@ impl<'ctx> CodeGen<'ctx> {
             let formal_types: Vec<BasicMetadataTypeEnum<'ctx>> = formals
                 .iter()
                 .map(|formal| match &formal.inner {
-                    Formal::UntypedFormal(_) => i32_t.into(),
-                    Formal::TypedFormal(type_string, _) => ir
+                    Parameter::Untyped(_) => i32_t.into(),
+                    Parameter::Typed(type_string, _) => ir
                         .type_string_to_ir_type(&type_string)
                         .unwrap_or_else(|| panic!("Void is not allowed as a parameter type"))
                         .try_into()
@@ -85,10 +85,10 @@ impl<'ctx> CodeGen<'ctx> {
                 let value = function.get_nth_param(i.try_into()?);
 
                 match &formal.inner {
-                    Formal::TypedFormal(_, identifier) => {
+                    Parameter::Typed(_, identifier) => {
                         function_scope.define_formal(&identifier, value.unwrap())
                     }
-                    Formal::UntypedFormal(identifier) => {
+                    Parameter::Untyped(identifier) => {
                         function_scope.define_formal(&identifier, value.unwrap())
                     }
                 };
@@ -111,7 +111,7 @@ impl<'ctx> CodeGen<'ctx> {
 
     fn handle_main_function(
         &mut self,
-        _formals: &Vec<SourceIDSpanned<Formal>>,
+        _formals: &Vec<SourceIDSpanned<Parameter>>,
         body: &Vec<SourceIDSpanned<Statement>>,
     ) {
         {
@@ -158,7 +158,7 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     pub fn handle_return(&self, expression: &Expression) {
-        if *expression == Expression::Literal(Literal::UnitLiteral) {
+        if *expression == Expression::Literal(Literal::Unit) {
             self.ir.builder.build_return(None).unwrap();
             return;
         }

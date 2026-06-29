@@ -2,7 +2,7 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{
-        BinaryOperator, BinopExpression, Expression, FunctionCall, Literal, UnaryOperator,
+        BinaryOperator, BinopExpression, Expression, Call, Literal, UnaryOperator,
         UnopExpression,
     },
     parenthesized,
@@ -20,7 +20,7 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::NumberLiteral(value) => Expression::Literal(Literal::NumberLiteral(value)),
+        Token::NumberLiteral(value) => Expression::Literal(Literal::Number(value)),
     }
     .spanned()
 }
@@ -31,7 +31,7 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::StringLiteral(value) => Expression::Literal(Literal::StringLiteral(value)),
+        Token::StringLiteral(value) => Expression::Literal(Literal::String(value)),
     }
     .spanned()
 }
@@ -42,8 +42,8 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::True => Expression::Literal(Literal::BooleanLiteral(true)),
-        Token::False => Expression::Literal(Literal::BooleanLiteral(false)),
+        Token::True => Expression::Literal(Literal::Boolean(true)),
+        Token::False => Expression::Literal(Literal::Boolean(false)),
     }
     .spanned()
 }
@@ -55,7 +55,7 @@ where
 {
     just(Token::LParenthesis)
         .ignore_then(just(Token::RParenthesis))
-        .to(Expression::Literal(Literal::UnitLiteral))
+        .to(Expression::Literal(Literal::Unit))
         .spanned()
 }
 pub fn binary_op_1<'src, I>()
@@ -137,9 +137,9 @@ where
                     _ => todo!(),
                 };
 
-                Expression::FunctionCall(FunctionCall {
+                Expression::Call(Call {
                     callee,
-                    argument_list,
+                    args: argument_list,
                 })
             })
             .spanned();

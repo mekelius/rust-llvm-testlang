@@ -3,7 +3,7 @@ use crate::span::SourceIDSpanned;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     Program(Program),
-    FunctionDefinition(FunctionDefinition),
+    Function(Function),
     Statement(Statement),
     Expression(Expression),
     Case(Case),
@@ -11,46 +11,98 @@ pub enum Node {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Program {
-    pub functions: Vec<SourceIDSpanned<FunctionDefinition>>,
+    pub functions: Vec<SourceIDSpanned<Function>>,
 }
 
+// ******************************************* FUNCTION *******************************************
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct FunctionDefinition {
+pub struct Function {
     pub name: SourceIDSpanned<String>,
     pub return_type_string: Option<SourceIDSpanned<String>>,
-    pub formals: Vec<SourceIDSpanned<Formal>>,
+    pub formals: Vec<SourceIDSpanned<Parameter>>,
     pub body: Vec<SourceIDSpanned<Statement>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Formal {
-    UntypedFormal(String),
-    TypedFormal(SourceIDSpanned<String>, SourceIDSpanned<String>),
+pub enum Parameter {
+    Untyped(String),
+    Typed(SourceIDSpanned<String>, SourceIDSpanned<String>),
 }
+
+// ******************************************* STATEMENT ******************************************
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Statement {
+    Empty,
+    Block(Vec<SourceIDSpanned<Statement>>),
+    ExpressionStatement(Box<SourceIDSpanned<Expression>>),
+    
+    Let(String, Box<SourceIDSpanned<Expression>>),
+    Const(String, Box<SourceIDSpanned<Expression>>),
+    Assignment(String, Box<SourceIDSpanned<Expression>>),
+    Return(Box<SourceIDSpanned<Expression>>),
+    ValuelessReturn,
+
+    While {
+        condition: Box<SourceIDSpanned<Expression>>,
+        body: Box<SourceIDSpanned<Statement>>,
+    },
+    For {
+        init: Box<SourceIDSpanned<Statement>>,
+        condition: Box<SourceIDSpanned<Expression>>,
+        step: Box<SourceIDSpanned<Statement>>,
+        body: Box<SourceIDSpanned<Statement>>,
+    },
+    If {
+        condition: Box<SourceIDSpanned<Expression>>,
+        body: Box<SourceIDSpanned<Statement>>,
+    },
+    IfElse(
+        Box<SourceIDSpanned<Statement>>,
+        Box<SourceIDSpanned<Statement>>,
+    ),
+    Switch {
+        matched_value_expression: Box<SourceIDSpanned<Expression>>,
+        cases: Vec<SourceIDSpanned<Case>>,
+    },
+
+    Continue,
+    Break,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Case {
+    pub matched_value: Option<SourceIDSpanned<String>>,
+    pub body: Vec<SourceIDSpanned<Statement>>,
+}
+
+pub const DEFAULT_CASE: Option<SourceIDSpanned<String>> = None;
+
+// ****************************************** EXPRESSION ******************************************
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     TypedExpression(SourceIDSpanned<String>, Box<SourceIDSpanned<Expression>>),
-    FunctionCall(FunctionCall),
+    Call(Call),
     Binop(BinopExpression),
     Unop(UnopExpression),
-
     Identifier(String),
     Literal(Literal),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
-    NumberLiteral(String),
-    StringLiteral(String),
-    BooleanLiteral(bool),
-    UnitLiteral,
+    Number(String),
+    String(String),
+    Boolean(bool),
+    Unit,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FunctionCall {
+pub struct Call {
     pub callee: SourceIDSpanned<String>,
-    pub argument_list: Vec<SourceIDSpanned<Expression>>,
+    pub args: Vec<SourceIDSpanned<Expression>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -78,62 +130,13 @@ pub enum BinaryOperator {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum UnaryOperator {
-    UnaryMinus,
-    UnaryNot,
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct UnopExpression {
     pub op: UnaryOperator,
     pub term: Box<SourceIDSpanned<Expression>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Statement {
-    ContinueStatement,
-    BreakStatement,
-
-    EmptyStatement,
-
-    LetStatement(String, Box<SourceIDSpanned<Expression>>),
-    ConstStatement(String, Box<SourceIDSpanned<Expression>>),
-    AssignmentStatement(String, Box<SourceIDSpanned<Expression>>),
-
-    ReturnStatement(Box<SourceIDSpanned<Expression>>),
-    ValuelessReturnStatement,
-
-    Block(Vec<SourceIDSpanned<Statement>>),
-    ExpressionStatement(Box<SourceIDSpanned<Expression>>),
-
-    WhileStatement {
-        condition: Box<SourceIDSpanned<Expression>>,
-        body: Box<SourceIDSpanned<Statement>>,
-    },
-    ForStatement {
-        init: Box<SourceIDSpanned<Statement>>,
-        condition: Box<SourceIDSpanned<Expression>>,
-        step: Box<SourceIDSpanned<Statement>>,
-        body: Box<SourceIDSpanned<Statement>>,
-    },
-    IfStatement {
-        condition: Box<SourceIDSpanned<Expression>>,
-        body: Box<SourceIDSpanned<Statement>>,
-    },
-    IfElseStatement(
-        Box<SourceIDSpanned<Statement>>,
-        Box<SourceIDSpanned<Statement>>,
-    ),
-    SwitchStatement {
-        matched_value_expression: Box<SourceIDSpanned<Expression>>,
-        cases: Vec<SourceIDSpanned<Case>>,
-    },
+pub enum UnaryOperator {
+    UnaryMinus,
+    UnaryNot,
 }
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Case {
-    pub matched_value: Option<SourceIDSpanned<String>>,
-    pub body: Vec<SourceIDSpanned<Statement>>,
-}
-
-pub const DEFAULT_CASE: Option<SourceIDSpanned<String>> = None;

@@ -8,33 +8,33 @@ impl<'ctx> CodeGen<'ctx> {
     /* Return true if was a return statement */
     pub fn handle_statement(&mut self, statement: &Statement) {
         match statement {
-            Statement::ConstStatement(identifier, expression) => {
+            Statement::Const(identifier, expression) => {
                 self.handle_const(identifier, expression)
             }
-            Statement::LetStatement(identifier, expression) => {
+            Statement::Let(identifier, expression) => {
                 self.handle_let(identifier, expression)
             }
-            Statement::AssignmentStatement(identifier, expression) => {
+            Statement::Assignment(identifier, expression) => {
                 self.handle_assignment(identifier, expression)
             }
 
-            Statement::ReturnStatement(expression) => {
+            Statement::Return(expression) => {
                 self.handle_return(expression);
             }
-            Statement::ValuelessReturnStatement => {
+            Statement::ValuelessReturn => {
                 self.handle_valueless_return();
             }
             Statement::ExpressionStatement(expression) => {
                 self.handle_expression(&expression);
             }
-            Statement::EmptyStatement => return,
+            Statement::Empty => return,
 
-            Statement::IfStatement { condition, body } => self.handle_if(condition, body),
-            Statement::IfElseStatement(if_branch, else_branch) => {
+            Statement::If { condition, body } => self.handle_if(condition, body),
+            Statement::IfElse(if_branch, else_branch) => {
                 self.handle_if_else(if_branch, else_branch)
             }
-            Statement::WhileStatement { condition, body } => self.handle_while(condition, body),
-            Statement::ForStatement {
+            Statement::While { condition, body } => self.handle_while(condition, body),
+            Statement::For {
                 init,
                 condition,
                 step,
@@ -43,7 +43,7 @@ impl<'ctx> CodeGen<'ctx> {
 
             Statement::Block(statements) => self.handle_block(statements),
 
-            Statement::SwitchStatement {
+            Statement::Switch {
                 matched_value_expression,
                 cases,
             } => self.handle_switch(matched_value_expression, cases),

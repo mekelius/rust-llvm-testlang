@@ -1,7 +1,7 @@
 use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
 
 use super::CodeGen;
-use crate::ast::{Expression, FunctionCall, Literal};
+use crate::ast::{Expression, Call, Literal};
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_expression(&self, expression: &Expression) -> AnyValueEnum<'ctx> {
@@ -13,20 +13,20 @@ impl<'ctx> CodeGen<'ctx> {
             Expression::Binop(binop) => self.handle_binop(binop),
             Expression::Unop(unop) => self.handle_unop(unop),
 
-            Expression::FunctionCall(call) => self.handle_function_call(&call),
+            Expression::Call(call) => self.handle_function_call(&call),
 
             Expression::Identifier(value) => self.handle_identifier(value),
 
-            Expression::Literal(Literal::NumberLiteral(value)) => {
+            Expression::Literal(Literal::Number(value)) => {
                 self.handle_number_literal(&value)
             }
-            Expression::Literal(Literal::StringLiteral(value)) => {
+            Expression::Literal(Literal::String(value)) => {
                 self.handle_string_literal(&value)
             }
-            Expression::Literal(Literal::BooleanLiteral(value)) => {
+            Expression::Literal(Literal::Boolean(value)) => {
                 self.handle_boolean_literal(&value)
             }
-            Expression::Literal(Literal::UnitLiteral) => {
+            Expression::Literal(Literal::Unit) => {
                 panic!("UnitLiteral only allowed as return value atm")
             }
         }
@@ -42,10 +42,10 @@ impl<'ctx> CodeGen<'ctx> {
         self.handle_expression(expression)
     }
 
-    fn handle_function_call(&self, call_expression: &FunctionCall) -> AnyValueEnum<'ctx> {
-        let FunctionCall {
+    fn handle_function_call(&self, call_expression: &Call) -> AnyValueEnum<'ctx> {
+        let Call {
             callee: callee_name,
-            argument_list,
+            args: argument_list,
         } = call_expression;
 
         let args: Vec<BasicMetadataValueEnum> = argument_list

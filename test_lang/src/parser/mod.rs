@@ -9,7 +9,7 @@ use chumsky::input::IterInput;
 use chumsky::prelude::*;
 use std::error::Error;
 
-use crate::ast::{FunctionDefinition, Program};
+use crate::ast::{Function, Program};
 use crate::parser::function::function;
 use crate::source::SourceID;
 use crate::span::{SourceIDSpan, SourceIDSpanned};
@@ -25,7 +25,7 @@ where
 
     let program = function
         .repeated()
-        .collect::<Vec<SourceIDSpanned<FunctionDefinition>>>()
+        .collect::<Vec<SourceIDSpanned<Function>>>()
         .map(|functions| Program { functions });
 
     program.spanned()

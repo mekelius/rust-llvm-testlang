@@ -47,7 +47,7 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     pub fn handle_if_else(&mut self, if_branch: &Statement, else_branch: &Statement) {
-        let Statement::IfStatement {
+        let Statement::If {
             condition,
             body: if_branch_body,
         } = if_branch

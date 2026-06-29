@@ -127,7 +127,7 @@ impl<'ctx> CodeGen<'ctx> {
     ) {
         for statement in body {
             match statement.inner {
-                Statement::BreakStatement => {
+                Statement::Break => {
                     self.ir
                         .builder
                         .build_unconditional_branch(*after_block)

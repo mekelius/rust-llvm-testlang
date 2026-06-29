@@ -79,7 +79,7 @@ pub fn break_statement<'src, I>()
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    just(Token::Break).to(Statement::BreakStatement).spanned()
+    just(Token::Break).to(Statement::Break).spanned()
 }
 
 pub fn empty_statement<'src, I>()
@@ -87,7 +87,7 @@ pub fn empty_statement<'src, I>()
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    empty().to(Statement::EmptyStatement).spanned()
+    empty().to(Statement::Empty).spanned()
 }
 
 pub fn expression_statement<'src, I>()
@@ -157,7 +157,7 @@ where
                         op: BinaryOperator::Add,
                         lhs: Box::new(Expression::Identifier(name.inner).with_span(name.span)),
                         rhs: Box::new(
-                            Expression::Literal(Literal::NumberLiteral("1".into()))
+                            Expression::Literal(Literal::Number("1".into()))
                                 .with_span(operator.span),
                         ),
                     }),
@@ -165,7 +165,7 @@ where
                         op: BinaryOperator::Sub,
                         lhs: Box::new(Expression::Identifier(name.inner).with_span(name.span)),
                         rhs: Box::new(
-                            Expression::Literal(Literal::NumberLiteral("1".into()))
+                            Expression::Literal(Literal::Number("1".into()))
                                 .with_span(operator.span),
                         ),
                     }),
@@ -186,7 +186,7 @@ where
 {
     just(Token::Const)
         .ignore_then(assignment())
-        .map(|(name, value)| Statement::ConstStatement(name.inner, Box::new(value)))
+        .map(|(name, value)| Statement::Const(name.inner, Box::new(value)))
         .spanned()
 }
 
@@ -197,7 +197,7 @@ where
 {
     just(Token::Let)
         .ignore_then(assignment())
-        .map(|(name, value)| Statement::LetStatement(name.inner, Box::new(value)))
+        .map(|(name, value)| Statement::Let(name.inner, Box::new(value)))
         .spanned()
 }
 
@@ -207,7 +207,7 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     choice((assignment(), shorthand_assignment(), postfix_assignment()))
-        .map(|(name, value)| Statement::AssignmentStatement(name.inner, Box::new(value)))
+        .map(|(name, value)| Statement::Assignment(name.inner, Box::new(value)))
         .spanned()
 }
 
@@ -217,7 +217,7 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Return)
-        .to(Statement::ValuelessReturnStatement)
+        .to(Statement::ValuelessReturn)
         .spanned()
 }
 
@@ -228,7 +228,7 @@ where
 {
     just(Token::Return)
         .ignore_then(expression())
-        .map(|expr| Statement::ReturnStatement(Box::new(expr)))
+        .map(|expr| Statement::Return(Box::new(expr)))
         .spanned()
 }
 
@@ -238,7 +238,7 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Continue)
-        .to(Statement::ContinueStatement)
+        .to(Statement::Continue)
         .spanned()
 }
 
@@ -255,7 +255,7 @@ where
         let if_statement = just(Token::If)
             .ignore_then(parenthesized!(expression.clone()))
             .then(p.clone())
-            .map(|(condition, body)| Statement::IfStatement {
+            .map(|(condition, body)| Statement::If {
                 condition: Box::new(condition),
                 body: Box::new(body),
             })
@@ -266,7 +266,7 @@ where
             .then_ignore(just(Token::Else))
             .then(p.clone())
             .map(|(if_branch, else_branch)| {
-                Statement::IfElseStatement(Box::new(if_branch), Box::new(else_branch))
+                Statement::IfElse(Box::new(if_branch), Box::new(else_branch))
             })
             .spanned();
 
@@ -299,7 +299,7 @@ where
             .then(in_curly_braces!(
                 (case.or(default_case)).repeated().collect()
             ))
-            .map(|(expression, cases)| Statement::SwitchStatement {
+            .map(|(expression, cases)| Statement::Switch {
                 matched_value_expression: Box::new(expression),
                 cases,
             })
@@ -336,7 +336,7 @@ where
             ))
             .then(p.clone())
             .map(
-                |(((init, condition), step), body)| Statement::ForStatement {
+                |(((init, condition), step), body)| Statement::For {
                     init: Box::new(init),
                     condition: Box::new(condition),
                     step: Box::new(step),
@@ -348,7 +348,7 @@ where
         let while_statement = just(Token::While)
             .ignore_then(parenthesized!(expression.clone()))
             .then(p.clone())
-            .map(|(condition, body)| Statement::WhileStatement {
+            .map(|(condition, body)| Statement::While {
                 condition: Box::new(condition),
                 body: Box::new(body),
             })

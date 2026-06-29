@@ -1,7 +1,7 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::{Formal, FunctionDefinition, Statement},
+    ast::{Parameter, Function, Statement},
     in_curly_braces, parenthesized,
     parser::{
         ParserError,
@@ -13,7 +13,7 @@ use crate::{
 };
 
 fn typed_formal<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Formal>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Parameter>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -25,22 +25,22 @@ where
             }
             .spanned(),
         )
-        .map(|(type_, name)| Formal::TypedFormal(type_, name))
+        .map(|(type_, name)| Parameter::Typed(type_, name))
         .spanned()
 }
 
 fn untyped_formal<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Formal>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Parameter>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::Identifier(value) => Formal::UntypedFormal(value)
+        Token::Identifier(value) => Parameter::Untyped(value)
     }
     .spanned()
 }
 
-fn formal<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Formal>, ParserError<'src>> + Clone
+fn formal<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Parameter>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -48,14 +48,14 @@ where
 }
 
 fn formals<'src, I>()
--> impl Parser<'src, I, Vec<SourceIDSpanned<Formal>>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, Vec<SourceIDSpanned<Parameter>>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     parenthesized!(
         formal()
             .separated_by(just(Token::Comma))
-            .collect::<Vec<SourceIDSpanned<Formal>>>()
+            .collect::<Vec<SourceIDSpanned<Parameter>>>()
     )
 }
 
@@ -84,7 +84,7 @@ where
 }
 
 pub fn function<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<FunctionDefinition>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Function>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -93,7 +93,7 @@ where
         .then(maybe_return_type())
         .then(function_body())
         .map(
-            |(((name, formals), return_type_string), body)| FunctionDefinition {
+            |(((name, formals), return_type_string), body)| Function {
                 name,
                 return_type_string,
                 formals,
