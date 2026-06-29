@@ -1,7 +1,7 @@
 use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
 
 use super::CodeGen;
-use crate::ast::{Expression, FunctionCall, Literal, Node};
+use crate::ast::{Expression, FunctionCall, Literal};
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_expression(&self, expression: &Expression) -> AnyValueEnum<'ctx> {
@@ -29,7 +29,6 @@ impl<'ctx> CodeGen<'ctx> {
             Expression::Literal(Literal::UnitLiteral) => {
                 panic!("UnitLiteral only allowed as return value atm")
             }
-            _ => unreachable!("Unknown AST node type {:?}", expression),
         }
     }
 
