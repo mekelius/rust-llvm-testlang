@@ -174,8 +174,8 @@ impl Node {
             }
             Expression::Literal(_) => None,
             Expression::Identifier(_) => None,
-            Expression::DotAccess(dot_access) => {
-                Self::walk_expression(visitor, &mut *dot_access.lhs)
+            Expression::PropertyAccess(dot_access) => {
+                Self::walk_expression(visitor, &mut *dot_access.object_expression)
             }
             Expression::TypedExpression(_type_, expression) => {
                 Self::walk_expression(visitor, expression)

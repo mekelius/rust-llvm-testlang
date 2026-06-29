@@ -18,7 +18,7 @@ impl<'ctx> CodeGen<'ctx> {
             Expression::Unop(unop) => self.handle_unop(unop),
             Expression::Call(call) => self.handle_function_call(&call),
             Expression::Identifier(value) => self.handle_identifier(&value),
-            Expression::DotAccess(_) => todo!("Dot access expressions"),
+            Expression::PropertyAccess(_) => todo!("Dot access expressions"),
 
             Expression::Literal(Literal::Number(value)) => self.handle_number_literal(&value),
             Expression::Literal(Literal::String(value)) => self.handle_string_literal(&value),

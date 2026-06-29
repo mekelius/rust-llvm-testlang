@@ -141,7 +141,7 @@ pub enum Expression {
     Binop(BinopExpression),
     Unop(UnopExpression),
     Identifier(String),
-    DotAccess(DotAccessExpression),
+    PropertyAccess(PropertyAccess),
     Literal(Literal),
 }
 
@@ -155,7 +155,7 @@ impl Expression {
             Expression::Binop(expression) => expression.get_type(),
             Expression::Unop(expression) => expression.get_type(),
             Expression::Identifier(_value) => Unknown,
-            Expression::DotAccess(_) => Unknown,
+            Expression::PropertyAccess(_) => Unknown,
             Expression::Literal(Literal::Boolean(_)) => Boolean,
             Expression::Literal(Literal::String(_)) => SimpleType::String,
             Expression::Literal(Literal::Number(_)) => Int,
@@ -165,8 +165,8 @@ impl Expression {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DotAccessExpression {
-    pub lhs: Box<SourceIDSpanned<Expression>>,
+pub struct PropertyAccess {
+    pub object_expression: Box<SourceIDSpanned<Expression>>,
     pub property_name: SourceIDSpanned<String>,
 }
 

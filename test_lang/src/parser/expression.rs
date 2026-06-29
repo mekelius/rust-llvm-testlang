@@ -2,7 +2,7 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{
-        BinaryOperator, BinopExpression, Call, DotAccessExpression, Expression, UnaryOperator,
+        BinaryOperator, BinopExpression, Call, Expression, PropertyAccess, UnaryOperator,
         UnopExpression,
     },
     parenthesized,
@@ -58,6 +58,14 @@ where
     .spanned()
 }
 
+enum DotSubscript {
+    PropertyAccess(SourceIDSpanned<String>),
+    MethodCall {
+        method_name: SourceIDSpanned<String>,
+        args: Vec<SourceIDSpanned<Expression>>,
+    },
+}
+
 pub fn expression<'src, I>()
 -> impl Parser<'src, I, SourceIDSpanned<Expression>, ParserError<'src>> + Clone
 where
@@ -77,20 +85,73 @@ where
         let callee = choice((callee_expression, identifier.clone()));
 
         let function_call = callee
-            .then(argument_list)
+            .then(argument_list.clone())
             .map(|(callee, argument_list)| {
                 Expression::Call(Call {
                     callee: Box::new(callee),
                     args: argument_list,
                 })
-            })
-            .spanned();
+            });
 
         let typed_expression = type_expression()
             .clone()
             .then(expression.clone())
             .map(|(type_, expression)| Expression::TypedExpression(type_, Box::new(expression)))
             .spanned();
+
+        let dot_subscriptable_expression = choice((
+            function_call.clone().spanned(),
+            identifier.clone(),
+            parenthesized!(expression.clone()),
+        ));
+
+        let method_call = identifier_as_string().then(argument_list);
+        let dot_subscript = choice((
+            method_call
+                .map(|(method_name, args)| DotSubscript::MethodCall { method_name, args })
+                .spanned(),
+            identifier_as_string()
+                .map(|value| DotSubscript::PropertyAccess(value))
+                .spanned(),
+        ));
+
+        let dot_access_chain = dot_subscriptable_expression.foldl(
+            just(Token::Period).ignore_then(dot_subscript).repeated(),
+            |object_expression, dot_subscript: SourceIDSpanned<DotSubscript>| {
+                let span = object_expression
+                    .span
+                    .clone()
+                    .union(dot_subscript.span.clone());
+                match dot_subscript.inner {
+                    DotSubscript::MethodCall { method_name, args } => {
+                        let callee_span = object_expression
+                            .span
+                            .clone()
+                            .union(method_name.span.clone());
+
+                        let callee = Expression::PropertyAccess(PropertyAccess {
+                            object_expression: Box::new(object_expression),
+                            property_name: method_name,
+                        })
+                        .with_span(callee_span);
+
+                        Expression::Call(Call {
+                            callee: Box::new(callee),
+                            args,
+                        })
+                        .with_span(span)
+                    }
+
+                    DotSubscript::PropertyAccess(property_name) => {
+                        Expression::PropertyAccess(PropertyAccess {
+                            object_expression: Box::new(object_expression),
+                            property_name,
+                        })
+                        .with_span(span)
+                    }
+                }
+            },
+        );
 
         let term = recursive(|term| {
             let unary_not_expression = just(Token::Minus)
@@ -115,23 +176,10 @@ where
 
             let unary_expression = choice((unary_minus_expression, unary_not_expression));
 
-            // let dot_access_chain = choice((identifier_as_string(), function_call.clone()));
-
-            let dot_access_expression = choice((identifier.clone(), function_call.clone()))
-                .then_ignore(just(Token::Period))
-                .then(identifier_as_string())
-                .map(|(lhs, property_name)| {
-                    Expression::DotAccess(DotAccessExpression {
-                        lhs: Box::new(lhs),
-                        property_name,
-                    })
-                })
-                .spanned();
-
             choice((
+                dot_access_chain,
                 unary_expression.clone(),
-                function_call,
-                dot_access_expression,
+                function_call.spanned(),
                 identifier.clone(),
                 literal(),
                 typed_expression,
