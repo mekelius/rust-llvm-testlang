@@ -1,7 +1,11 @@
 use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
 
 use super::CodeGen;
-use crate::ast::{Call, Expression, LValue, Literal};
+use crate::ast::{
+    Call,
+    Expression::{self},
+    Literal,
+};
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_expression(&self, expression: &Expression) -> AnyValueEnum<'ctx> {
@@ -13,8 +17,9 @@ impl<'ctx> CodeGen<'ctx> {
             Expression::Binop(binop) => self.handle_binop(binop),
             Expression::Unop(unop) => self.handle_unop(unop),
             Expression::Call(call) => self.handle_function_call(&call),
-            Expression::LValue(value) => self.handle_lvalue(&*value),
-            
+            Expression::Identifier(value) => self.handle_identifier(&value),
+            Expression::DotAccess(_) => todo!("Dot access expressions"),
+
             Expression::Literal(Literal::Number(value)) => self.handle_number_literal(&value),
             Expression::Literal(Literal::String(value)) => self.handle_string_literal(&value),
             Expression::Literal(Literal::Boolean(value)) => self.handle_boolean_literal(&value),
@@ -40,14 +45,8 @@ impl<'ctx> CodeGen<'ctx> {
             args: argument_list,
         } = call_expression;
 
-        let lvalue: &LValue = match &callee_expression.inner {
-            Expression::LValue(lvalue) => lvalue,
-            _ => todo!("Callee expressions"),
-        };
-
-        let callee_name = match lvalue {
-            LValue::Identifier(callee_name) => callee_name,
-            _ => todo!("Non identifier lvalues"),
+        let Expression::Identifier(callee_name) = &callee_expression.inner else {
+            todo!("Callee expressions")
         };
 
         let args: Vec<BasicMetadataValueEnum> = argument_list

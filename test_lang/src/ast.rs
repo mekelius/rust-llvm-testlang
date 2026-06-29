@@ -125,6 +125,21 @@ pub enum Statement {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum LValue {
+    Identifier(String),
+    DotAccess(DotAccessExpression),
+}
+
+impl LValue {
+    pub fn to_expression(&self) -> Expression {
+        match self {
+            LValue::Identifier(value) => Expression::Identifier(value.clone()),
+            LValue::DotAccess(expression) => Expression::DotAccess(Box::new(expression.clone())),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Case {
     pub matched_value: Option<SourceIDSpanned<String>>,
     pub body: Vec<SourceIDSpanned<Statement>>,
@@ -140,7 +155,8 @@ pub enum Expression {
     Call(Call),
     Binop(BinopExpression),
     Unop(UnopExpression),
-    LValue(Box<LValue>),
+    Identifier(String),
+    DotAccess(Box<DotAccessExpression>),
     Literal(Literal),
 }
 
@@ -153,13 +169,20 @@ impl Expression {
             Expression::Call(_call) => Unknown,
             Expression::Binop(expression) => expression.get_type(),
             Expression::Unop(expression) => expression.get_type(),
-            Expression::LValue(_value) => Unknown,
+            Expression::Identifier(_value) => Unknown,
+            Expression::DotAccess(_) => Unknown,
             Expression::Literal(Literal::Boolean(_)) => Boolean,
             Expression::Literal(Literal::String(_)) => SimpleType::String,
             Expression::Literal(Literal::Number(_)) => Int,
             Expression::Literal(Literal::Unit) => Void,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DotAccessExpression {
+    pub lhs: Box<SourceIDSpanned<Expression>>,
+    pub property_name: SourceIDSpanned<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -239,15 +262,4 @@ impl UnopExpression {
             UnaryOperator::UnaryNot => Boolean,
         }
     }
-}
-
-// ******************************************** LVALUE ********************************************
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum LValue {
-    Identifier(String),
-    DotAccess {
-        lhs: SourceIDSpanned<Expression>,
-        property_name: SourceIDSpanned<String>,
-    },
 }

@@ -134,9 +134,7 @@ where
             };
             let rhs = Expression::Binop(BinopExpression {
                 op,
-                lhs: Box::new(
-                    Expression::LValue(Box::new(lvalue.inner.clone())).with_span(lvalue.span),
-                ),
+                lhs: Box::new(lvalue.to_expression().with_span(lvalue.span)),
                 rhs: Box::new(rhs),
             })
             .with_span(operator.span.union(rhs_span));
@@ -159,9 +157,7 @@ where
                 match operator.inner {
                     PostfixAssignment::Increment => Expression::Binop(BinopExpression {
                         op: BinaryOperator::Add,
-                        lhs: Box::new(
-                            Expression::LValue(Box::new(lvalue.inner)).with_span(lvalue.span),
-                        ),
+                        lhs: Box::new(lvalue.to_expression().with_span(lvalue.span)),
                         rhs: Box::new(
                             Expression::Literal(Literal::Number("1".into()))
                                 .with_span(operator.span),
@@ -169,9 +165,7 @@ where
                     }),
                     PostfixAssignment::Decrement => Expression::Binop(BinopExpression {
                         op: BinaryOperator::Sub,
-                        lhs: Box::new(
-                            Expression::LValue(Box::new(lvalue.inner)).with_span(lvalue.span),
-                        ),
+                        lhs: Box::new(lvalue.to_expression().with_span(lvalue.span)),
                         rhs: Box::new(
                             Expression::Literal(Literal::Number("1".into()))
                                 .with_span(operator.span),
@@ -179,9 +173,7 @@ where
                     }),
                     PostfixAssignment::Negate => Expression::Unop(UnopExpression {
                         op: UnaryOperator::UnaryNot,
-                        term: Box::new(
-                            Expression::LValue(Box::new(lvalue.inner)).with_span(lvalue.span),
-                        ),
+                        term: Box::new(lvalue.to_expression().with_span(lvalue.span)),
                     }),
                 }
                 .with_span(operator.span),

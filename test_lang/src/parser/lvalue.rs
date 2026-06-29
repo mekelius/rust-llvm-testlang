@@ -1,7 +1,7 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::LValue,
+    ast::{DotAccessExpression, LValue},
     parser::{ParserError, common::identifier_as_string, expression::expression, lexer::Token},
     span::{SourceIDSpan, SourceIDSpanned},
 };
@@ -14,7 +14,12 @@ where
     expression()
         .then_ignore(just(Token::Period))
         .then(identifier_as_string())
-        .map(|(lhs, property_name)| LValue::DotAccess { lhs, property_name })
+        .map(|(lhs, property_name)| {
+            LValue::DotAccess(DotAccessExpression {
+                lhs: Box::new(lhs),
+                property_name,
+            })
+        })
         .spanned()
 }
 

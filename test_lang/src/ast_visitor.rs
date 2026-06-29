@@ -1,7 +1,7 @@
 use crate::{
     ast::{
-        BinopExpression, Call, Case, Expression, Function, Node, NodeRef, Program, Statement,
-        UnopExpression,
+        BinopExpression, Call, Case, Expression, Function, Node, NodeRef,
+        Program, Statement, UnopExpression,
     },
     span::SourceIDSpanned,
 };
@@ -173,7 +173,10 @@ impl Node {
                 Self::walk_expression(visitor, term)
             }
             Expression::Literal(_) => None,
-            Expression::LValue(_) => None,
+            Expression::Identifier(_) => None,
+            Expression::DotAccess(dot_access) => {
+                Self::walk_expression(visitor, &mut *dot_access.lhs)
+            }
             Expression::TypedExpression(_type_, expression) => {
                 Self::walk_expression(visitor, expression)
             }
