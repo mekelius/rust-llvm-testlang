@@ -2,18 +2,18 @@ use chumsky::span::SpanWrap;
 
 use crate::{
     ast::{
-        BinopExpression, Expression, FunctionCall, FunctionDefinition, Node, Statement,
-        UnopExpression,
+        BinopExpression, Case, DEFAULT_CASE, Expression, FunctionCall, FunctionDefinition, Node,
+        Program, Statement, UnopExpression,
     },
     span::SourceIDSpanned,
 };
 
 pub trait ASTVisitor<R> {
-    fn visit_program(&mut self, program: &SourceIDSpanned<Node>) -> Option<R>;
+    fn visit_program(&mut self, program: &SourceIDSpanned<Program>) -> Option<R>;
     fn visit_function(&mut self, function: &SourceIDSpanned<FunctionDefinition>) -> Option<R>;
     fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R>;
     fn visit_expression(&mut self, expression: &SourceIDSpanned<Expression>) -> Option<R>;
-    fn visit_case(&mut self, case: &SourceIDSpanned<Node>) -> Option<R>;
+    fn visit_case(&mut self, case: &SourceIDSpanned<Case>) -> Option<R>;
 }
 
 pub trait DumbASTVisitor<R>: ASTVisitor<R> {
@@ -24,8 +24,8 @@ impl<T, R> ASTVisitor<R> for T
 where
     T: DumbASTVisitor<R>,
 {
-    fn visit_program(&mut self, program: &SourceIDSpanned<Node>) -> Option<R> {
-        self.visit_node(program)
+    fn visit_program(&mut self, program: &SourceIDSpanned<Program>) -> Option<R> {
+        self.visit_node(&Node::Program(program.inner.clone()).with_span(program.span))
     }
     fn visit_function(&mut self, function: &SourceIDSpanned<FunctionDefinition>) -> Option<R> {
         self.visit_node(&Node::FunctionDefinition(function.inner.clone()).with_span(function.span))
@@ -36,8 +36,8 @@ where
     fn visit_expression(&mut self, expression: &SourceIDSpanned<Expression>) -> Option<R> {
         self.visit_node(&Node::Expression(expression.inner.clone()).with_span(expression.span))
     }
-    fn visit_case(&mut self, case: &SourceIDSpanned<Node>) -> Option<R> {
-        self.visit_node(case)
+    fn visit_case(&mut self, case: &SourceIDSpanned<Case>) -> Option<R> {
+        self.visit_node(&Node::Case(case.inner.clone()).with_span(case.span))
     }
 }
 
@@ -73,20 +73,15 @@ impl<R> ASTVisitResult<R> for Option<R> {
 impl Node {
     pub fn walk_program<R>(
         visitor: &mut impl ASTVisitor<R>,
-        program: &mut SourceIDSpanned<Node>,
+        program: &mut SourceIDSpanned<Program>,
     ) -> Option<R> {
-        let value = visitor.visit_program(program);
-        if value.is_some() {
-            return value;
-        }
-
-        let Node::Program(functions) = &mut program.inner else {
-            unreachable!("Node::walk_program called with a non-program node");
-        };
-
-        functions
-            .iter_mut()
-            .find_map(|function| Self::walk_function(visitor, function))
+        visitor.visit_program(program).or_else(|| {
+            program
+                .inner
+                .functions
+                .iter_mut()
+                .find_map(|function| Self::walk_function(visitor, function))
+        })
     }
 
     pub fn walk_function<R>(
@@ -214,22 +209,23 @@ impl Node {
 
     pub fn walk_case<R>(
         visitor: &mut impl ASTVisitor<R>,
-        case: &mut SourceIDSpanned<Node>,
+        case: &mut SourceIDSpanned<Case>,
     ) -> Option<R> {
         return visitor.visit_case(case).or_else(|| match &mut case.inner {
-            Node::Case {
-                value: _value,
+            Case {
+                matched_value: Some(_),
                 body,
             } => {
                 return body
                     .iter_mut()
                     .find_map(|statement| Self::walk_statement(visitor, statement));
             }
-            Node::DefaultCase(_body) => {
+
+            Case {
+                matched_value: DEFAULT_CASE,
+                body: _,
+            } => {
                 todo!("default case")
-            }
-            _ => {
-                unreachable!("Node::walk_case called with a non-case node")
             }
         });
     }
@@ -259,7 +255,10 @@ mod tests {
             body: vec![Statement::EmptyStatement.with_span(DUMMY_SPAN)],
         }
         .with_span(DUMMY_SPAN);
-        let mut node = Node::Program(vec![function1]).with_span(DUMMY_SPAN);
+        let mut node = Program {
+            functions: vec![function1],
+        }
+        .with_span(DUMMY_SPAN);
 
         let first_function_name = Node::walk_program(
             &mut |node: &SourceIDSpanned<Node>| match &node.inner {
@@ -299,7 +298,10 @@ mod tests {
             ],
         }
         .with_span(DUMMY_SPAN);
-        let mut node = Node::Program(vec![function1, function2]).with_span(DUMMY_SPAN);
+        let mut node = Program {
+            functions: vec![function1, function2],
+        }
+        .with_span(DUMMY_SPAN);
 
         let first_string_literal_value = Node::walk_program(
             &mut |node: &SourceIDSpanned<Node>| match &node.inner {

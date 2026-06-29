@@ -2,17 +2,13 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{
-        BinaryOperator, BinopExpression, Expression, Literal, Node, Statement, UnaryOperator,
-        UnopExpression,
-    },
-    in_curly_braces, parenthesized,
-    parser::{
+        BinaryOperator, BinopExpression, Case, DEFAULT_CASE, Expression, Literal, Statement, UnaryOperator, UnopExpression,
+    }, in_curly_braces, parenthesized, parser::{
         ParserError,
         common::{identifier_as_string, number_literal_as_string},
         expression::expression,
         lexer::Token,
-    },
-    span::{SourceIDSpan, SourceIDSpanned},
+    }, span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[derive(Clone)]
@@ -146,7 +142,8 @@ where
 }
 
 pub fn postfix_assignment<'src, I>()
--> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Expression>), ParserError<'src>> + Clone
+-> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Expression>), ParserError<'src>>
++ Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -282,13 +279,19 @@ where
             .ignore_then(number_literal_as_string())
             .then_ignore(just(Token::Colon))
             .then(statement_list.clone())
-            .map(|(value, body)| Node::Case { value, body })
+            .map(|(matched_value, body)| Case {
+                matched_value: Some(matched_value),
+                body,
+            })
             .spanned();
 
         let default_case = just(Token::Default)
             .ignore_then(just(Token::Colon))
             .ignore_then(statement_list.clone())
-            .map(|case_body| Node::DefaultCase(case_body))
+            .map(|body| Case {
+                matched_value: DEFAULT_CASE,
+                body,
+            })
             .spanned();
 
         let switch_statement = just(Token::Switch)

@@ -2,7 +2,7 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{
-        BinaryOperator, BinopExpression, Expression, FunctionCall, Literal, Node, UnaryOperator,
+        BinaryOperator, BinopExpression, Expression, FunctionCall, Literal, UnaryOperator,
         UnopExpression,
     },
     parenthesized,
@@ -126,20 +126,14 @@ where
             expr.clone()
                 .separated_by(just(Token::Comma))
                 .collect::<Vec<SourceIDSpanned<Expression>>>()
-                .map(|e| Node::ArgumentList(e))
         );
 
         let function_call = identifier
             .clone()
             .then(argument_list)
-            .map(|(callee_expression, arguments)| {
+            .map(|(callee_expression, argument_list)| {
                 let callee = match callee_expression.inner {
                     Expression::Identifier(value) => value.with_span(callee_expression.span),
-                    _ => todo!(),
-                };
-
-                let argument_list = match arguments {
-                    Node::ArgumentList(argument_list) => argument_list,
                     _ => todo!(),
                 };
 

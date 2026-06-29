@@ -4,22 +4,22 @@ pub mod scope;
 mod builtins;
 mod types;
 
-mod function;
-mod expression;
-mod statement;
 mod binop;
-mod r#if;
-mod r#loop;
+mod expression;
+mod function;
 mod identifier;
+mod r#if;
 mod literal;
-mod variable;
+mod r#loop;
+mod statement;
 mod switch;
-mod unop; 
+mod unop;
+mod variable;
 
 use inkwell::context::Context;
 use std::error::Error;
 
-use crate::ast::Node;
+use crate::ast::Program;
 use crate::codegen::ir::IR;
 use crate::codegen::scope::Scopes;
 
@@ -38,20 +38,15 @@ impl<'ctx> CodeGen<'ctx> {
             },
             scopes: Scopes::new(),
         };
-        
+
         codegen.init_builtins();
         codegen
     }
 
-    pub fn run(&mut self, ast: &Node) -> Result<(), Box<dyn Error>> {
-        match ast {
-            Node::Program(program) => {
-                for function in program {
-                    self.handle_function(function)?;
-                }
-            }
-            _ => unreachable!(),
-        };
+    pub fn run(&mut self, Program { functions }: &Program) -> Result<(), Box<dyn Error>> {
+        for function in functions {
+            self.handle_function(function)?;
+        }
 
         Ok(())
     }

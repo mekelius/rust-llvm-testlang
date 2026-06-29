@@ -2,17 +2,16 @@ use crate::span::SourceIDSpanned;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
-    Program(Vec<SourceIDSpanned<FunctionDefinition>>),
+    Program(Program),
     FunctionDefinition(FunctionDefinition),
     Statement(Statement),
     Expression(Expression),
-    
-    Case {
-        value: SourceIDSpanned<String>,
-        body: Vec<SourceIDSpanned<Statement>>,
-    },
-    DefaultCase(Vec<SourceIDSpanned<Statement>>),
-    ArgumentList(Vec<SourceIDSpanned<Expression>>),
+    Case(Case),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Program {
+    pub functions: Vec<SourceIDSpanned<FunctionDefinition>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -127,6 +126,14 @@ pub enum Statement {
     ),
     SwitchStatement {
         matched_value_expression: Box<SourceIDSpanned<Expression>>,
-        cases: Vec<SourceIDSpanned<Node>>,
+        cases: Vec<SourceIDSpanned<Case>>,
     },
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Case {
+    pub matched_value: Option<SourceIDSpanned<String>>,
+    pub body: Vec<SourceIDSpanned<Statement>>,
+}
+
+pub const DEFAULT_CASE: Option<SourceIDSpanned<String>> = None;

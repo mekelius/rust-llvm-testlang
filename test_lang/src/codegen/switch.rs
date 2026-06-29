@@ -2,8 +2,9 @@ use chumsky::span::Spanned;
 use inkwell::{basic_block::BasicBlock, types::StringRadix::Decimal, values::IntValue};
 
 use crate::{
-    ast::{Expression, Node, Statement},
+    ast::{Case, DEFAULT_CASE, Expression, Statement},
     codegen::CodeGen,
+    span::SourceIDSpanned,
 };
 
 struct HandleCasesReturn<'ctx> {
@@ -13,10 +14,10 @@ struct HandleCasesReturn<'ctx> {
 
 impl<'ctx> CodeGen<'ctx> {
     /** Returns true if the block all_cases_returned */
-    pub fn handle_switch<S>(
+    pub fn handle_switch(
         &mut self,
         matched_value_expression: &Expression,
-        body: &Vec<Spanned<Node, S>>,
+        body: &Vec<SourceIDSpanned<Case>>,
     ) {
         let matched_value = self.handle_expression(matched_value_expression);
 
@@ -66,9 +67,9 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     /** Returned default block will be the after_block if no default case was encountered */
-    fn handle_cases<'a, S>(
+    fn handle_cases<'a>(
         &mut self,
-        cases_body: &Vec<Spanned<Node, S>>,
+        cases_body: &Vec<SourceIDSpanned<Case>>,
         after_block: BasicBlock<'ctx>,
     ) -> HandleCasesReturn<'ctx> {
         let entry_block = self.ir.builder.get_insert_block().unwrap();
@@ -82,15 +83,18 @@ impl<'ctx> CodeGen<'ctx> {
             next_block = self.ir.context.append_basic_block(current_function, "case");
 
             match &case.inner {
-                Node::Case {
-                    value,
-                    body: case_body,
+                Case {
+                    matched_value: Some(matched_value),
+                    body,
                 } => {
-                    cases.push((value.inner.clone(), case_block));
+                    cases.push((matched_value.inner.clone(), case_block));
                     self.ir.builder.position_at_end(case_block);
-                    self.handle_case(&case_body, &next_block, &after_block);
+                    self.handle_case(&body, &next_block, &after_block);
                 }
-                Node::DefaultCase(case_body) => {
+                Case {
+                    matched_value: DEFAULT_CASE,
+                    body,
+                } => {
                     // Check no duplicate default
                     if default_block.is_some() {
                         panic!("Multiple default cases in one switch statement");
@@ -98,11 +102,8 @@ impl<'ctx> CodeGen<'ctx> {
 
                     default_block = Some(case_block.clone());
                     self.ir.builder.position_at_end(case_block);
-                    self.handle_case(&case_body, &next_block, &after_block);
+                    self.handle_case(&body, &next_block, &after_block);
                 }
-                _ => unreachable!(
-                    "Switch statement body contained something other than a Case or DefaultCase"
-                ),
             };
         }
 

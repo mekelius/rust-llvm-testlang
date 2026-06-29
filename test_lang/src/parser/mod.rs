@@ -9,14 +9,15 @@ use chumsky::input::IterInput;
 use chumsky::prelude::*;
 use std::error::Error;
 
-use crate::ast::{FunctionDefinition, Node};
+use crate::ast::{FunctionDefinition, Program};
 use crate::parser::function::function;
 use crate::source::SourceID;
 use crate::span::{SourceIDSpan, SourceIDSpanned};
 
 type ParserError<'tokens> = chumsky::extra::Err<Rich<'tokens, Token, SourceIDSpan>>;
 
-fn parser<'tokens, I>() -> impl Parser<'tokens, I, SourceIDSpanned<Node>, ParserError<'tokens>> + Clone
+fn parser<'tokens, I>()
+-> impl Parser<'tokens, I, SourceIDSpanned<Program>, ParserError<'tokens>> + Clone
 where
     I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
@@ -25,12 +26,12 @@ where
     let program = function
         .repeated()
         .collect::<Vec<SourceIDSpanned<FunctionDefinition>>>()
-        .map(|e| Node::Program(e));
+        .map(|functions| Program { functions });
 
     program.spanned()
 }
 
-pub fn run(src: &str, source_id: SourceID) -> Result<SourceIDSpanned<Node>, Box<dyn Error>> {
+pub fn run(src: &str, source_id: SourceID) -> Result<SourceIDSpanned<Program>, Box<dyn Error>> {
     let tokens = match lexer::run(src, source_id) {
         Ok(tokens) => tokens,
         Err(_) => unreachable!(),
