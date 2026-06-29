@@ -173,7 +173,7 @@ impl Node {
                 Self::walk_expression(visitor, term)
             }
             Expression::Literal(_) => None,
-            Expression::Identifier(_) => None,
+            Expression::LValue(_) => None,
             Expression::TypedExpression(_type_, expression) => {
                 Self::walk_expression(visitor, expression)
             }

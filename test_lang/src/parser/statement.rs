@@ -2,15 +2,13 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{
-        BinaryOperator, BinopExpression, Case, DEFAULT_CASE, Expression, Literal, Statement,
-        UnaryOperator, UnopExpression,
+        BinaryOperator, BinopExpression, Case, DEFAULT_CASE, Expression, LValue, Literal,
+        Statement, UnaryOperator, UnopExpression,
     },
     in_curly_braces, parenthesized,
     parser::{
-        ParserError,
-        common::{identifier_as_string, number_literal_as_string},
-        expression::expression,
-        lexer::Token,
+        ParserError, common::number_literal_as_string, expression::expression, lexer::Token,
+        lvalue::lvalue,
     },
     span::{SourceIDSpan, SourceIDSpanned},
 };
@@ -105,26 +103,26 @@ where
 }
 
 pub fn assignment<'src, I>()
--> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Expression>), ParserError<'src>>
+-> impl Parser<'src, I, (SourceIDSpanned<LValue>, SourceIDSpanned<Expression>), ParserError<'src>>
 + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    identifier_as_string()
+    lvalue()
         .then_ignore(just(Token::SingleEquals))
         .then(expression())
 }
 
 pub fn shorthand_assignment<'src, I>()
--> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Expression>), ParserError<'src>>
+-> impl Parser<'src, I, (SourceIDSpanned<LValue>, SourceIDSpanned<Expression>), ParserError<'src>>
 + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    identifier_as_string()
+    lvalue()
         .then(shorthand_assignment_operator())
         .then(expression())
-        .map(|((name, operator), rhs)| {
+        .map(|((lvalue, operator), rhs)| {
             let rhs_span = rhs.span.clone();
             let op = match operator.inner {
                 Token::PlusEquals => BinaryOperator::Add,
@@ -136,30 +134,34 @@ where
             };
             let rhs = Expression::Binop(BinopExpression {
                 op,
-                lhs: Box::new(Expression::Identifier(name.inner.clone()).with_span(name.span)),
+                lhs: Box::new(
+                    Expression::LValue(Box::new(lvalue.inner.clone())).with_span(lvalue.span),
+                ),
                 rhs: Box::new(rhs),
             })
             .with_span(operator.span.union(rhs_span));
 
-            (name, rhs)
+            (lvalue, rhs)
         })
 }
 
 pub fn postfix_assignment<'src, I>()
--> impl Parser<'src, I, (SourceIDSpanned<String>, SourceIDSpanned<Expression>), ParserError<'src>>
+-> impl Parser<'src, I, (SourceIDSpanned<LValue>, SourceIDSpanned<Expression>), ParserError<'src>>
 + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    identifier_as_string()
+    lvalue()
         .then(postfix_assignment_operator())
-        .map(|(name, operator)| {
+        .map(|(lvalue, operator)| {
             (
-                name.clone(),
+                lvalue.clone(),
                 match operator.inner {
                     PostfixAssignment::Increment => Expression::Binop(BinopExpression {
                         op: BinaryOperator::Add,
-                        lhs: Box::new(Expression::Identifier(name.inner).with_span(name.span)),
+                        lhs: Box::new(
+                            Expression::LValue(Box::new(lvalue.inner)).with_span(lvalue.span),
+                        ),
                         rhs: Box::new(
                             Expression::Literal(Literal::Number("1".into()))
                                 .with_span(operator.span),
@@ -167,7 +169,9 @@ where
                     }),
                     PostfixAssignment::Decrement => Expression::Binop(BinopExpression {
                         op: BinaryOperator::Sub,
-                        lhs: Box::new(Expression::Identifier(name.inner).with_span(name.span)),
+                        lhs: Box::new(
+                            Expression::LValue(Box::new(lvalue.inner)).with_span(lvalue.span),
+                        ),
                         rhs: Box::new(
                             Expression::Literal(Literal::Number("1".into()))
                                 .with_span(operator.span),
@@ -175,7 +179,9 @@ where
                     }),
                     PostfixAssignment::Negate => Expression::Unop(UnopExpression {
                         op: UnaryOperator::UnaryNot,
-                        term: Box::new(Expression::Identifier(name.inner).with_span(name.span)),
+                        term: Box::new(
+                            Expression::LValue(Box::new(lvalue.inner)).with_span(lvalue.span),
+                        ),
                     }),
                 }
                 .with_span(operator.span),

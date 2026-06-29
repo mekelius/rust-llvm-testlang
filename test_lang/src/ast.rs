@@ -1,5 +1,6 @@
 use crate::{
-    span::SourceIDSpanned, types::SimpleType::{self, Boolean, Int, Unknown, Void},
+    span::SourceIDSpanned,
+    types::SimpleType::{self, Boolean, Int, Unknown, Void},
 };
 
 // macro_rules! node_types {
@@ -91,9 +92,9 @@ pub enum Statement {
     Block(Vec<SourceIDSpanned<Statement>>),
     Expression(Box<SourceIDSpanned<Expression>>),
 
-    Let(String, Box<SourceIDSpanned<Expression>>),
-    Const(String, Box<SourceIDSpanned<Expression>>),
-    Assignment(String, Box<SourceIDSpanned<Expression>>),
+    Let(LValue, Box<SourceIDSpanned<Expression>>),
+    Const(LValue, Box<SourceIDSpanned<Expression>>),
+    Assignment(LValue, Box<SourceIDSpanned<Expression>>),
     Return(Box<SourceIDSpanned<Expression>>),
 
     While {
@@ -139,18 +140,20 @@ pub enum Expression {
     Call(Call),
     Binop(BinopExpression),
     Unop(UnopExpression),
-    Identifier(String),
+    LValue(Box<LValue>),
     Literal(Literal),
 }
 
 impl Expression {
     pub fn get_type(&self) -> SimpleType {
         match self {
-            Expression::TypedExpression(type_string, _expression) => SimpleType::from_type_string(type_string),
+            Expression::TypedExpression(type_string, _expression) => {
+                SimpleType::from_type_string(type_string)
+            }
             Expression::Call(_call) => Unknown,
             Expression::Binop(expression) => expression.get_type(),
             Expression::Unop(expression) => expression.get_type(),
-            Expression::Identifier(_value) => Unknown,
+            Expression::LValue(_value) => Unknown,
             Expression::Literal(Literal::Boolean(_)) => Boolean,
             Expression::Literal(Literal::String(_)) => SimpleType::String,
             Expression::Literal(Literal::Number(_)) => Int,
@@ -236,4 +239,15 @@ impl UnopExpression {
             UnaryOperator::UnaryNot => Boolean,
         }
     }
+}
+
+// ******************************************** LVALUE ********************************************
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum LValue {
+    Identifier(String),
+    DotAccess {
+        lhs: SourceIDSpanned<Expression>,
+        property_name: SourceIDSpanned<String>,
+    },
 }

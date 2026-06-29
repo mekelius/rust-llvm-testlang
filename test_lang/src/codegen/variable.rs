@@ -4,10 +4,18 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::{ast::Expression, codegen::identifier::Symbol, types::SimpleType};
+use crate::{
+    ast::{Expression, LValue},
+    codegen::identifier::Symbol,
+    types::SimpleType,
+};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_const(&mut self, identifier: &str, expression: &Expression) {
+    pub fn handle_const(&mut self, lvalue: &LValue, expression: &Expression) {
+        let LValue::Identifier(identifier) = lvalue else {
+            todo!("Non-identifier lvalues");
+        };
+
         let value = self.handle_expression(expression);
         let symbol = Symbol::Value(value);
         let current_scope = self.scopes.get_current_scope_mut();
@@ -21,7 +29,11 @@ impl<'ctx> CodeGen<'ctx> {
         };
     }
 
-    pub fn handle_let(&mut self, identifier: &str, expression: &Expression) {
+    pub fn handle_let(&mut self, lvalue: &LValue, expression: &Expression) {
+        let LValue::Identifier(identifier) = lvalue else {
+            todo!("Non-identifier lvalues");
+        };
+
         let simple_type = match expression {
             Expression::TypedExpression(type_identifier, _) => {
                 SimpleType::from_type_string(type_identifier)
@@ -64,7 +76,11 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_assignment(&self, identifier: &str, new_value_expression: &Expression) {
+    pub fn handle_assignment(&self, lvalue: &LValue, new_value_expression: &Expression) {
+        let LValue::Identifier(identifier) = lvalue else {
+            todo!("Non-identifier lvalues");
+        };
+
         let Symbol::Variable {
             pointer,
             type_: old_type,
@@ -72,6 +88,7 @@ impl<'ctx> CodeGen<'ctx> {
         else {
             panic!();
         };
+
         let new_type = match new_value_expression {
             Expression::TypedExpression(type_string, _) => {
                 SimpleType::from_type_string(type_string)

@@ -1,9 +1,7 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::Expression,
-    parser::{ParserError, lexer::Token},
-    span::{SourceIDSpan, SourceIDSpanned},
+    ast::{Expression, LValue}, parser::{ParserError, lexer::Token}, span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[macro_export]
@@ -37,7 +35,7 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::Identifier(value) => Expression::Identifier(value),
+        Token::Identifier(value) => Expression::LValue(Box::new(LValue::Identifier(value))),
     }
     .spanned()
 }

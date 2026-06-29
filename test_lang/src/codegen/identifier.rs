@@ -4,7 +4,7 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::types::SimpleType;
+use crate::{ast::LValue, types::SimpleType};
 
 #[derive(Debug, Clone)]
 pub enum Symbol<'ctx> {
@@ -35,6 +35,13 @@ impl<'ctx> Symbol<'ctx> {
 }
 
 impl<'ctx> CodeGen<'ctx> {
+    pub fn handle_lvalue(&self, lvalue: &LValue) -> AnyValueEnum<'ctx> {
+        match lvalue {
+            LValue::Identifier(value) => self.handle_identifier(value),
+            _ => todo!("Non identifier lvalues"),
+        }
+    }
+
     pub fn handle_identifier(&self, identifier: &str) -> AnyValueEnum<'ctx> {
         let symbol = self
             .scopes

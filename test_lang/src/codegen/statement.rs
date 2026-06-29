@@ -8,14 +8,14 @@ impl<'ctx> CodeGen<'ctx> {
     /* Return true if was a return statement */
     pub fn handle_statement(&mut self, statement: &Statement) {
         match statement {
-            Statement::Const(identifier, expression) => {
-                self.handle_const(identifier, expression)
+            Statement::Const(lvalue, expression) => {
+                self.handle_const(lvalue, expression)
             }
-            Statement::Let(identifier, expression) => {
-                self.handle_let(identifier, expression)
+            Statement::Let(lvalue, expression) => {
+                self.handle_let(lvalue, expression)
             }
-            Statement::Assignment(identifier, expression) => {
-                self.handle_assignment(identifier, expression)
+            Statement::Assignment(lvalue, expression) => {
+                self.handle_assignment(lvalue, expression)
             }
 
             Statement::Return(expression) => {
