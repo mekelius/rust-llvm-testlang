@@ -1,4 +1,6 @@
-use crate::span::SourceIDSpanned;
+use crate::{
+    span::SourceIDSpanned, types::SimpleType::{self, Boolean, Int, Unknown, Void},
+};
 
 // macro_rules! node_types {
 //     ($node: item) => {
@@ -141,6 +143,22 @@ pub enum Expression {
     Literal(Literal),
 }
 
+impl Expression {
+    pub fn get_type(&self) -> SimpleType {
+        match self {
+            Expression::TypedExpression(type_string, _expression) => SimpleType::from_type_string(type_string),
+            Expression::Call(_call) => Unknown,
+            Expression::Binop(expression) => expression.get_type(),
+            Expression::Unop(expression) => expression.get_type(),
+            Expression::Identifier(_value) => Unknown,
+            Expression::Literal(Literal::Boolean(_)) => Boolean,
+            Expression::Literal(Literal::String(_)) => SimpleType::String,
+            Expression::Literal(Literal::Number(_)) => Int,
+            Expression::Literal(Literal::Unit) => Void,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     Number(String),
@@ -179,6 +197,26 @@ pub enum BinaryOperator {
     Mod,
 }
 
+impl BinopExpression {
+    pub fn get_type(&self) -> SimpleType {
+        match self.op {
+            BinaryOperator::Equals => Boolean,
+            BinaryOperator::GreaterThan => Boolean,
+            BinaryOperator::LessThan => Boolean,
+            BinaryOperator::GreaterThanOrEquals => Boolean,
+            BinaryOperator::LessThanOrEquals => Boolean,
+            BinaryOperator::NotEquals => Boolean,
+            BinaryOperator::And => Boolean,
+            BinaryOperator::Or => Boolean,
+            BinaryOperator::Mul => Int,
+            BinaryOperator::Div => Int,
+            BinaryOperator::Add => Int,
+            BinaryOperator::Sub => Int,
+            BinaryOperator::Mod => Int,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnopExpression {
     pub op: UnaryOperator,
@@ -189,4 +227,13 @@ pub struct UnopExpression {
 pub enum UnaryOperator {
     UnaryMinus,
     UnaryNot,
+}
+
+impl UnopExpression {
+    pub fn get_type(&self) -> SimpleType {
+        match self.op {
+            UnaryOperator::UnaryMinus => Int,
+            UnaryOperator::UnaryNot => Boolean,
+        }
+    }
 }
