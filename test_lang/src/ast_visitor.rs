@@ -1,7 +1,7 @@
 use crate::{
     ast::{
-        BinopExpression, Call, Case, DEFAULT_CASE, Expression, Function, Node, NodeRef, Program,
-        Statement, UnopExpression,
+        BinopExpression, Call, Case, Expression, Function, Node, NodeRef, Program, Statement,
+        UnopExpression,
     },
     span::SourceIDSpanned,
 };
@@ -73,125 +73,104 @@ impl Node {
         visitor: &mut impl ASTVisitor<R>,
         program: &mut SourceIDSpanned<Program>,
     ) -> Option<R> {
-        visitor.visit_program(program).or_else(|| {
-            program
-                .inner
-                .functions
-                .iter_mut()
-                .find_map(|function| Self::walk_function(visitor, function))
-        })
+        program
+            .inner
+            .functions
+            .iter_mut()
+            .find_map(|function| Self::walk_function(visitor, function))
+            .or_else(|| visitor.visit_program(program))
     }
 
     pub fn walk_function<R>(
         visitor: &mut impl ASTVisitor<R>,
         function: &mut SourceIDSpanned<Function>,
     ) -> Option<R> {
-        return visitor.visit_function(function).or_else(|| {
-            function
-                .inner
-                .body
-                .iter_mut()
-                .find_map(|statement| Self::walk_statement(visitor, statement))
-        });
+        function
+            .inner
+            .body
+            .iter_mut()
+            .find_map(|statement| Self::walk_statement(visitor, statement))
+            .or_else(|| visitor.visit_function(function))
     }
 
     pub fn walk_statement<R>(
         visitor: &mut impl ASTVisitor<R>,
         statement: &mut SourceIDSpanned<Statement>,
     ) -> Option<R> {
-        println!("{:?}", statement);
+        match &mut statement.inner {
+            Statement::Block(statements) => statements
+                .iter_mut()
+                .find_map(|statement| Self::walk_statement(visitor, statement)),
 
-        return visitor
-            .visit_statement(statement)
-            .or_else(|| match &mut statement.inner {
-                Statement::Block(statements) => statements
+            Statement::Expression(expression) => Self::walk_expression(visitor, &mut **expression),
+
+            Statement::While { condition, body } => {
+                Self::walk_expression(visitor, &mut **condition)
+                    .or_else(|| Self::walk_statement(visitor, body))
+            }
+            Statement::For {
+                init,
+                condition,
+                step,
+                body,
+            } => Self::walk_statement(visitor, init)
+                .or_else(|| Self::walk_expression(visitor, &mut **condition))
+                .or_else(|| Self::walk_statement(visitor, step))
+                .or_else(|| Self::walk_statement(visitor, body)),
+
+            Statement::If { condition, body } => Self::walk_expression(visitor, &mut **condition)
+                .or_else(|| Self::walk_statement(visitor, body)),
+            Statement::IfElse(if_statement, else_statement) => {
+                Self::walk_statement(visitor, if_statement)
+                    .or_else(|| Self::walk_statement(visitor, else_statement))
+            }
+            Statement::Switch {
+                matched_value_expression,
+                cases,
+            } => Self::walk_expression(visitor, &mut **matched_value_expression).or_else(|| {
+                cases
                     .iter_mut()
-                    .find_map(|statement| Self::walk_statement(visitor, statement)),
+                    .find_map(|case| Self::walk_case(visitor, case))
+            }),
 
-                Statement::Empty => None,
-                Statement::Expression(expression) => {
-                    Self::walk_expression(visitor, &mut **expression)
-                }
+            Statement::Let(_, expression) => Self::walk_expression(visitor, &mut **expression),
+            Statement::Const(_, expression) => Self::walk_expression(visitor, &mut **expression),
+            Statement::Assignment(_identifier, expression) => {
+                Self::walk_expression(visitor, &mut **expression)
+            }
+            Statement::Return(expression) => Self::walk_expression(visitor, &mut **expression),
 
-                Statement::While { condition, body } => {
-                    Self::walk_expression(visitor, &mut **condition)
-                        .or_else(|| Self::walk_statement(visitor, body))
-                }
-                Statement::For {
-                    init,
-                    condition,
-                    step,
-                    body,
-                } => {
-                    return Self::walk_statement(visitor, init)
-                        .or_else(|| Self::walk_expression(visitor, &mut **condition))
-                        .or_else(|| Self::walk_statement(visitor, step))
-                        .or_else(|| Self::walk_statement(visitor, body));
-                }
-
-                Statement::If { condition, body } => {
-                    return Self::walk_expression(visitor, &mut **condition)
-                        .or_else(|| Self::walk_statement(visitor, body));
-                }
-                Statement::IfElse(if_statement, else_statement) => {
-                    return Self::walk_statement(visitor, if_statement)
-                        .or_else(|| Self::walk_statement(visitor, else_statement));
-                }
-                Statement::Switch {
-                    matched_value_expression,
-                    cases,
-                } => {
-                    return Self::walk_expression(visitor, &mut **matched_value_expression)
-                        .or_else(|| {
-                            cases
-                                .iter_mut()
-                                .find_map(|case| Self::walk_case(visitor, case))
-                        });
-                }
-
-                Statement::Let(_, expression) => {
-                    return Self::walk_expression(visitor, &mut **expression);
-                }
-                Statement::Const(_, expression) => {
-                    return Self::walk_expression(visitor, &mut **expression);
-                }
-                Statement::Assignment(_identifier, expression) => {
-                    return Self::walk_expression(visitor, &mut **expression);
-                }
-                Statement::Return(expression) => {
-                    return Self::walk_expression(visitor, &mut **expression);
-                }
-                _ => {
-                    unreachable!("Node::walk_statement called with a non-statement node")
-                }
-            });
+            Statement::Empty => None,
+            Statement::Break => None,
+            Statement::Continue => None,
+        }
+        .or_else(|| visitor.visit_statement(statement))
     }
 
     pub fn walk_expression<R>(
         visitor: &mut impl ASTVisitor<R>,
         expression: &mut SourceIDSpanned<Expression>,
     ) -> Option<R> {
-        return visitor
-            .visit_expression(expression)
-            .or_else(|| match &mut expression.inner {
-                Expression::Binop(BinopExpression { op: _, lhs, rhs }) => {
-                    Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
-                }
-                Expression::Call(Call {
-                    callee: _,
-                    args: argument_list,
-                }) => argument_list.iter_mut().find_map(|argument_expression| {
-                    Self::walk_expression(visitor, argument_expression)
-                }),
-                Expression::Unop(UnopExpression { op: _, term }) => {
-                    Self::walk_expression(visitor, term)
-                }
-                Expression::Literal(_) => None,
-                Expression::Identifier(_) => None,
-                Expression::TypedExpression(_type_, expression) => {
-                    Self::walk_expression(visitor, expression)
-                }
-            });
+        match &mut expression.inner {
+            Expression::Binop(BinopExpression { op: _, lhs, rhs }) => {
+                Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
+            }
+            Expression::Call(Call {
+                callee: _,
+                args: argument_list,
+            }) => argument_list.iter_mut().find_map(|argument_expression| {
+                Self::walk_expression(visitor, argument_expression)
+            }),
+            Expression::Unop(UnopExpression { op: _, term }) => {
+                Self::walk_expression(visitor, term)
+            }
+            Expression::Literal(_) => None,
+            Expression::Identifier(_) => None,
+            Expression::TypedExpression(_type_, expression) => {
+                Self::walk_expression(visitor, expression)
+            }
+        }
+        .or_else(|| visitor.visit_expression(expression))
     }
 
     /**
@@ -209,23 +188,11 @@ impl Node {
         visitor: &mut impl ASTVisitor<R>,
         case: &mut SourceIDSpanned<Case>,
     ) -> Option<R> {
-        return visitor.visit_case(case).or_else(|| match &mut case.inner {
-            Case {
-                matched_value: Some(_),
-                body,
-            } => {
-                return body
-                    .iter_mut()
-                    .find_map(|statement| Self::walk_statement(visitor, statement));
-            }
-
-            Case {
-                matched_value: DEFAULT_CASE,
-                body: _,
-            } => {
-                todo!("default case")
-            }
-        });
+        case.inner
+            .body
+            .iter_mut()
+            .find_map(|statement| Self::walk_statement(visitor, statement))
+            .or_else(|| visitor.visit_case(case))
     }
 }
 
@@ -286,8 +253,7 @@ mod tests {
             return_type_string: None,
             formals: vec![],
             body: vec![
-                Statement::Expression(Box::new(string_literal.clone()))
-                    .with_span(DUMMY_SPAN),
+                Statement::Expression(Box::new(string_literal.clone())).with_span(DUMMY_SPAN),
             ],
         }
         .with_span(DUMMY_SPAN);
