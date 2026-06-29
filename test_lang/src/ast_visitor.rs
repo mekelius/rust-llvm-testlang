@@ -1,9 +1,14 @@
-use crate::{ast::Node, span::SourceIDSpanned};
+use chumsky::span::SpanWrap;
+
+use crate::{
+    ast::{Node, Statement},
+    span::SourceIDSpanned,
+};
 
 pub trait ASTVisitor<R> {
     fn visit_program(&mut self, program: &SourceIDSpanned<Node>) -> Option<R>;
     fn visit_function(&mut self, function: &SourceIDSpanned<Node>) -> Option<R>;
-    fn visit_statement(&mut self, statement: &SourceIDSpanned<Node>) -> Option<R>;
+    fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R>;
     fn visit_expression(&mut self, expression: &SourceIDSpanned<Node>) -> Option<R>;
     fn visit_case(&mut self, case: &SourceIDSpanned<Node>) -> Option<R>;
 }
@@ -22,8 +27,8 @@ where
     fn visit_function(&mut self, function: &SourceIDSpanned<Node>) -> Option<R> {
         self.visit_node(function)
     }
-    fn visit_statement(&mut self, statement: &SourceIDSpanned<Node>) -> Option<R> {
-        self.visit_node(statement)
+    fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R> {
+        self.visit_node(&Node::Statement(statement.inner.clone()).with_span(statement.span))
     }
     fn visit_expression(&mut self, expression: &SourceIDSpanned<Node>) -> Option<R> {
         self.visit_node(expression)
@@ -96,33 +101,41 @@ impl Node {
                 unreachable!("Node::walk_function called with a non-function node")
             };
 
-            Self::walk_statement(visitor, body)
+            let Node::FunctionBody(statements) = &mut body.inner else {
+                unreachable!(
+                    "Node::walk_function called with function node that had no function body"
+                )
+            };
+
+            statements
+                .iter_mut()
+                .find_map(|statement| Self::walk_statement(visitor, statement))
         });
     }
 
     pub fn walk_statement<R>(
         visitor: &mut impl ASTVisitor<R>,
-        statement: &mut SourceIDSpanned<Node>,
+        statement: &mut SourceIDSpanned<Statement>,
     ) -> Option<R> {
         println!("{:?}", statement);
 
         return visitor
             .visit_statement(statement)
             .or_else(|| match &mut statement.inner {
-                Node::Block(statements) => statements
+                Statement::Block(statements) => statements
                     .iter_mut()
                     .find_map(|statement| Self::walk_statement(visitor, statement)),
 
-                Node::EmptyStatement => None,
-                Node::ExpressionStatement(expression) => {
+                Statement::EmptyStatement => None,
+                Statement::ExpressionStatement(expression) => {
                     Self::walk_expression(visitor, &mut **expression)
                 }
 
-                Node::WhileStatement { condition, body } => {
+                Statement::WhileStatement { condition, body } => {
                     Self::walk_expression(visitor, &mut **condition)
                         .or_else(|| Self::walk_statement(visitor, body))
                 }
-                Node::ForStatement {
+                Statement::ForStatement {
                     init,
                     condition,
                     step,
@@ -134,15 +147,15 @@ impl Node {
                         .or_else(|| Self::walk_statement(visitor, body));
                 }
 
-                Node::IfStatement { condition, body } => {
+                Statement::IfStatement { condition, body } => {
                     return Self::walk_expression(visitor, &mut **condition)
                         .or_else(|| Self::walk_statement(visitor, body));
                 }
-                Node::IfElseStatement(if_statement, else_statement) => {
+                Statement::IfElseStatement(if_statement, else_statement) => {
                     return Self::walk_statement(visitor, if_statement)
                         .or_else(|| Self::walk_statement(visitor, else_statement));
                 }
-                Node::SwitchStatement {
+                Statement::SwitchStatement {
                     matched_value_expression,
                     cases,
                 } => {
@@ -154,16 +167,16 @@ impl Node {
                         });
                 }
 
-                Node::LetStatement(_, expression) => {
+                Statement::LetStatement(_, expression) => {
                     return Self::walk_expression(visitor, &mut **expression);
                 }
-                Node::ConstStatement(_, expression) => {
+                Statement::ConstStatement(_, expression) => {
                     return Self::walk_expression(visitor, &mut **expression);
                 }
-                Node::AssignmentStatement(_identifier, expression) => {
+                Statement::AssignmentStatement(_identifier, expression) => {
                     return Self::walk_expression(visitor, &mut **expression);
                 }
-                Node::ReturnStatement(expression) => {
+                Statement::ReturnStatement(expression) => {
                     return Self::walk_expression(visitor, &mut **expression);
                 }
                 _ => {
@@ -291,7 +304,10 @@ mod tests {
             name: "f1".to_string().with_span(DUMMY_SPAN),
             return_type_string: None,
             formals: vec![],
-            body: Box::new(Node::EmptyStatement.with_span(DUMMY_SPAN)),
+            body: Box::new(
+                Node::FunctionBody(vec![Statement::EmptyStatement.with_span(DUMMY_SPAN)])
+                    .with_span(DUMMY_SPAN),
+            ),
         }
         .with_span(DUMMY_SPAN);
         let mut node = Node::Program(vec![function1]).with_span(DUMMY_SPAN);
@@ -320,7 +336,10 @@ mod tests {
             name: "f1".to_string().with_span(DUMMY_SPAN),
             return_type_string: None,
             formals: vec![],
-            body: Box::new(Node::EmptyStatement.with_span(DUMMY_SPAN)),
+            body: Box::new(
+                Node::FunctionBody(vec![Statement::EmptyStatement.with_span(DUMMY_SPAN)])
+                    .with_span(DUMMY_SPAN),
+            ),
         }
         .with_span(DUMMY_SPAN);
         let function2 = Node::Function {
@@ -328,7 +347,11 @@ mod tests {
             return_type_string: None,
             formals: vec![],
             body: Box::new(
-                Node::ExpressionStatement(Box::new(string_literal.clone())).with_span(DUMMY_SPAN),
+                Node::FunctionBody(vec![
+                    Statement::ExpressionStatement(Box::new(string_literal.clone()))
+                        .with_span(DUMMY_SPAN),
+                ])
+                .with_span(DUMMY_SPAN),
             ),
         }
         .with_span(DUMMY_SPAN);

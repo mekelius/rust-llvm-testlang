@@ -4,10 +4,10 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::ast::Node;
+use crate::ast::{Node, Statement};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_while(&mut self, condition: &Node, body: &Node) {
+    pub fn handle_while(&mut self, condition: &Node, body: &Statement) {
         let from_block = self.ir.builder.get_insert_block().unwrap();
         let current_function = from_block.get_parent().unwrap();
 
@@ -51,7 +51,7 @@ impl<'ctx> CodeGen<'ctx> {
         self.ir.builder.position_at_end(after_block);
     }
 
-    pub fn handle_for(&mut self, init: &Node, condition: &Node, step: &Node, body: &Node) {        
+    pub fn handle_for(&mut self, init: &Statement, condition: &Node, step: &Statement, body: &Statement) {        
         let from_block = self.ir.builder.get_insert_block().unwrap();
         let current_function = from_block.get_parent().unwrap();
 

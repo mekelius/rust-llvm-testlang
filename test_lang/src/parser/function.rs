@@ -1,15 +1,12 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::Node,
-    in_curly_braces, parenthesized,
-    parser::{
+    ast::{Node, Statement}, in_curly_braces, parenthesized, parser::{
         ParserError,
         common::{identifier_as_string, type_expression},
         lexer::Token,
         statement::statement,
-    },
-    span::{SourceIDSpan, SourceIDSpanned},
+    }, span::{SourceIDSpan, SourceIDSpanned},
 };
 
 pub fn function<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
@@ -39,7 +36,7 @@ where
     let function_body = in_curly_braces!(
         statement
             .repeated()
-            .collect::<Vec<SourceIDSpanned<Node>>>()
+            .collect::<Vec<SourceIDSpanned<Statement>>>()
             .map(|e| Node::FunctionBody(e))
     )
     .spanned();

@@ -1,15 +1,12 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::Node,
-    in_curly_braces, parenthesized,
-    parser::{
+    ast::{Node, Statement}, in_curly_braces, parenthesized, parser::{
         ParserError,
         common::{identifier_as_string, number_literal_as_string},
         expression::expression,
         lexer::Token,
-    },
-    span::{SourceIDSpan, SourceIDSpanned},
+    }, span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[derive(Clone)]
@@ -76,28 +73,28 @@ where
 }
 
 pub fn break_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    just(Token::Break).to(Node::BreakStatement).spanned()
+    just(Token::Break).to(Statement::BreakStatement).spanned()
 }
 
 pub fn empty_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    empty().to(Node::EmptyStatement).spanned()
+    empty().to(Statement::EmptyStatement).spanned()
 }
 
 pub fn expression_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     expression()
-        .map(|e| Node::ExpressionStatement(Box::new(e)))
+        .map(|e| Statement::ExpressionStatement(Box::new(e)))
         .spanned()
 }
 
@@ -182,67 +179,67 @@ where
 }
 
 pub fn const_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Const)
         .ignore_then(assignment())
-        .map(|(name, value)| Node::ConstStatement(name.inner, Box::new(value)))
+        .map(|(name, value)| Statement::ConstStatement(name.inner, Box::new(value)))
         .spanned()
 }
 
 pub fn let_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Let)
         .ignore_then(assignment())
-        .map(|(name, value)| Node::LetStatement(name.inner, Box::new(value)))
+        .map(|(name, value)| Statement::LetStatement(name.inner, Box::new(value)))
         .spanned()
 }
 
 pub fn assignment_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     choice((assignment(), shorthand_assignment(), postfix_assignment()))
-        .map(|(name, value)| Node::AssignmentStatement(name.inner, Box::new(value)))
+        .map(|(name, value)| Statement::AssignmentStatement(name.inner, Box::new(value)))
         .spanned()
 }
 
 pub fn valueless_return_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Return)
-        .to(Node::ValuelessReturnStatement)
+        .to(Statement::ValuelessReturnStatement)
         .spanned()
 }
 
 pub fn return_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Return)
         .ignore_then(expression())
-        .map(|expr| Node::ReturnStatement(Box::new(expr)))
+        .map(|expr| Statement::ReturnStatement(Box::new(expr)))
         .spanned()
 }
 
 pub fn continue_statement<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+-> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    just(Token::Continue).to(Node::ContinueStatement).spanned()
+    just(Token::Continue).to(Statement::ContinueStatement).spanned()
 }
 
-pub fn statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Node>, ParserError<'src>> + Clone
+pub fn statement<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
@@ -254,7 +251,7 @@ where
         let if_statement = just(Token::If)
             .ignore_then(parenthesized!(expression.clone()))
             .then(p.clone())
-            .map(|(condition, body)| Node::IfStatement {
+            .map(|(condition, body)| Statement::IfStatement {
                 condition: Box::new(condition),
                 body: Box::new(body),
             })
@@ -265,11 +262,11 @@ where
             .then_ignore(just(Token::Else))
             .then(p.clone())
             .map(|(if_branch, else_branch)| {
-                Node::IfElseStatement(Box::new(if_branch), Box::new(else_branch))
+                Statement::IfElseStatement(Box::new(if_branch), Box::new(else_branch))
             })
             .spanned();
 
-        let statement_list = p.clone().repeated().collect::<Vec<SourceIDSpanned<Node>>>();
+        let statement_list = p.clone().repeated().collect::<Vec<SourceIDSpanned<Statement>>>();
 
         let case = just(Token::Case)
             .ignore_then(number_literal_as_string())
@@ -289,13 +286,13 @@ where
             .then(in_curly_braces!(
                 (case.or(default_case)).repeated().collect()
             ))
-            .map(|(expression, cases)| Node::SwitchStatement {
+            .map(|(expression, cases)| Statement::SwitchStatement {
                 matched_value_expression: Box::new(expression),
                 cases,
             })
             .spanned();
 
-        let block = in_curly_braces!(statement_list.clone().map(|e| Node::Block(e))).spanned();
+        let block = in_curly_braces!(statement_list.clone().map(|e| Statement::Block(e))).spanned();
 
         let simple_statement = choice((
             let_statement.clone(),
@@ -325,7 +322,7 @@ where
                     .then(for_step)
             ))
             .then(p.clone())
-            .map(|(((init, condition), step), body)| Node::ForStatement {
+            .map(|(((init, condition), step), body)| Statement::ForStatement {
                 init: Box::new(init),
                 condition: Box::new(condition),
                 step: Box::new(step),
@@ -336,7 +333,7 @@ where
         let while_statement = just(Token::While)
             .ignore_then(parenthesized!(expression.clone()))
             .then(p.clone())
-            .map(|(condition, body)| Node::WhileStatement {
+            .map(|(condition, body)| Statement::WhileStatement {
                 condition: Box::new(condition),
                 body: Box::new(body),
             })

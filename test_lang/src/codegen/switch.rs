@@ -1,7 +1,7 @@
 use chumsky::span::Spanned;
 use inkwell::{basic_block::BasicBlock, types::StringRadix::Decimal, values::IntValue};
 
-use crate::{ast::Node, codegen::CodeGen};
+use crate::{ast::{Node, Statement}, codegen::CodeGen};
 
 struct HandleCasesReturn<'ctx> {
     cases: Vec<(String, BasicBlock<'ctx>)>,
@@ -111,10 +111,10 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn handle_case<S>(&mut self, body: &Vec<Spanned<Node, S>>, next_block: &BasicBlock, after_block: &BasicBlock) {
+    fn handle_case<S>(&mut self, body: &Vec<Spanned<Statement, S>>, next_block: &BasicBlock, after_block: &BasicBlock) {
         for statement in body {
             match statement.inner {
-                Node::BreakStatement => {
+                Statement::BreakStatement => {
                     self.ir
                         .builder
                         .build_unconditional_branch(*after_block)

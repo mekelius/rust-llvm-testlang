@@ -24,48 +24,16 @@ pub enum Node {
     Formals(Vec<SourceIDSpanned<Node>>),
     UntypedFormal(String),
     TypedFormal(SourceIDSpanned<String>, SourceIDSpanned<String>),
-    FunctionBody(Vec<SourceIDSpanned<Node>>),
+    FunctionBody(Vec<SourceIDSpanned<Statement>>),
 
-    // Statements
-    Block(Vec<SourceIDSpanned<Node>>),
-    ExpressionStatement(Box<SourceIDSpanned<Node>>),
+    Statement(Statement),
 
-    WhileStatement {
-        condition: Box<SourceIDSpanned<Node>>,
-        body: Box<SourceIDSpanned<Node>>,
-    },
-    ForStatement {
-        init: Box<SourceIDSpanned<Node>>,
-        condition: Box<SourceIDSpanned<Node>>,
-        step: Box<SourceIDSpanned<Node>>,
-        body: Box<SourceIDSpanned<Node>>,
-    },
-    IfStatement {
-        condition: Box<SourceIDSpanned<Node>>,
-        body: Box<SourceIDSpanned<Node>>,
-    },
-    IfElseStatement(Box<SourceIDSpanned<Node>>, Box<SourceIDSpanned<Node>>),
-    SwitchStatement {
-        matched_value_expression: Box<SourceIDSpanned<Node>>,
-        cases: Vec<SourceIDSpanned<Node>>,
-    },
     Case {
         value: SourceIDSpanned<String>,
-        body: Vec<SourceIDSpanned<Node>>,
+        body: Vec<SourceIDSpanned<Statement>>,
     },
-    DefaultCase(Vec<SourceIDSpanned<Node>>),
+    DefaultCase(Vec<SourceIDSpanned<Statement>>),
 
-    ContinueStatement,
-    BreakStatement,
-
-    EmptyStatement,
-
-    LetStatement(String, Box<SourceIDSpanned<Node>>),
-    ConstStatement(String, Box<SourceIDSpanned<Node>>),
-    AssignmentStatement(String, Box<SourceIDSpanned<Node>>),
-
-    ReturnStatement(Box<SourceIDSpanned<Node>>),
-    ValuelessReturnStatement,
 
     // Expressions
     ArgumentList(Vec<SourceIDSpanned<Node>>),
@@ -91,4 +59,42 @@ pub enum Node {
     Add(Box<SourceIDSpanned<Node>>, Box<SourceIDSpanned<Node>>),
     Sub(Box<SourceIDSpanned<Node>>, Box<SourceIDSpanned<Node>>),
     Mod(Box<SourceIDSpanned<Node>>, Box<SourceIDSpanned<Node>>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Statement {
+    ContinueStatement,
+    BreakStatement,
+
+    EmptyStatement,
+
+    LetStatement(String, Box<SourceIDSpanned<Node>>),
+    ConstStatement(String, Box<SourceIDSpanned<Node>>),
+    AssignmentStatement(String, Box<SourceIDSpanned<Node>>),
+
+    ReturnStatement(Box<SourceIDSpanned<Node>>),
+    ValuelessReturnStatement,
+
+    Block(Vec<SourceIDSpanned<Statement>>),
+    ExpressionStatement(Box<SourceIDSpanned<Node>>),
+
+    WhileStatement {
+        condition: Box<SourceIDSpanned<Node>>,
+        body: Box<SourceIDSpanned<Statement>>,
+    },
+    ForStatement {
+        init: Box<SourceIDSpanned<Statement>>,
+        condition: Box<SourceIDSpanned<Node>>,
+        step: Box<SourceIDSpanned<Statement>>,
+        body: Box<SourceIDSpanned<Statement>>,
+    },
+    IfStatement {
+        condition: Box<SourceIDSpanned<Node>>,
+        body: Box<SourceIDSpanned<Statement>>,
+    },
+    IfElseStatement(Box<SourceIDSpanned<Statement>>, Box<SourceIDSpanned<Statement>>),
+    SwitchStatement {
+        matched_value_expression: Box<SourceIDSpanned<Node>>,
+        cases: Vec<SourceIDSpanned<Node>>,
+    },
 }

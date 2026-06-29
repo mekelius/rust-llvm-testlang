@@ -1,8 +1,8 @@
 use super::CodeGen;
-use crate::ast::Node;
+use crate::ast::{Node, Statement};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_if(&mut self, condition: &Node, body: &Node) {
+    pub fn handle_if(&mut self, condition: &Node, body: &Statement) {
         let condition_value = self.handle_expression(condition);
 
         let current_function = self
@@ -46,8 +46,8 @@ impl<'ctx> CodeGen<'ctx> {
         self.ir.builder.position_at_end(after_block);
     }
 
-    pub fn handle_if_else(&mut self, if_branch: &Node, else_branch: &Node) {
-        let Node::IfStatement {
+    pub fn handle_if_else(&mut self, if_branch: &Statement, else_branch: &Statement) {
+        let Statement::IfStatement {
             condition,
             body: if_branch_body,
         } = if_branch
