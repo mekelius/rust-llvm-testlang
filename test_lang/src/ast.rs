@@ -92,9 +92,9 @@ pub enum Statement {
     Block(Vec<SourceIDSpanned<Statement>>),
     Expression(Box<SourceIDSpanned<Expression>>),
 
-    Let(LValue, Box<SourceIDSpanned<Expression>>),
-    Const(LValue, Box<SourceIDSpanned<Expression>>),
-    Assignment(LValue, Box<SourceIDSpanned<Expression>>),
+    Let(Expression, Box<SourceIDSpanned<Expression>>),
+    Const(Expression, Box<SourceIDSpanned<Expression>>),
+    Assignment(Expression, Box<SourceIDSpanned<Expression>>),
     Return(Box<SourceIDSpanned<Expression>>),
 
     While {
@@ -125,21 +125,6 @@ pub enum Statement {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum LValue {
-    Identifier(String),
-    DotAccess(DotAccessExpression),
-}
-
-impl LValue {
-    pub fn to_expression(&self) -> Expression {
-        match self {
-            LValue::Identifier(value) => Expression::Identifier(value.clone()),
-            LValue::DotAccess(expression) => Expression::DotAccess(Box::new(expression.clone())),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct Case {
     pub matched_value: Option<SourceIDSpanned<String>>,
     pub body: Vec<SourceIDSpanned<Statement>>,
@@ -156,7 +141,7 @@ pub enum Expression {
     Binop(BinopExpression),
     Unop(UnopExpression),
     Identifier(String),
-    DotAccess(Box<DotAccessExpression>),
+    DotAccess(DotAccessExpression),
     Literal(Literal),
 }
 

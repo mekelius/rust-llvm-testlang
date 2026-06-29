@@ -4,15 +4,11 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::{
-    ast::{Expression, LValue},
-    codegen::identifier::Symbol,
-    types::SimpleType,
-};
+use crate::{ast::Expression, codegen::identifier::Symbol, types::SimpleType};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_const(&mut self, lvalue: &LValue, expression: &Expression) {
-        let LValue::Identifier(identifier) = lvalue else {
+    pub fn handle_const(&mut self, lvalue: &Expression, expression: &Expression) {
+        let Expression::Identifier(identifier) = lvalue else {
             todo!("Non-identifier lvalues");
         };
 
@@ -29,8 +25,8 @@ impl<'ctx> CodeGen<'ctx> {
         };
     }
 
-    pub fn handle_let(&mut self, lvalue: &LValue, expression: &Expression) {
-        let LValue::Identifier(identifier) = lvalue else {
+    pub fn handle_let(&mut self, lvalue: &Expression, expression: &Expression) {
+        let Expression::Identifier(identifier) = lvalue else {
             todo!("Non-identifier lvalues");
         };
 
@@ -76,8 +72,8 @@ impl<'ctx> CodeGen<'ctx> {
             .as_any_value_enum()
     }
 
-    pub fn handle_assignment(&self, lvalue: &LValue, new_value_expression: &Expression) {
-        let LValue::Identifier(identifier) = lvalue else {
+    pub fn handle_assignment(&self, lvalue: &Expression, new_value_expression: &Expression) {
+        let Expression::Identifier(identifier) = lvalue else {
             todo!("Non-identifier lvalues");
         };
 

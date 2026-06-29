@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match ast {
         Ok(ast) => {
-            println!("[AST]\n{:?}", ast);
+            println!("[AST]\n{:#?}", ast);
             ast
         }
         Err(e) => {

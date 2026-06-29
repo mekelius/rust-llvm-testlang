@@ -4,7 +4,7 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::{ast::LValue, types::SimpleType};
+use crate::{ast::Expression, types::SimpleType};
 
 #[derive(Debug, Clone)]
 pub enum Symbol<'ctx> {
@@ -35,9 +35,9 @@ impl<'ctx> Symbol<'ctx> {
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_lvalue(&self, lvalue: &LValue) -> AnyValueEnum<'ctx> {
+    pub fn handle_lvalue(&self, lvalue: &Expression) -> AnyValueEnum<'ctx> {
         match lvalue {
-            LValue::Identifier(value) => self.handle_identifier(value),
+            Expression::Identifier(value) => self.handle_identifier(value),
             _ => todo!("Non identifier lvalues"),
         }
     }
