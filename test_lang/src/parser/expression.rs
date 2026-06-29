@@ -64,6 +64,7 @@ enum DotSubscript {
         method_name: SourceIDSpanned<String>,
         args: Vec<SourceIDSpanned<Expression>>,
     },
+    ChainedCall(Vec<SourceIDSpanned<Expression>>),
 }
 
 pub fn expression<'src, I>()
@@ -105,13 +106,16 @@ where
             parenthesized!(expression.clone()),
         ));
 
-        let method_call = identifier_as_string().then(argument_list);
+        let method_call = identifier_as_string().then(argument_list.clone());
         let dot_subscript = choice((
             method_call
                 .map(|(method_name, args)| DotSubscript::MethodCall { method_name, args })
                 .spanned(),
             identifier_as_string()
                 .map(|value| DotSubscript::PropertyAccess(value))
+                .spanned(),
+            argument_list
+                .map(|args| DotSubscript::ChainedCall(args))
                 .spanned(),
         ));
 
@@ -149,6 +153,12 @@ where
                         })
                         .with_span(span)
                     }
+
+                    DotSubscript::ChainedCall(args) => Expression::Call(Call {
+                        callee: Box::new(object_expression),
+                        args,
+                    })
+                    .with_span(span),
                 }
             },
         );
