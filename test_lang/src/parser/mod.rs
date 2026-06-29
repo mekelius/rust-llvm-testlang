@@ -3,6 +3,7 @@ pub mod common;
 pub mod expression;
 pub mod function;
 pub mod lexer;
+pub mod literal;
 pub mod lvalue;
 pub mod statement;
 
