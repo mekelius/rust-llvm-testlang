@@ -2,29 +2,31 @@ use crate::span::SourceIDSpanned;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
-    Program(Vec<SourceIDSpanned<Node>>),
-
-    Function {
-        name: SourceIDSpanned<String>,
-        return_type_string: Option<SourceIDSpanned<String>>,
-        formals: Vec<SourceIDSpanned<Node>>,
-        body: Box<SourceIDSpanned<Node>>,
-    },
-
-    Formals(Vec<SourceIDSpanned<Node>>),
-    UntypedFormal(String),
-    TypedFormal(SourceIDSpanned<String>, SourceIDSpanned<String>),
-    FunctionBody(Vec<SourceIDSpanned<Statement>>),
-
+    Program(Vec<SourceIDSpanned<FunctionDefinition>>),
+    FunctionDefinition(FunctionDefinition),
     Statement(Statement),
     Expression(Expression),
-
+    
     Case {
         value: SourceIDSpanned<String>,
         body: Vec<SourceIDSpanned<Statement>>,
     },
     DefaultCase(Vec<SourceIDSpanned<Statement>>),
     ArgumentList(Vec<SourceIDSpanned<Expression>>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionDefinition {
+    pub name: SourceIDSpanned<String>,
+    pub return_type_string: Option<SourceIDSpanned<String>>,
+    pub formals: Vec<SourceIDSpanned<Formal>>,
+    pub body: Vec<SourceIDSpanned<Statement>>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Formal {
+    UntypedFormal(String),
+    TypedFormal(SourceIDSpanned<String>, SourceIDSpanned<String>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

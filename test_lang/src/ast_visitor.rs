@@ -1,13 +1,16 @@
 use chumsky::span::SpanWrap;
 
 use crate::{
-    ast::{BinopExpression, Expression, FunctionCall, Node, Statement, UnopExpression},
+    ast::{
+        BinopExpression, Expression, FunctionCall, FunctionDefinition, Node, Statement,
+        UnopExpression,
+    },
     span::SourceIDSpanned,
 };
 
 pub trait ASTVisitor<R> {
     fn visit_program(&mut self, program: &SourceIDSpanned<Node>) -> Option<R>;
-    fn visit_function(&mut self, function: &SourceIDSpanned<Node>) -> Option<R>;
+    fn visit_function(&mut self, function: &SourceIDSpanned<FunctionDefinition>) -> Option<R>;
     fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R>;
     fn visit_expression(&mut self, expression: &SourceIDSpanned<Expression>) -> Option<R>;
     fn visit_case(&mut self, case: &SourceIDSpanned<Node>) -> Option<R>;
@@ -24,8 +27,8 @@ where
     fn visit_program(&mut self, program: &SourceIDSpanned<Node>) -> Option<R> {
         self.visit_node(program)
     }
-    fn visit_function(&mut self, function: &SourceIDSpanned<Node>) -> Option<R> {
-        self.visit_node(function)
+    fn visit_function(&mut self, function: &SourceIDSpanned<FunctionDefinition>) -> Option<R> {
+        self.visit_node(&Node::FunctionDefinition(function.inner.clone()).with_span(function.span))
     }
     fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R> {
         self.visit_node(&Node::Statement(statement.inner.clone()).with_span(statement.span))
@@ -88,26 +91,12 @@ impl Node {
 
     pub fn walk_function<R>(
         visitor: &mut impl ASTVisitor<R>,
-        function: &mut SourceIDSpanned<Node>,
+        function: &mut SourceIDSpanned<FunctionDefinition>,
     ) -> Option<R> {
         return visitor.visit_function(function).or_else(|| {
-            let Node::Function {
-                name: _,
-                return_type_string: _,
-                formals: _,
-                body,
-            } = &mut function.inner
-            else {
-                unreachable!("Node::walk_function called with a non-function node")
-            };
-
-            let Node::FunctionBody(statements) = &mut body.inner else {
-                unreachable!(
-                    "Node::walk_function called with function node that had no function body"
-                )
-            };
-
-            statements
+            function
+                .inner
+                .body
                 .iter_mut()
                 .find_map(|statement| Self::walk_statement(visitor, statement))
         });
@@ -263,26 +252,23 @@ mod tests {
 
     #[test]
     fn finds_a_function() {
-        let function1 = Node::Function {
+        let function1 = FunctionDefinition {
             name: "f1".to_string().with_span(DUMMY_SPAN),
             return_type_string: None,
             formals: vec![],
-            body: Box::new(
-                Node::FunctionBody(vec![Statement::EmptyStatement.with_span(DUMMY_SPAN)])
-                    .with_span(DUMMY_SPAN),
-            ),
+            body: vec![Statement::EmptyStatement.with_span(DUMMY_SPAN)],
         }
         .with_span(DUMMY_SPAN);
         let mut node = Node::Program(vec![function1]).with_span(DUMMY_SPAN);
 
         let first_function_name = Node::walk_program(
             &mut |node: &SourceIDSpanned<Node>| match &node.inner {
-                Node::Function {
+                Node::FunctionDefinition(FunctionDefinition {
                     name,
                     return_type_string: _,
                     formals: _,
                     body: _,
-                } => Some(name.inner.clone()),
+                }) => Some(name.inner.clone()),
                 _ => None,
             },
             &mut node,
@@ -296,27 +282,21 @@ mod tests {
     fn finds_a_node() {
         let string_literal = Expression::Literal(Literal::StringLiteral("test_string".to_string()))
             .with_span(DUMMY_SPAN);
-        let function1 = Node::Function {
+        let function1 = FunctionDefinition {
             name: "f1".to_string().with_span(DUMMY_SPAN),
             return_type_string: None,
             formals: vec![],
-            body: Box::new(
-                Node::FunctionBody(vec![Statement::EmptyStatement.with_span(DUMMY_SPAN)])
-                    .with_span(DUMMY_SPAN),
-            ),
+            body: vec![Statement::EmptyStatement.with_span(DUMMY_SPAN)],
         }
         .with_span(DUMMY_SPAN);
-        let function2 = Node::Function {
+        let function2 = FunctionDefinition {
             name: "f2".to_string().with_span(DUMMY_SPAN),
             return_type_string: None,
             formals: vec![],
-            body: Box::new(
-                Node::FunctionBody(vec![
-                    Statement::ExpressionStatement(Box::new(string_literal.clone()))
-                        .with_span(DUMMY_SPAN),
-                ])
-                .with_span(DUMMY_SPAN),
-            ),
+            body: vec![
+                Statement::ExpressionStatement(Box::new(string_literal.clone()))
+                    .with_span(DUMMY_SPAN),
+            ],
         }
         .with_span(DUMMY_SPAN);
         let mut node = Node::Program(vec![function1, function2]).with_span(DUMMY_SPAN);

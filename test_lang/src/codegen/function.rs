@@ -1,6 +1,5 @@
 use std::error::Error;
 
-use chumsky::span::Spanned;
 use inkwell::{
     AddressSpace,
     types::BasicMetadataTypeEnum,
@@ -9,25 +8,21 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::{
-        Expression, Literal,
-        Node::{self},
-    },
+    ast::{Expression, Formal, FunctionDefinition, Literal, Statement},
     codegen::{identifier::Symbol, types::SimpleType},
+    span::SourceIDSpanned,
 };
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_function(&mut self, function: &Node) -> Result<(), Box<dyn Error>> {
-        let Node::Function {
+    pub fn handle_function(
+        &mut self,
+        FunctionDefinition {
             name,
             return_type_string,
             formals,
             body,
-        } = function
-        else {
-            unreachable!();
-        };
-
+        }: &FunctionDefinition,
+    ) -> Result<(), Box<dyn Error>> {
         let return_type = match return_type_string {
             Some(string) => SimpleType::from_type_string(string),
             None => SimpleType::Void,
@@ -41,7 +36,7 @@ impl<'ctx> CodeGen<'ctx> {
             {
                 panic!("main function is only allowed return type Int (if specified)");
             }
-            self.handle_main_function(formals, &**body);
+            self.handle_main_function(formals, body);
             return Ok(());
         }
 
@@ -54,13 +49,12 @@ impl<'ctx> CodeGen<'ctx> {
             let formal_types: Vec<BasicMetadataTypeEnum<'ctx>> = formals
                 .iter()
                 .map(|formal| match &formal.inner {
-                    Node::UntypedFormal(_) => i32_t.into(),
-                    Node::TypedFormal(type_string, _) => ir
+                    Formal::UntypedFormal(_) => i32_t.into(),
+                    Formal::TypedFormal(type_string, _) => ir
                         .type_string_to_ir_type(&type_string)
                         .unwrap_or_else(|| panic!("Void is not allowed as a parameter type"))
                         .try_into()
                         .unwrap(),
-                    _ => unreachable!(),
                 })
                 .collect();
 
@@ -91,18 +85,17 @@ impl<'ctx> CodeGen<'ctx> {
                 let value = function.get_nth_param(i.try_into()?);
 
                 match &formal.inner {
-                    Node::TypedFormal(_, identifier) => {
+                    Formal::TypedFormal(_, identifier) => {
                         function_scope.define_formal(&identifier, value.unwrap())
                     }
-                    Node::UntypedFormal(identifier) => {
+                    Formal::UntypedFormal(identifier) => {
                         function_scope.define_formal(&identifier, value.unwrap())
                     }
-                    _ => unreachable!(),
                 };
             }
         }
 
-        self.handle_function_body(&**body);
+        self.handle_function_body(body);
 
         {
             let CodeGen { ir, scopes } = self;
@@ -116,10 +109,10 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(())
     }
 
-    fn handle_main_function<S>(
+    fn handle_main_function(
         &mut self,
-        _formals: &Vec<Spanned<Node, S>>,
-        body: &Spanned<Node, S>,
+        _formals: &Vec<SourceIDSpanned<Formal>>,
+        body: &Vec<SourceIDSpanned<Statement>>,
     ) {
         {
             let CodeGen { ir, scopes } = self;
@@ -158,11 +151,7 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     // Returns true if the body ends with a return statement
-    fn handle_function_body<S>(&mut self, body: &Spanned<Node, S>) {
-        let Node::FunctionBody(body) = &body.inner else {
-            unreachable!();
-        };
-
+    fn handle_function_body(&mut self, body: &Vec<SourceIDSpanned<Statement>>) {
         for statement in body {
             self.handle_statement(&statement);
         }

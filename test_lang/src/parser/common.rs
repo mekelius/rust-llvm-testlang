@@ -59,7 +59,7 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     select! {
-        Token::NumberLiteral(value)=>value,
+        Token::NumberLiteral(value) => value,
     }
     .spanned()
 }
