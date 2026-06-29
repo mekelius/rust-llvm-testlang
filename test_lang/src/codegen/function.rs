@@ -8,9 +8,10 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::{Expression, Parameter, Function, Literal, Statement},
-    codegen::{identifier::Symbol, types::SimpleType},
+    ast::{Expression, Function, Literal, Parameter, Statement},
+    codegen::identifier::Symbol,
     span::SourceIDSpanned,
+    types::SimpleType,
 };
 
 impl<'ctx> CodeGen<'ctx> {

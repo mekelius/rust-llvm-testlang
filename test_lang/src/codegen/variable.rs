@@ -4,10 +4,7 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::{
-    ast::Expression,
-    codegen::{identifier::Symbol, types::SimpleType},
-};
+use crate::{ast::Expression, codegen::identifier::Symbol, types::SimpleType};
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn handle_const(&mut self, identifier: &str, expression: &Expression) {

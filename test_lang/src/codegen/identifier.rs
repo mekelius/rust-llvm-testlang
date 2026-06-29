@@ -3,9 +3,8 @@ use inkwell::{
     values::{AnyValue, AnyValueEnum, BasicValueEnum, FunctionValue, PointerValue},
 };
 
-use crate::codegen::types::SimpleType;
-
 use super::CodeGen;
+use crate::types::SimpleType;
 
 #[derive(Debug, Clone)]
 pub enum Symbol<'ctx> {

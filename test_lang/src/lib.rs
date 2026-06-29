@@ -1,7 +1,9 @@
-pub mod parser;
-pub mod codegen;
 pub mod ast;
-pub mod span;
-pub mod source;
-pub mod helpers;
 pub mod ast_visitor;
+pub mod codegen;
+pub mod helpers;
+pub mod parser;
+pub mod passes;
+pub mod source;
+pub mod span;
+pub mod types;

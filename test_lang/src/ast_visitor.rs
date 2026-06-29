@@ -14,6 +14,14 @@ pub trait ASTVisitor<R> {
     fn visit_case(&mut self, case: &SourceIDSpanned<Case>) -> Option<R>;
 }
 
+pub trait ASTVisitorMut<R> {
+    fn visit_program(&mut self, program: &mut SourceIDSpanned<Program>) -> Option<R>;
+    fn visit_function(&mut self, function: &mut SourceIDSpanned<Function>) -> Option<R>;
+    fn visit_statement(&mut self, statement: &mut SourceIDSpanned<Statement>) -> Option<R>;
+    fn visit_expression(&mut self, expression: &mut SourceIDSpanned<Expression>) -> Option<R>;
+    fn visit_case(&mut self, case: &mut SourceIDSpanned<Case>) -> Option<R>;
+}
+
 pub trait MatchingASTVisitor<R>: ASTVisitor<R> {
     fn visit_node(&mut self, case: NodeRef) -> Option<R>;
 }
