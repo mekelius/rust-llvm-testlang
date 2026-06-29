@@ -1,16 +1,22 @@
 ## e2e tests with lit
 
-1. activate venv
+1. Create venv (if first time)
 ```bash
-source e2e/venv/bin/activate
+python3 -m venv lit_tests/venv
 ```
 
-2. Install deps (if first time)
+2. Activate venv
 ```bash
-pip install -r e2e/requirements.txt
+source lit_tests/venv/bin/activate
 ```
 
-3. Run tests
+3. Install deps (if first time)
 ```bash
-lit e2e
+pip install -r lit_tests/requirements.txt
+```
+
+4. Run tests
+```bash
+cargo test
+lit lit_tests
 ```
