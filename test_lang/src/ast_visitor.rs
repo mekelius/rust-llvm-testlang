@@ -109,7 +109,7 @@ impl Node {
                     .find_map(|statement| Self::walk_statement(visitor, statement)),
 
                 Statement::Empty => None,
-                Statement::ExpressionStatement(expression) => {
+                Statement::Expression(expression) => {
                     Self::walk_expression(visitor, &mut **expression)
                 }
 
@@ -286,7 +286,7 @@ mod tests {
             return_type_string: None,
             formals: vec![],
             body: vec![
-                Statement::ExpressionStatement(Box::new(string_literal.clone()))
+                Statement::Expression(Box::new(string_literal.clone()))
                     .with_span(DUMMY_SPAN),
             ],
         }

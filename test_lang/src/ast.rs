@@ -25,6 +25,21 @@ pub enum Node {
     Statement(SourceIDSpanned<Statement>),
     Expression(SourceIDSpanned<Expression>),
     Case(SourceIDSpanned<Case>),
+    /*
+    Literal
+    Binop
+    Unop
+    Identifier
+    Assignment
+    Let
+    Const
+    Type
+    Call
+    ControlStatement
+    ExpressionStatement
+    EmptyStatement
+    Block
+    */
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,7 +87,7 @@ pub enum Parameter {
 pub enum Statement {
     Empty,
     Block(Vec<SourceIDSpanned<Statement>>),
-    ExpressionStatement(Box<SourceIDSpanned<Expression>>),
+    Expression(Box<SourceIDSpanned<Expression>>),
 
     Let(String, Box<SourceIDSpanned<Expression>>),
     Const(String, Box<SourceIDSpanned<Expression>>),

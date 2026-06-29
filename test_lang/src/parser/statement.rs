@@ -100,7 +100,7 @@ where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     expression()
-        .map(|e| Statement::ExpressionStatement(Box::new(e)))
+        .map(|e| Statement::Expression(Box::new(e)))
         .spanned()
 }
 
