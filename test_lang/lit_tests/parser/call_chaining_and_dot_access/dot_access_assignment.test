@@ -1,0 +1,5 @@
+// RUN: %parse < %s
+
+main() {
+    f1.reter = asr;
+}

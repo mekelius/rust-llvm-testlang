@@ -2,8 +2,7 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{
-        BinaryOperator, BinopExpression, Expression, Call, Literal, UnaryOperator,
-        UnopExpression,
+        BinaryOperator, BinopExpression, Call, Expression, Literal, UnaryOperator, UnopExpression,
     },
     parenthesized,
     parser::{
@@ -121,24 +120,22 @@ where
 {
     let identifier = identifier();
 
-    recursive(|expr| {
+    recursive(|expression| {
         let argument_list = parenthesized!(
-            expr.clone()
+            expression
+                .clone()
                 .separated_by(just(Token::Comma))
                 .collect::<Vec<SourceIDSpanned<Expression>>>()
         );
 
-        let function_call = identifier
-            .clone()
-            .then(argument_list)
-            .map(|(callee_expression, argument_list)| {
-                let callee = match callee_expression.inner {
-                    Expression::Identifier(value) => value.with_span(callee_expression.span),
-                    _ => todo!(),
-                };
+        let callee_expression = parenthesized!(expression.clone());
+        let callee = choice((callee_expression, identifier.clone()));
 
+        let function_call = callee
+            .then(argument_list)
+            .map(|(callee, argument_list)| {
                 Expression::Call(Call {
-                    callee,
+                    callee: Box::new(callee),
                     args: argument_list,
                 })
             })
@@ -146,7 +143,7 @@ where
 
         let typed_expression = type_expression()
             .clone()
-            .then(expr.clone())
+            .then(expression.clone())
             .map(|(type_, expression)| Expression::TypedExpression(type_, Box::new(expression)))
             .spanned();
 
@@ -179,7 +176,7 @@ where
                 identifier.clone(),
                 literal(),
                 typed_expression,
-                parenthesized!(expr.clone()),
+                parenthesized!(expression.clone()),
             ))
         });
 
@@ -252,7 +249,7 @@ where
             binary_expression_2,
             binary_expression_1,
             term,
-            parenthesized!(expr.clone()),
+            parenthesized!(expression.clone()),
         ))
     })
 }

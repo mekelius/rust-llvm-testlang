@@ -44,9 +44,14 @@ impl<'ctx> CodeGen<'ctx> {
 
     fn handle_function_call(&self, call_expression: &Call) -> AnyValueEnum<'ctx> {
         let Call {
-            callee: callee_name,
+            callee: callee_expression,
             args: argument_list,
         } = call_expression;
+
+        let callee_name = match &callee_expression.inner {
+            Expression::Identifier(callee_name) => callee_name,
+            _ => todo!("Callee expressions"),
+        };
 
         let args: Vec<BasicMetadataValueEnum> = argument_list
             .into_iter()
@@ -55,9 +60,9 @@ impl<'ctx> CodeGen<'ctx> {
 
         let callee = self
             .scopes
-            .resolve_function(callee_name)
+            .resolve_function(&callee_name)
             .unwrap_or_else(|| {
-                panic!("Attempt to call nonexistent function {}", callee_name.inner)
+                panic!("Attempt to call nonexistent function {}", callee_name)
             });
 
         self.ir

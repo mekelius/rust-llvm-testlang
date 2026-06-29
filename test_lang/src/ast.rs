@@ -169,7 +169,7 @@ pub enum Literal {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Call {
-    pub callee: SourceIDSpanned<String>,
+    pub callee: Box<SourceIDSpanned<Expression>>,
     pub args: Vec<SourceIDSpanned<Expression>>,
 }
 
