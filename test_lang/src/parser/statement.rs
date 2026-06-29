@@ -2,13 +2,17 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{
-        BinaryOperator, BinopExpression, Case, DEFAULT_CASE, Expression, Literal, Statement, UnaryOperator, UnopExpression,
-    }, in_curly_braces, parenthesized, parser::{
+        BinaryOperator, BinopExpression, Case, DEFAULT_CASE, Expression, Literal, Statement,
+        UnaryOperator, UnopExpression,
+    },
+    in_curly_braces, parenthesized,
+    parser::{
         ParserError,
         common::{identifier_as_string, number_literal_as_string},
         expression::expression,
         lexer::Token,
-    }, span::{SourceIDSpan, SourceIDSpanned},
+    },
+    span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[derive(Clone)]
@@ -211,13 +215,18 @@ where
         .spanned()
 }
 
+/**
+ * Valueless "return" is desugared to "return ()"
+ */
 pub fn valueless_return_statement<'src, I>()
 -> impl Parser<'src, I, SourceIDSpanned<Statement>, ParserError<'src>> + Clone
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
     just(Token::Return)
-        .to(Statement::ValuelessReturn)
+        .to(Expression::Literal(Literal::Unit))
+        .spanned()
+        .map(|unit| Statement::Return(Box::new(unit)))
         .spanned()
 }
 
@@ -237,9 +246,7 @@ pub fn continue_statement<'src, I>()
 where
     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 {
-    just(Token::Continue)
-        .to(Statement::Continue)
-        .spanned()
+    just(Token::Continue).to(Statement::Continue).spanned()
 }
 
 pub fn statement<'src, I>()
@@ -335,14 +342,12 @@ where
                     .then(for_step)
             ))
             .then(p.clone())
-            .map(
-                |(((init, condition), step), body)| Statement::For {
-                    init: Box::new(init),
-                    condition: Box::new(condition),
-                    step: Box::new(step),
-                    body: Box::new(body),
-                },
-            )
+            .map(|(((init, condition), step), body)| Statement::For {
+                init: Box::new(init),
+                condition: Box::new(condition),
+                step: Box::new(step),
+                body: Box::new(body),
+            })
             .spanned();
 
         let while_statement = just(Token::While)

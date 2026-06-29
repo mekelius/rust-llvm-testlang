@@ -78,7 +78,6 @@ pub enum Statement {
     Const(String, Box<SourceIDSpanned<Expression>>),
     Assignment(String, Box<SourceIDSpanned<Expression>>),
     Return(Box<SourceIDSpanned<Expression>>),
-    ValuelessReturn,
 
     While {
         condition: Box<SourceIDSpanned<Expression>>,

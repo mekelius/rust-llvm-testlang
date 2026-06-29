@@ -184,10 +184,6 @@ impl<'ctx> CodeGen<'ctx> {
         // };
     }
 
-    pub fn handle_valueless_return(&self) {
-        self.ir.builder.build_return(None).unwrap();
-    }
-
     // fn update_return_type(&self, function: FunctionValue<'ctx>, return_type: BasicTypeEnum<'ctx>) -> FunctionValue<'ctx> {
     //     let name = function.get_name().to_str().unwrap();
     //     function.nam

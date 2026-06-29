@@ -21,9 +21,6 @@ impl<'ctx> CodeGen<'ctx> {
             Statement::Return(expression) => {
                 self.handle_return(expression);
             }
-            Statement::ValuelessReturn => {
-                self.handle_valueless_return();
-            }
             Statement::ExpressionStatement(expression) => {
                 self.handle_expression(&expression);
             }
