@@ -3,5 +3,5 @@
 set -e
 set -o pipefail
 
-cargo run --bin testc < $1 | clang -x ir - -o testbin/out 
+cargo run --bin testc < $1 | clang-22 -x ir - -o testbin/out 
 ./testbin/out

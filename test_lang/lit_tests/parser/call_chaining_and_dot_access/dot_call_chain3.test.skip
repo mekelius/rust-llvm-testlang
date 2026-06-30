@@ -1,0 +1,19 @@
+// RUN: %parse < %s
+
+init_commands(config) {
+    return run_command(command, args) {
+        {
+            command1(args) {
+                ...
+            }
+            
+            command2(args) {
+                ...
+            }
+            
+            command3(args) {
+                ...
+            }
+        }[command].(args)
+    }
+}

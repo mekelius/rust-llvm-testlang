@@ -1,0 +1,13 @@
+// RUN: %testc < %s | clang-22 -x ir - -o %t
+// RUN: %t | filecheck %s
+
+main() {
+    for(let i=0; i<3;i++)
+    {
+        println_int(i); //CHECK-NEXT: 0
+                        //CHECK-NEXT: 1
+                        //CHECK-NEXT: 2
+    }
+
+    print("done\n");              // CHECK-NEXT: done
+}

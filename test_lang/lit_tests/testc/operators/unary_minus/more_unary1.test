@@ -4,10 +4,4 @@
 main() {
     println_int(-(5*4));     // CHECK-NEXT: -20
     println_int(-(-5--4));   // CHECK-NEXT:   1
-    println_int(-(5*4));     // CHECK-NEXT: -20
-    println_int(-(5*4));     // CHECK-NEXT: -20
-    println_int(-(5*4));     // CHECK-NEXT: -20
-    println_int(-(5*4));     // CHECK-NEXT: -20
-    println_int(-(5*4));     // CHECK-NEXT: -20
-    println_int(-(5*4));     // CHECK-NEXT: -20
 }
