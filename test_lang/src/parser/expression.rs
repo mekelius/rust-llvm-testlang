@@ -1,11 +1,11 @@
-use chumsky::prelude::*;
+use chumsky::{extra::SimpleState, input::MapExtra, prelude::*};
 
 use crate::{
     ast::{
         BinaryOperator, BinopExpression, Call, Expression, PropertyAccess, UnaryOperator,
         UnopExpression,
     },
-    ast_store::{ExpressionID, Store},
+    ast_store::{ASTStore, ExpressionID, Store},
     parenthesized,
     parser::{
         Extras,
@@ -58,6 +58,59 @@ where
         just(Token::NotEquals).to(BinaryOperator::NotEquals),
     ))
     .spanned()
+}
+
+// fn fold_binary<'tokens, I>(
+//     term: impl Parser<'tokens, I, SourceIDSpanned<ExpressionID>> + Clone,
+//     operator: impl Parser<'tokens, I, SourceIDSpanned<BinaryOperator>> + Clone,
+// ) -> impl Parser<'tokens, I, SourceIDSpanned<ExpressionID>, Extras<'tokens>> + Clone
+// where
+//     I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
+// {
+//     term.clone().spanned().foldl_with(
+//         operator.then(term).repeated(),
+//         |lhs: SourceIDSpanned<ExpressionID>,
+//          (op, rhs): (
+//             SourceIDSpanned<BinaryOperator>,
+//             SourceIDSpanned<ExpressionID>,
+//         ),
+//          extras: &mut MapExtra<'_, '_, I, Extras<'tokens>>| {
+//             let span = lhs.span.union(op.span).union(rhs.span);
+
+//             extras
+//                 .state()
+//                 .expressions
+//                 .add(
+//                     Expression::Binop(BinopExpression {
+//                         op: op.inner,
+//                         lhs: lhs.inner,
+//                         rhs: rhs.inner,
+//                     })
+//                     .with_span(span),
+//                 )
+//                 .with_span(span)
+//         },
+//     )
+// }
+
+fn fold_binary<'tokens>(
+    lhs: SourceIDSpanned<ExpressionID>,
+    op: SourceIDSpanned<BinaryOperator>,
+    rhs: SourceIDSpanned<ExpressionID>,
+    state: &mut SimpleState<ASTStore>,
+) -> SourceIDSpanned<ExpressionID> {
+    let span = lhs.span.union(op.span).union(rhs.span);
+    state
+        .expressions
+        .add(
+            Expression::Binop(BinopExpression {
+                op: op.inner,
+                lhs: lhs.inner,
+                rhs: rhs.inner,
+            })
+            .with_span(span),
+        )
+        .with_span(span)
 }
 
 enum DotSubscript {
@@ -194,58 +247,43 @@ where
             ))
         });
 
-        // let binary_expression_1 = term.clone().foldl(
-        //     binary_operator_1().then(term.clone()).repeated(),
-        //     |lhs, (op, rhs)| {
-        //         let span = lhs.span.union(op.span).union(rhs.span);
+        let binary_expression_1 = term
+            .clone()
+            .spanned()
+            .foldl_with(
+                binary_operator_1().then(term.clone().spanned()).repeated(),
+                |lhs, (op, rhs), extras| fold_binary(lhs, op, rhs, extras.state()),
+            )
+            .map(|e| e.inner);
 
-        //         Expression::Binop(BinopExpression {
-        //             op: op.inner,
-        //             lhs,
-        //             rhs,
-        //         })
-        //         .with_span(span)
-        //     },
-        // );
+        let binary_expression_2 = binary_expression_1
+            .clone()
+            .spanned()
+            .foldl_with(
+                binary_operator_2()
+                    .then(binary_expression_1.clone().spanned())
+                    .repeated(),
+                |lhs, (op, rhs), extras| fold_binary(lhs, op, rhs, extras.state()),
+            )
+            .map(|e| e.inner);
 
-        // let binary_expression_2 = binary_expression_1.clone().foldl(
-        //     binary_operator_2()
-        //         .then(binary_expression_1.clone())
-        //         .repeated(),
-        //     |lhs, (op, rhs)| {
-        //         let span = lhs.span.union(op.span).union(rhs.span);
-
-        //         Expression::Binop(BinopExpression {
-        //             op: op.inner,
-        //             lhs,
-        //             rhs,
-        //         })
-        //         .with_span(span)
-        //     },
-        // );
-
-        // let binary_expression_3 = binary_expression_2.clone().foldl(
-        //     binary_operator_3()
-        //         .then(binary_expression_2.clone())
-        //         .repeated(),
-        //     |lhs, (op, rhs)| {
-        //         let span = lhs.span.union(op.span).union(rhs.span);
-
-        //         Expression::Binop(BinopExpression {
-        //             op: op.inner,
-        //             lhs,
-        //             rhs,
-        //         })
-        //         .with_span(span)
-        //     },
-        // );
+        let binary_expression_3 = binary_expression_2
+            .clone()
+            .spanned()
+            .foldl_with(
+                binary_operator_3()
+                    .then(binary_expression_2.clone().spanned())
+                    .repeated(),
+                |lhs, (op, rhs), extras| fold_binary(lhs, op, rhs, extras.state()),
+            )
+            .map(|e| e.inner);
 
         choice((
-            // binary_expression_3,
-            // binary_expression_2,
-            // binary_expression_1,
+            binary_expression_3,
+            binary_expression_2,
+            binary_expression_1,
             term,
-            // parenthesized!(expression.clone()).store_expression(),
+            parenthesized!(expression.clone()),
         ))
     })
 }
