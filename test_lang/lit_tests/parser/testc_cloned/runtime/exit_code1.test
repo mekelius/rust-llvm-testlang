@@ -1,0 +1,12 @@
+// RUN: %parse < %s
+
+returnNumber(number) -> Int
+{
+    return number;
+}
+
+main() -> Int
+{
+    print_int(returnNumber(123)); 
+    return 0;
+}

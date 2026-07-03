@@ -1,0 +1,7 @@
+// RUN: %parse < %s
+
+main() {
+    let y = Bool false;
+    y!!;
+    println_bool(y);    
+}

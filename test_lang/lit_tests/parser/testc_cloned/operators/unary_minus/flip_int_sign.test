@@ -1,0 +1,6 @@
+// RUN: %parse < %s
+
+main() {
+    const x = 9*2;
+    print_int(-x);     
+}

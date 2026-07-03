@@ -1,0 +1,10 @@
+// RUN: %parse < %s
+
+test() -> Boolean {
+    return false;
+}
+
+main() {
+    const x = test();
+    print_bool(x);           
+}

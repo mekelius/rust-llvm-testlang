@@ -1,0 +1,9 @@
+// RUN: %parse < %s
+
+returnVoid() -> Void {
+    return ();
+}
+
+main() {
+    returnVoid();
+}

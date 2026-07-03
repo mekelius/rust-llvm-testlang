@@ -1,0 +1,7 @@
+// RUN: %parse < %s
+
+main() {
+    const x = Int 100;
+    const y = Int 6;
+    print_int(x * y); 
+}

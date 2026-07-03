@@ -1,0 +1,10 @@
+// RUN: %parse < %s
+
+test(x) -> Int {
+    return x+123;
+}
+
+main() {
+    const x = test(9);
+    print_int(x);           
+}

@@ -1,0 +1,10 @@
+// RUN: %parse < %s
+
+test() -> String {
+    return "hihhii";
+}
+
+main() {
+    const x = test();
+    print(x);           
+}

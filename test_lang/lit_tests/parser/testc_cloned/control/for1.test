@@ -1,0 +1,11 @@
+// RUN: %parse < %s
+
+main() {
+    for (let x = 0; x < 3; x = x + 1) {
+        println_int(x);         
+                                
+                                
+    }
+
+    print("done\n");              
+}

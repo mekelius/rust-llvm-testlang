@@ -1,0 +1,17 @@
+// RUN: %parse < %s
+
+hmm(x) {
+    switch x {
+        case 1:
+            print("one");
+            break;
+        default:
+            break;
+        default:
+            break;
+    }
+}
+
+main() {
+    hmm(1);
+}

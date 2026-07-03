@@ -1,0 +1,10 @@
+// RUN: %parse < %s
+
+main() {
+    println_int(42%3);        
+    println_int(42%5);        
+    println_int(101%100);     
+    println_int(9%7);         
+    println_int(13%3);        
+    println_int(82%6);        
+}

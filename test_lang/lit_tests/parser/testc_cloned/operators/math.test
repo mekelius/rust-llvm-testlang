@@ -1,0 +1,9 @@
+// RUN: %parse < %s
+
+test() {
+    print_int(1+5-3*2);
+}
+
+main() {
+    test();                 
+}

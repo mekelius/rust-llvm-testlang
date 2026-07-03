@@ -1,0 +1,7 @@
+// RUN: %parse < %s
+
+main() {
+    let x = 100;    
+    x = x*6;
+    print_int(x);   
+}

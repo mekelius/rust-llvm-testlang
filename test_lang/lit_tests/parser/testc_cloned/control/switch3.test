@@ -1,0 +1,21 @@
+// RUN: %parse < %s
+
+hmm(x) {
+    print("before\n");          
+    switch x {
+        case 1:
+            print("one");
+            break;
+        case 2:
+            print("two");
+            break;
+        case 69:
+            print("nice");
+            break;
+    }
+    print("after\n");           
+}
+
+main() {
+    hmm(32);
+}

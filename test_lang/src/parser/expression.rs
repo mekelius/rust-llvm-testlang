@@ -73,28 +73,31 @@ pub fn expression<'tokens, I>() -> impl Parser<'tokens, I, ExpressionID, Extras<
 where
     I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
-    // let identifier = identifier();
+    let identifier = identifier().store_expression();
 
     recursive(|expression| {
-        // let argument_list = parenthesized!(
-        //     expression
-        //         .clone()
-        //         .separated_by(just(Token::Comma))
-        //         .collect::<Vec<SourceIDSpanned<Expression>>>()
-        // );
+        let argument_list = parenthesized!(
+            expression
+                .clone()
+                .separated_by(just(Token::Comma))
+                .collect::<Vec<ExpressionID>>()
+        );
 
-        // let callee_expression = parenthesized!(expression.clone());
-        // let callee = choice((callee_expression, identifier.clone()));
+        let callee_expression = parenthesized!(expression.clone());
+        let callee = choice((callee_expression, identifier.clone()));
 
-        // let function_call = callee
-        //     .then(argument_list.clone())
-        //     .map(|(callee, args)| Expression::Call(Call { callee, args }));
+        let function_call = callee
+            .then(argument_list.clone())
+            .map(|(callee, args)| Expression::Call(Call { callee, args }))
+            .spanned()
+            .store_expression();
 
-        // let typed_expression = type_expression()
-        //     .clone()
-        //     .then(expression.clone())
-        //     .map(|(type_, expression)| Expression::TypedExpression(type_, expression))
-        //     .spanned();
+        let typed_expression = type_expression()
+            .clone()
+            .then(expression.clone())
+            .map(|(type_, expression)| Expression::TypedExpression(type_, expression))
+            .spanned()
+            .store_expression();
 
         // let dot_subscriptable_expression = choice((
         //     function_call.clone().spanned().store_expression(),
@@ -156,38 +159,38 @@ where
         // );
 
         let term = recursive(|term| {
-            // let unary_not_expression = just(Token::Minus)
-            //     .ignore_then(term.clone())
-            //     .map(|term| {
-            //         Expression::Unop(UnopExpression {
-            //             op: UnaryOperator::UnaryMinus,
-            //             term,
-            //         })
-            //     })
-            //     .spanned()
-            //     .store_expression();
+            let unary_not_expression = just(Token::Minus)
+                .ignore_then(term.clone())
+                .map(|term| {
+                    Expression::Unop(UnopExpression {
+                        op: UnaryOperator::UnaryMinus,
+                        term,
+                    })
+                })
+                .spanned()
+                .store_expression();
 
-            // let unary_minus_expression = just(Token::Bang)
-            //     .ignore_then(term.clone())
-            //     .map(|expression| {
-            //         Expression::Unop(UnopExpression {
-            //             op: UnaryOperator::UnaryNot,
-            //             term: Box::new(expression),
-            //         })
-            //     })
-            //     .spanned()
-            //     .store_expression();
+            let unary_minus_expression = just(Token::Bang)
+                .ignore_then(term.clone())
+                .map(|expression_id| {
+                    Expression::Unop(UnopExpression {
+                        op: UnaryOperator::UnaryNot,
+                        term: expression_id,
+                    })
+                })
+                .spanned()
+                .store_expression();
 
-            // let unary_expression = choice((unary_minus_expression, unary_not_expression));
+            let unary_expression = choice((unary_minus_expression, unary_not_expression));
 
             choice((
                 // dot_access_chain,
-                // unary_expression.clone(),
-                // function_call.spanned().store_expression(),
-                // identifier.clone(),
+                unary_expression.clone(),
+                function_call,
+                identifier.clone(),
                 literal(),
-                // typed_expression,
-                // parenthesized!(expression.clone()),
+                typed_expression,
+                parenthesized!(expression.clone()),
             ))
         });
 

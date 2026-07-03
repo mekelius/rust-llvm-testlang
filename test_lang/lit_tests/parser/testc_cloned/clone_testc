@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Clone into the script's directory
+target_dir="$(cd -- "$(dirname -- ${BASH_SOURCE[0]})" && pwd)"
+source_dir=$target_dir/../../testc
+
+shopt -s globstar
+
+for file in "$source_dir"/**/*.test
+do
+    out_file=$(echo "$file" | sed -E "s:"$source_dir":"$target_dir":")
+    mkdir -p "$(dirname "$out_file")"
+    awk -F'// *CHECK' 'BEGIN {print "// RUN: %parse < %s"} /\/\/ *RUN:/ {next} {print $1}' "$file" > "$out_file"
+done

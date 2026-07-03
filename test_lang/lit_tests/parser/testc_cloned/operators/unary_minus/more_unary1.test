@@ -1,0 +1,12 @@
+// RUN: %parse < %s
+
+main() {
+    println_int(-(5*4));     
+    println_int(-(-5--4));   
+    println_int(-(5*4));     
+    println_int(-(5*4));     
+    println_int(-(5*4));     
+    println_int(-(5*4));     
+    println_int(-(5*4));     
+    println_int(-(5*4));     
+}

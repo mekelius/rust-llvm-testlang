@@ -1,0 +1,15 @@
+// RUN: %parse < %s
+
+main() {
+    let x = 5;
+
+    while (x != 9) {    
+        println_int(x);         
+                                
+                                
+                                
+        x = x+1;
+    }
+
+    print("done\n");              
+}

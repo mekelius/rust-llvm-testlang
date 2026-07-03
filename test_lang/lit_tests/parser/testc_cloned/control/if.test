@@ -1,0 +1,11 @@
+// RUN: %parse < %s
+
+main() {
+    if (3 > 9) {
+        print("heey");
+    }
+
+    if (3 < 9) {
+        print("yaaz"); 
+    }
+}

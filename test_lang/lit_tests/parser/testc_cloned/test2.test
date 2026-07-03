@@ -1,0 +1,9 @@
+// RUN: %parse < %s
+
+test() {
+    print_int(999);
+}
+
+main() {
+    test();             
+}

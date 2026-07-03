@@ -1,0 +1,10 @@
+// RUN: %parse < %s
+
+test() {
+    print('Hello "oe"\n');
+}
+
+main() {
+    test();                 
+}
+

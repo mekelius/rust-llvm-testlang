@@ -1,0 +1,11 @@
+// RUN: %parse < %s
+
+println(String string) {
+    print(string);
+    print("\n");
+}
+
+main() {
+    println("Hellouski");           
+    println("Kyl");                 
+}

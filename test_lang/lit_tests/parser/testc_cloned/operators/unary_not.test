@@ -1,0 +1,11 @@
+// RUN: %parse < %s
+
+main() {
+    const x = true;
+    println_bool(!x);                           
+    println_bool(!!x);                          
+    println_bool(!!!x);                         
+    println_bool(!x != x);                      
+    println_bool(!(x != x));                    
+    println_bool((!x == !x) == !(x == x));      
+}

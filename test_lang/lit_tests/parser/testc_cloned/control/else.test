@@ -1,0 +1,10 @@
+// RUN: %parse < %s
+
+main() {
+    print("jippii\n");          
+    if (1 > 2) {
+        print("qwewqe");
+    } else {
+        print("www");           
+    }
+}

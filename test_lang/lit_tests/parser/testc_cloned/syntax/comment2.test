@@ -1,0 +1,13 @@
+// RUN: %parse < %s
+
+/* TESTSTE
+adg
+asdttaat
+aststatsattasa
+        tets
+        gigi */ joo() {} 
+main() { // woo
+    // asdasd
+    print("qwe");           
+}
+//asasaas

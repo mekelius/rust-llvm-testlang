@@ -1,0 +1,9 @@
+// RUN: %parse < %s
+
+hmm() {
+    print("Toimii");
+}
+
+main() {
+    hmm(); 
+}

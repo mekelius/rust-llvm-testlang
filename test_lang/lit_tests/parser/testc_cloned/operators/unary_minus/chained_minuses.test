@@ -1,0 +1,11 @@
+// RUN: %parse < %s
+
+main() {
+    println_int(--4);           
+    println_int(---4);          
+    println_int(----4);         
+    println_int(-----4);        
+    println_int(---(--4));      
+    println_int(-(----4));      
+    println_int(-----(4));      
+}

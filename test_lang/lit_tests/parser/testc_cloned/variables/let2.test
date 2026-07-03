@@ -1,0 +1,13 @@
+// RUN: %parse < %s
+
+mod2(x) -> Int {
+    return x % 2;
+}
+
+main() {
+    let x = 100;    
+    const y = mod2(5);
+    x = x-y;
+    let z = 90;
+    println_int(x + z);   
+}

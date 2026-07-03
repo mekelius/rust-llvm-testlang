@@ -1,0 +1,5 @@
+// RUN: %parse < %s
+
+main() {
+    print_bool(4 != 4); 
+}

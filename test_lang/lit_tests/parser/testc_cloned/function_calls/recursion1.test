@@ -1,0 +1,20 @@
+// RUN: %parse < %s
+
+f(x) {
+    if (x == 0) {
+        print("done\n");
+        return;
+    }
+
+    print_int(x);
+    print("\n");
+    f(x-1);
+}
+
+main() {
+    f(4);                   
+                            
+                            
+                            
+                            
+}
