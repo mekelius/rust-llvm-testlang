@@ -1,7 +1,9 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::Expression, parser::{Extras, ParserError, lexer::Token}, span::{SourceIDSpan, SourceIDSpanned},
+    ast::Expression,
+    parser::{Extras, lexer::Token},
+    span::{SourceIDSpan, SourceIDSpanned},
 };
 
 #[macro_export]

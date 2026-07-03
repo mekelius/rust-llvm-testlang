@@ -1,4 +1,4 @@
-use chumsky::{extra::SimpleState, input::MapExtra, prelude::*};
+use chumsky::{extra::SimpleState, prelude::*};
 
 use crate::{
     ast::{
@@ -117,9 +117,9 @@ enum DotSubscript {
     PropertyAccess(SourceIDSpanned<String>),
     MethodCall {
         method_name: SourceIDSpanned<String>,
-        args: Vec<SourceIDSpanned<Expression>>,
+        args: Vec<ExpressionID>,
     },
-    ChainedCall(Vec<SourceIDSpanned<Expression>>),
+    ChainedCall(Vec<ExpressionID>),
 }
 
 pub fn expression<'tokens, I>() -> impl Parser<'tokens, I, ExpressionID, Extras<'tokens>> + Clone
@@ -152,64 +152,78 @@ where
             .spanned()
             .store_expression();
 
-        // let dot_subscriptable_expression = choice((
-        //     function_call.clone().spanned().store_expression(),
-        //     identifier.clone(),
-        //     parenthesized!(expression.clone()),
-        // ));
+        let dot_subscriptable_expression = choice((
+            function_call.clone(),
+            identifier.clone(),
+            parenthesized!(expression.clone()),
+        ));
 
-        // let method_call = identifier_as_string().then(argument_list.clone());
-        // let dot_subscript = choice((
-        //     method_call
-        //         .map(|(method_name, args)| DotSubscript::MethodCall { method_name, args })
-        //         .spanned(),
-        //     identifier_as_string()
-        //         .map(|value| DotSubscript::PropertyAccess(value))
-        //         .spanned(),
-        //     argument_list
-        //         .map(|args| DotSubscript::ChainedCall(args))
-        //         .spanned(),
-        // ));
+        let method_call = identifier_as_string().then(argument_list.clone());
+        let dot_subscript = choice((
+            method_call
+                .map(|(method_name, args)| DotSubscript::MethodCall { method_name, args })
+                .spanned(),
+            identifier_as_string()
+                .map(|value| DotSubscript::PropertyAccess(value))
+                .spanned(),
+            argument_list
+                .map(|args| DotSubscript::ChainedCall(args))
+                .spanned(),
+        ));
 
-        // let dot_access_chain = dot_subscriptable_expression.foldl(
-        //     just(Token::Period).ignore_then(dot_subscript).repeated(),
-        //     |dot_subscriptable, dot_subscript: SourceIDSpanned<DotSubscript>| {
-        //         let span = dot_subscriptable
-        //             .span
-        //             .clone()
-        //             .union(dot_subscript.span.clone());
-        //         match dot_subscript.inner {
-        //             DotSubscript::MethodCall { method_name, args } => {
-        //                 let callee_span = dot_subscriptable
-        //                     .span
-        //                     .clone()
-        //                     .union(method_name.span.clone());
+        let dot_access_chain = dot_subscriptable_expression
+            .spanned()
+            .foldl_with(
+                just(Token::Period).ignore_then(dot_subscript).repeated(),
+                |dot_subscriptable: SourceIDSpanned<ExpressionID>,
+                 dot_subscript: SourceIDSpanned<DotSubscript>,
+                 extras| {
+                    let state = extras.state();
+                    let span = dot_subscriptable
+                        .span
+                        .clone()
+                        .union(dot_subscript.span.clone());
 
-        //                 let callee = Expression::PropertyAccess(PropertyAccess {
-        //                     dot_subscriptable,
-        //                     property_name: method_name,
-        //                 })
-        //                 .with_span(callee_span).store_expression();
+                    match dot_subscript.inner {
+                        DotSubscript::MethodCall { method_name, args } => {
+                            let callee_span = dot_subscriptable
+                                .span
+                                .clone()
+                                .union(method_name.span.clone());
 
-        //                 Expression::Call(Call { callee, args }).with_span(span)
-        //             }
+                            let callee = state.expressions.add(
+                                Expression::PropertyAccess(PropertyAccess {
+                                    dot_subscriptable: dot_subscriptable.inner,
+                                    property_name: method_name,
+                                })
+                                .with_span(callee_span),
+                            );
 
-        //             DotSubscript::PropertyAccess(property_name) => {
-        //                 Expression::PropertyAccess(PropertyAccess {
-        //                     dot_subscriptable,
-        //                     property_name,
-        //                 })
-        //                 .with_span(span)
-        //             }
+                            state
+                                .expressions
+                                .add(Expression::Call(Call { callee, args }).with_span(span))
+                        }
 
-        //             DotSubscript::ChainedCall(args) => Expression::Call(Call {
-        //                 callee: dot_subscriptable,
-        //                 args,
-        //             })
-        //             .with_span(span),
-        //         }
-        //     },
-        // );
+                        DotSubscript::PropertyAccess(property_name) => state.expressions.add(
+                            Expression::PropertyAccess(PropertyAccess {
+                                dot_subscriptable: dot_subscriptable.inner,
+                                property_name,
+                            })
+                            .with_span(span),
+                        ),
+
+                        DotSubscript::ChainedCall(args) => state.expressions.add(
+                            Expression::Call(Call {
+                                callee: dot_subscriptable.inner,
+                                args,
+                            })
+                            .with_span(span),
+                        ),
+                    }
+                    .with_span(span)
+                },
+            )
+            .map(|e| e.inner);
 
         let term = recursive(|term| {
             let unary_not_expression = just(Token::Minus)
@@ -237,7 +251,7 @@ where
             let unary_expression = choice((unary_minus_expression, unary_not_expression));
 
             choice((
-                // dot_access_chain,
+                dot_access_chain,
                 unary_expression.clone(),
                 function_call,
                 identifier.clone(),
