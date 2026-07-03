@@ -1,10 +1,11 @@
 use chumsky::prelude::*;
 
 use crate::{
-    ast::{Parameter, Function, Statement},
+    ast::{Function, Parameter},
+    ast_store::{FunctionID, StatementID, Store},
     in_curly_braces, parenthesized,
     parser::{
-        ParserError,
+        Extras,
         common::{identifier_as_string, type_expression},
         lexer::Token,
         statement::statement,
@@ -12,10 +13,10 @@ use crate::{
     span::{SourceIDSpan, SourceIDSpanned},
 };
 
-fn typed_formal<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Parameter>, ParserError<'src>> + Clone
+fn typed_formal<'tokens, I>()
+-> impl Parser<'tokens, I, SourceIDSpanned<Parameter>, Extras<'tokens>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SourceIDSpan>,
+    I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
     select! {Token::TypeIdentifier(value) => value}
         .spanned()
@@ -29,10 +30,10 @@ where
         .spanned()
 }
 
-fn untyped_formal<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Parameter>, ParserError<'src>> + Clone
+fn untyped_formal<'tokens, I>()
+-> impl Parser<'tokens, I, SourceIDSpanned<Parameter>, Extras<'tokens>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SourceIDSpan>,
+    I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
     select! {
         Token::Identifier(value) => Parameter::Untyped(value)
@@ -40,17 +41,18 @@ where
     .spanned()
 }
 
-fn formal<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<Parameter>, ParserError<'src>> + Clone
+fn formal<'tokens, I>()
+-> impl Parser<'tokens, I, SourceIDSpanned<Parameter>, Extras<'tokens>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SourceIDSpan>,
+    I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
     choice((typed_formal(), untyped_formal()))
 }
 
-fn formals<'src, I>()
--> impl Parser<'src, I, Vec<SourceIDSpanned<Parameter>>, ParserError<'src>> + Clone
+fn parameter_list<'tokens, I>()
+-> impl Parser<'tokens, I, Vec<SourceIDSpanned<Parameter>>, Extras<'tokens>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SourceIDSpan>,
+    I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
     parenthesized!(
         formal()
@@ -59,10 +61,10 @@ where
     )
 }
 
-fn maybe_return_type<'src, I>()
--> impl Parser<'src, I, Option<SourceIDSpanned<String>>, ParserError<'src>> + Clone
+fn maybe_return_type<'tokens, I>()
+-> impl Parser<'tokens, I, Option<SourceIDSpanned<String>>, Extras<'tokens>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SourceIDSpan>,
+    I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
     (just(Token::ArrowSingle)
         .ignore_then(type_expression())
@@ -70,35 +72,32 @@ where
     .or(empty().to(None))
 }
 
-fn function_body<'src, I>()
--> impl Parser<'src, I, Vec<SourceIDSpanned<Statement>>, ParserError<'src>> + Clone
+fn function_body<'tokens, I>() -> impl Parser<'tokens, I, Vec<StatementID>, Extras<'tokens>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SourceIDSpan>,
+    I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
     in_curly_braces!(
         statement()
             .repeated()
-            .collect::<Vec<SourceIDSpanned<Statement>>>()
+            .collect::<Vec<StatementID>>()
             .map(|body| body)
     )
 }
 
-pub fn function<'src, I>()
--> impl Parser<'src, I, SourceIDSpanned<Function>, ParserError<'src>> + Clone
+pub fn function<'tokens, I>() -> impl Parser<'tokens, I, FunctionID, Extras<'tokens>> + Clone
 where
-    I: Input<'src, Token = Token, Span = SourceIDSpan>,
+    I: Input<'tokens, Token = Token, Span = SourceIDSpan>,
 {
     identifier_as_string()
-        .then(formals())
+        .then(parameter_list())
         .then(maybe_return_type())
         .then(function_body())
-        .map(
-            |(((name, formals), return_type_string), body)| Function {
-                name,
-                return_type_string,
-                formals,
-                body,
-            },
-        )
+        .map(|(((name, formals), return_type_string), body)| Function {
+            name,
+            return_type_string,
+            formals,
+            body,
+        })
         .spanned()
+        .map_with(|function, e| e.state().functions.add(function))
 }

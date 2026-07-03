@@ -7,7 +7,7 @@
 // };
 
 // pub fn dot_access_lvalue<'src, I>()
-// -> impl Parser<'src, I, SourceIDSpanned<LValue>, ParserError<'src>> + Clone
+// -> impl Parser<'src, I, SourceIDSpanned<LValue>, Extras<'tokens, 'ast>> + Clone
 // where
 //     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 // {
@@ -23,7 +23,7 @@
 //         .spanned()
 // }
 
-// pub fn lvalue<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<LValue>, ParserError<'src>> + Clone
+// pub fn lvalue<'src, I>() -> impl Parser<'src, I, SourceIDSpanned<LValue>, Extras<'tokens, 'ast>> + Clone
 // where
 //     I: Input<'src, Token = Token, Span = SourceIDSpan>,
 // {

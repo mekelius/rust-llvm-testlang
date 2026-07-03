@@ -1,6 +1,7 @@
 use crate::{
+    ast_store::{ExpressionID, FunctionID, StatementID},
     span::SourceIDSpanned,
-    types::SimpleType::{self, Boolean, Int, Unknown, Void},
+    types::SimpleType::{self, Boolean, Int, Unknown},
 };
 
 // macro_rules! node_types {
@@ -27,7 +28,6 @@ pub enum Node {
     Function(SourceIDSpanned<Function>),
     Statement(SourceIDSpanned<Statement>),
     Expression(SourceIDSpanned<Expression>),
-    Case(SourceIDSpanned<Case>),
     /*
     Literal
     Binop
@@ -51,7 +51,6 @@ pub enum NodeRef<'a> {
     Function(&'a SourceIDSpanned<Function>),
     Statement(&'a SourceIDSpanned<Statement>),
     Expression(&'a SourceIDSpanned<Expression>),
-    Case(&'a SourceIDSpanned<Case>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -60,12 +59,11 @@ pub enum NodeRefMut<'a> {
     Function(&'a mut SourceIDSpanned<Function>),
     Statement(&'a mut SourceIDSpanned<Statement>),
     Expression(&'a mut SourceIDSpanned<Expression>),
-    Case(&'a mut SourceIDSpanned<Case>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Program {
-    pub functions: Vec<SourceIDSpanned<Function>>,
+    pub functions: Vec<FunctionID>,
 }
 
 // ******************************************* FUNCTION *******************************************
@@ -75,7 +73,7 @@ pub struct Function {
     pub name: SourceIDSpanned<String>,
     pub return_type_string: Option<SourceIDSpanned<String>>,
     pub formals: Vec<SourceIDSpanned<Parameter>>,
-    pub body: Vec<SourceIDSpanned<Statement>>,
+    pub body: Vec<StatementID>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -89,34 +87,31 @@ pub enum Parameter {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
     Empty,
-    Block(Vec<SourceIDSpanned<Statement>>),
-    Expression(Box<SourceIDSpanned<Expression>>),
+    Block(Vec<StatementID>),
+    Expression(ExpressionID),
 
-    Let(Expression, Box<SourceIDSpanned<Expression>>),
-    Const(Expression, Box<SourceIDSpanned<Expression>>),
-    Assignment(Expression, Box<SourceIDSpanned<Expression>>),
-    Return(Box<SourceIDSpanned<Expression>>),
+    Let(ExpressionID, ExpressionID),
+    Const(ExpressionID, ExpressionID),
+    Assignment(ExpressionID, ExpressionID),
+    Return(ExpressionID),
 
     While {
-        condition: Box<SourceIDSpanned<Expression>>,
-        body: Box<SourceIDSpanned<Statement>>,
+        condition: ExpressionID,
+        body: StatementID,
     },
     For {
-        init: Box<SourceIDSpanned<Statement>>,
-        condition: Box<SourceIDSpanned<Expression>>,
-        step: Box<SourceIDSpanned<Statement>>,
-        body: Box<SourceIDSpanned<Statement>>,
+        init: StatementID,
+        condition: ExpressionID,
+        step: StatementID,
+        body: StatementID,
     },
     If {
-        condition: Box<SourceIDSpanned<Expression>>,
-        body: Box<SourceIDSpanned<Statement>>,
+        condition: ExpressionID,
+        body: StatementID,
     },
-    IfElse(
-        Box<SourceIDSpanned<Statement>>,
-        Box<SourceIDSpanned<Statement>>,
-    ),
+    IfElse(StatementID, StatementID),
     Switch {
-        matched_value_expression: Box<SourceIDSpanned<Expression>>,
+        matched_value_expression: ExpressionID,
         cases: Vec<SourceIDSpanned<Case>>,
     },
 
@@ -127,7 +122,7 @@ pub enum Statement {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Case {
     pub matched_value: Option<SourceIDSpanned<String>>,
-    pub body: Vec<SourceIDSpanned<Statement>>,
+    pub body: Vec<StatementID>,
 }
 
 pub const DEFAULT_CASE: Option<SourceIDSpanned<String>> = None;
@@ -136,7 +131,7 @@ pub const DEFAULT_CASE: Option<SourceIDSpanned<String>> = None;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
-    TypedExpression(SourceIDSpanned<String>, Box<SourceIDSpanned<Expression>>),
+    TypedExpression(SourceIDSpanned<String>, ExpressionID),
     Call(Call),
     Binop(BinopExpression),
     Unop(UnopExpression),
@@ -146,27 +141,24 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn get_type(&self) -> SimpleType {
+    pub fn get_actual_type(&self) -> SimpleType {
         match self {
             Expression::TypedExpression(type_string, _expression) => {
                 SimpleType::from_type_string(type_string)
             }
             Expression::Call(_call) => Unknown,
-            Expression::Binop(expression) => expression.get_type(),
-            Expression::Unop(expression) => expression.get_type(),
+            Expression::Binop(expression) => expression.get_actual_type(),
+            Expression::Unop(expression) => expression.get_actual_type(),
             Expression::Identifier(_value) => Unknown,
             Expression::PropertyAccess(_) => Unknown,
-            Expression::Literal(Literal::Boolean(_)) => Boolean,
-            Expression::Literal(Literal::String(_)) => SimpleType::String,
-            Expression::Literal(Literal::Number(_)) => Int,
-            Expression::Literal(Literal::Unit) => Void,
+            Expression::Literal(literal) => literal.get_type(),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PropertyAccess {
-    pub object_expression: Box<SourceIDSpanned<Expression>>,
+    pub dot_subscriptable: ExpressionID,
     pub property_name: SourceIDSpanned<String>,
 }
 
@@ -178,17 +170,28 @@ pub enum Literal {
     Unit,
 }
 
+impl Literal {
+    pub fn get_type(&self) -> SimpleType {
+        match self {
+            Literal::Boolean(_) => SimpleType::Boolean,
+            Literal::String(_) => SimpleType::String,
+            Literal::Number(_) => SimpleType::Int,
+            Literal::Unit => SimpleType::Void,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Call {
-    pub callee: Box<SourceIDSpanned<Expression>>,
-    pub args: Vec<SourceIDSpanned<Expression>>,
+    pub callee: ExpressionID,
+    pub args: Vec<ExpressionID>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BinopExpression {
     pub op: BinaryOperator,
-    pub lhs: Box<SourceIDSpanned<Expression>>,
-    pub rhs: Box<SourceIDSpanned<Expression>>,
+    pub lhs: ExpressionID,
+    pub rhs: ExpressionID,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -209,7 +212,7 @@ pub enum BinaryOperator {
 }
 
 impl BinopExpression {
-    pub fn get_type(&self) -> SimpleType {
+    pub fn get_actual_type(&self) -> SimpleType {
         match self.op {
             BinaryOperator::Equals => Boolean,
             BinaryOperator::GreaterThan => Boolean,
@@ -231,7 +234,7 @@ impl BinopExpression {
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnopExpression {
     pub op: UnaryOperator,
-    pub term: Box<SourceIDSpanned<Expression>>,
+    pub term: ExpressionID,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -241,7 +244,7 @@ pub enum UnaryOperator {
 }
 
 impl UnopExpression {
-    pub fn get_type(&self) -> SimpleType {
+    pub fn get_actual_type(&self) -> SimpleType {
         match self.op {
             UnaryOperator::UnaryMinus => Int,
             UnaryOperator::UnaryNot => Boolean,

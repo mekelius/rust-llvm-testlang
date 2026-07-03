@@ -32,6 +32,8 @@ pub struct SourceStore {
     sources: Vec<Source>,
 }
 
+pub const BUILTINS_SOURCE_ID: SourceID = 0;
+
 /**
  * Location in a source. Contains a ref to the Source and thus cannot be stored long term.
  * For storage use SourceIDSpan instead.
@@ -118,7 +120,8 @@ impl<'src> Source {
 
 impl<'src> SourceStore {
     pub fn new() -> SourceStore {
-        SourceStore { sources: vec![] }
+        let builtins_source = Source::new("!BUILTINS!", "");
+        SourceStore { sources: vec![builtins_source] }
     }
 
     pub fn get_filename(&self, source_id: SourceID) -> Option<&String> {

@@ -37,3 +37,10 @@ impl SimpleType {
         }
     }
 }
+
+pub struct TypeInfo {
+    pub actual_type: SimpleType,
+    pub is_comptime: bool,
+    pub inferred_type: SimpleType,
+    pub declared_type: Option<SimpleType>,
+}

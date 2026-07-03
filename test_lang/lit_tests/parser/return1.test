@@ -1,0 +1,5 @@
+// RUN: %parse < %s
+
+test() {
+    return 123;
+}

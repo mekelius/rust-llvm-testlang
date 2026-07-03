@@ -1,15 +1,29 @@
+use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::support::LLVMString;
+use inkwell::values::AnyValueEnum;
 
 pub struct IR<'ctx> {
     pub context: &'ctx Context,
     pub module: Module<'ctx>,
     pub builder: Builder<'ctx>,
+    pub expression_stack: Vec<Option<AnyValueEnum<'ctx>>>,
+    pub statement_stack: Vec<BasicBlock<'ctx>>,
 }
 
 impl<'ctx> IR<'ctx> {
+    pub fn new(context: &'ctx Context, module_name: &'ctx str) -> Self {
+        IR {
+            context,
+            module: context.create_module(module_name),
+            builder: context.create_builder(),
+            expression_stack: vec![],
+            statement_stack: vec![],
+        }
+    }
+
     /** Helper that returns true if the last instruction in the current block is a terminator 
      *  (and the block is not empty) */
     pub fn at_terminator(&self) -> bool {

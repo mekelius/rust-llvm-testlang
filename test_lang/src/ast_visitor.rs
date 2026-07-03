@@ -1,17 +1,49 @@
 use crate::{
     ast::{
-        BinopExpression, Call, Case, Expression, Function, Node, NodeRef,
-        Program, Statement, UnopExpression,
+        BinopExpression, Call, Case, Expression, Function, NodeRef, Program, Statement,
+        UnopExpression,
     },
+    ast_store::{ASTStore, ExpressionID, FunctionID, HasID, StatementID, Store},
     span::SourceIDSpanned,
 };
 
 pub trait ASTVisitor<R> {
-    fn visit_program(&mut self, program: &SourceIDSpanned<Program>) -> Option<R>;
-    fn visit_function(&mut self, function: &SourceIDSpanned<Function>) -> Option<R>;
-    fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R>;
-    fn visit_expression(&mut self, expression: &SourceIDSpanned<Expression>) -> Option<R>;
-    fn visit_case(&mut self, case: &SourceIDSpanned<Case>) -> Option<R>;
+    fn enter_program(&mut self, _program: &SourceIDSpanned<Program>) -> Option<R> {
+        None
+    }
+    fn enter_function(&mut self, _function: (&SourceIDSpanned<Function>, FunctionID)) -> Option<R> {
+        None
+    }
+    fn enter_statement(
+        &mut self,
+        _statement: (&SourceIDSpanned<Statement>, StatementID),
+    ) -> Option<R> {
+        None
+    }
+    fn enter_expression(
+        &mut self,
+        _expression: (&SourceIDSpanned<Expression>, ExpressionID),
+    ) -> Option<R> {
+        None
+    }
+    fn exit_program(&mut self, _program: &SourceIDSpanned<Program>) -> Option<R> {
+        None
+    }
+    fn exit_function(&mut self, _function: (&SourceIDSpanned<Function>, FunctionID)) -> Option<R> {
+        None
+    }
+    fn exit_statement(
+        &mut self,
+        _statement: (&SourceIDSpanned<Statement>, StatementID),
+    ) -> Option<R> {
+        None
+    }
+    fn exit_expression(
+        &mut self,
+        _expression: (&SourceIDSpanned<Expression>, ExpressionID),
+    ) -> Option<R> {
+        None
+    }
 }
 
 pub trait ASTVisitorMut<R> {
@@ -19,7 +51,6 @@ pub trait ASTVisitorMut<R> {
     fn visit_function(&mut self, function: &mut SourceIDSpanned<Function>) -> Option<R>;
     fn visit_statement(&mut self, statement: &mut SourceIDSpanned<Statement>) -> Option<R>;
     fn visit_expression(&mut self, expression: &mut SourceIDSpanned<Expression>) -> Option<R>;
-    fn visit_case(&mut self, case: &mut SourceIDSpanned<Case>) -> Option<R>;
 }
 
 pub trait MatchingASTVisitor<R>: ASTVisitor<R> {
@@ -30,20 +61,23 @@ impl<T, R> ASTVisitor<R> for T
 where
     T: MatchingASTVisitor<R>,
 {
-    fn visit_program(&mut self, program: &SourceIDSpanned<Program>) -> Option<R> {
+    fn enter_program(&mut self, program: &SourceIDSpanned<Program>) -> Option<R> {
         self.visit_node(NodeRef::Program(program))
     }
-    fn visit_function(&mut self, function: &SourceIDSpanned<Function>) -> Option<R> {
-        self.visit_node(NodeRef::Function(function))
+    fn enter_function(&mut self, function: (&SourceIDSpanned<Function>, FunctionID)) -> Option<R> {
+        self.visit_node(NodeRef::Function(function.value()))
     }
-    fn visit_statement(&mut self, statement: &SourceIDSpanned<Statement>) -> Option<R> {
-        self.visit_node(NodeRef::Statement(statement))
+    fn enter_statement(
+        &mut self,
+        statement: (&SourceIDSpanned<Statement>, StatementID),
+    ) -> Option<R> {
+        self.visit_node(NodeRef::Statement(statement.value()))
     }
-    fn visit_expression(&mut self, expression: &SourceIDSpanned<Expression>) -> Option<R> {
-        self.visit_node(NodeRef::Expression(expression))
-    }
-    fn visit_case(&mut self, case: &SourceIDSpanned<Case>) -> Option<R> {
-        self.visit_node(NodeRef::Case(case))
+    fn enter_expression(
+        &mut self,
+        expression: (&SourceIDSpanned<Expression>, ExpressionID),
+    ) -> Option<R> {
+        self.visit_node(NodeRef::Expression(expression.value()))
     }
 }
 
@@ -76,8 +110,9 @@ impl<R> ASTVisitResult<R> for Option<R> {
     }
 }
 
-impl Node {
+impl ASTStore {
     pub fn walk_program<R>(
+        &mut self,
         visitor: &mut impl ASTVisitor<R>,
         program: &mut SourceIDSpanned<Program>,
     ) -> Option<R> {
@@ -85,125 +120,173 @@ impl Node {
             .inner
             .functions
             .iter_mut()
-            .find_map(|function| Self::walk_function(visitor, function))
-            .or_else(|| visitor.visit_program(program))
+            .find_map(|function| self.walk_function(visitor, *function))
+            .or_else(|| visitor.exit_program(program))
     }
 
     pub fn walk_function<R>(
+        &mut self,
         visitor: &mut impl ASTVisitor<R>,
-        function: &mut SourceIDSpanned<Function>,
+        function_id: FunctionID,
     ) -> Option<R> {
-        function
-            .inner
-            .body
-            .iter_mut()
-            .find_map(|statement| Self::walk_statement(visitor, statement))
-            .or_else(|| visitor.visit_function(function))
+        let (function, _) = self.functions.get_node_mut(function_id);
+
+        let result = visitor.enter_function((function, function_id));
+        if result.is_some() {
+            return result;
+        }
+
+        let body = function.inner.body.clone();
+
+        let result = body
+            .iter()
+            .find_map(|statement| self.walk_statement(visitor, *statement));
+
+        if result.is_some() {
+            return result;
+        }
+
+        visitor.exit_function(self.functions.get_node(function_id))
     }
 
     pub fn walk_statement<R>(
+        &mut self,
         visitor: &mut impl ASTVisitor<R>,
-        statement: &mut SourceIDSpanned<Statement>,
+        statement_id: StatementID,
     ) -> Option<R> {
-        match &mut statement.inner {
-            Statement::Block(statements) => statements
-                .iter_mut()
-                .find_map(|statement| Self::walk_statement(visitor, statement)),
+        let (statement, _) = self.statements.get_node(statement_id);
 
-            Statement::Expression(expression) => Self::walk_expression(visitor, &mut **expression),
-
-            Statement::While { condition, body } => {
-                Self::walk_expression(visitor, &mut **condition)
-                    .or_else(|| Self::walk_statement(visitor, body))
-            }
-            Statement::For {
-                init,
-                condition,
-                step,
-                body,
-            } => Self::walk_statement(visitor, init)
-                .or_else(|| Self::walk_expression(visitor, &mut **condition))
-                .or_else(|| Self::walk_statement(visitor, step))
-                .or_else(|| Self::walk_statement(visitor, body)),
-
-            Statement::If { condition, body } => Self::walk_expression(visitor, &mut **condition)
-                .or_else(|| Self::walk_statement(visitor, body)),
-            Statement::IfElse(if_statement, else_statement) => {
-                Self::walk_statement(visitor, if_statement)
-                    .or_else(|| Self::walk_statement(visitor, else_statement))
-            }
-            Statement::Switch {
-                matched_value_expression,
-                cases,
-            } => Self::walk_expression(visitor, &mut **matched_value_expression).or_else(|| {
-                cases
-                    .iter_mut()
-                    .find_map(|case| Self::walk_case(visitor, case))
-            }),
-
-            Statement::Let(_, expression) => Self::walk_expression(visitor, &mut **expression),
-            Statement::Const(_, expression) => Self::walk_expression(visitor, &mut **expression),
-            Statement::Assignment(_identifier, expression) => {
-                Self::walk_expression(visitor, &mut **expression)
-            }
-            Statement::Return(expression) => Self::walk_expression(visitor, &mut **expression),
-
-            Statement::Empty => None,
-            Statement::Break => None,
-            Statement::Continue => None,
+        let result = visitor.enter_statement((statement, statement_id));
+        if result.is_some() {
+            return result;
         }
-        .or_else(|| visitor.visit_statement(statement))
+
+        let result = match &statement.inner {
+            Statement::Switch {
+                matched_value_expression: _,
+                cases: _,
+            } => todo!("Switch"),
+            _ => {
+                let statement = statement.inner.clone();
+                match statement {
+                    Statement::Block(statements) => statements
+                        .iter()
+                        .find_map(|statement_id| self.walk_statement(visitor, *statement_id)),
+
+                    Statement::Expression(expression) => self.walk_expression(visitor, expression),
+
+                    Statement::While { condition, body } => self
+                        .walk_expression(visitor, condition)
+                        .or_else(|| self.walk_statement(visitor, body)),
+                    Statement::For {
+                        init,
+                        condition,
+                        step,
+                        body,
+                    } => self
+                        .walk_statement(visitor, init)
+                        .or_else(|| self.walk_expression(visitor, condition))
+                        .or_else(|| self.walk_statement(visitor, step))
+                        .or_else(|| self.walk_statement(visitor, body)),
+
+                    Statement::If { condition, body } => self
+                        .walk_expression(visitor, condition)
+                        .or_else(|| self.walk_statement(visitor, body)),
+                    Statement::IfElse(if_statement, else_statement) => self
+                        .walk_statement(visitor, if_statement)
+                        .or_else(|| self.walk_statement(visitor, else_statement)),
+                    Statement::Switch {
+                        matched_value_expression,
+                        cases,
+                    } => self
+                        .walk_expression(visitor, matched_value_expression)
+                        .or_else(|| cases.iter().find_map(|case| self.walk_case(visitor, case))),
+
+                    Statement::Let(_, expression) => self.walk_expression(visitor, expression),
+                    Statement::Const(_, expression) => self.walk_expression(visitor, expression),
+                    Statement::Assignment(_identifier, expression) => {
+                        self.walk_expression(visitor, expression)
+                    }
+                    Statement::Return(expression) => self.walk_expression(visitor, expression),
+
+                    Statement::Empty => None,
+                    Statement::Break => None,
+                    Statement::Continue => None,
+                }
+            }
+        };
+
+        if result.is_some() {
+            return result;
+        }
+
+        let statement = self.statements.get_node(statement_id);
+        visitor.exit_statement(statement)
+    }
+
+    fn walk_case<R>(&mut self, _visitor: &mut impl ASTVisitor<R>, _case: &Case) -> Option<R> {
+        todo!("Walking cases");
     }
 
     pub fn walk_expression<R>(
+        &mut self,
         visitor: &mut impl ASTVisitor<R>,
-        expression: &mut SourceIDSpanned<Expression>,
+        expression_id: ExpressionID,
     ) -> Option<R> {
-        match &mut expression.inner {
+        let (expression, _) = self.expressions.get_node(expression_id);
+
+        let result = visitor.enter_expression((expression, expression_id));
+        if result.is_some() {
+            return result;
+        }
+
+        let result = match &expression.inner {
             Expression::Binop(BinopExpression { op: _, lhs, rhs }) => {
-                Self::walk_binary_expression(visitor, &mut **lhs, &mut **rhs)
+                let lhs = lhs.clone();
+                let rhs = rhs.clone();
+                self.walk_binary_expression(visitor, lhs, rhs)
             }
-            Expression::Call(Call {
-                callee: _,
-                args: argument_list,
-            }) => argument_list.iter_mut().find_map(|argument_expression| {
-                Self::walk_expression(visitor, argument_expression)
-            }),
+            Expression::Call(Call { callee: _, args }) => {
+                let args = args.clone();
+                args.iter().find_map(|argument_expression| {
+                    self.walk_expression(visitor, *argument_expression)
+                })
+            }
             Expression::Unop(UnopExpression { op: _, term }) => {
-                Self::walk_expression(visitor, term)
+                let term = term.clone();
+                self.walk_expression(visitor, term)
             }
             Expression::Literal(_) => None,
             Expression::Identifier(_) => None,
             Expression::PropertyAccess(dot_access) => {
-                Self::walk_expression(visitor, &mut *dot_access.object_expression)
+                let expression_id = dot_access.dot_subscriptable.clone();
+                self.walk_expression(visitor, expression_id)
             }
             Expression::TypedExpression(_type_, expression) => {
-                Self::walk_expression(visitor, expression)
+                let expression_id = expression.clone();
+                self.walk_expression(visitor, expression_id)
             }
+        };
+
+        if result.is_some() {
+            return result;
         }
-        .or_else(|| visitor.visit_expression(expression))
+
+        let expression = self.expressions.get_node(expression_id);
+        visitor.exit_expression(expression)
     }
 
     /**
      * Assumes that the expression as a whole has already been visited
      */
     fn walk_binary_expression<R>(
+        &mut self,
         visitor: &mut impl ASTVisitor<R>,
-        lhs: &mut SourceIDSpanned<Expression>,
-        rhs: &mut SourceIDSpanned<Expression>,
+        lhs: ExpressionID,
+        rhs: ExpressionID,
     ) -> Option<R> {
-        Self::walk_expression(visitor, lhs).or_else(|| Self::walk_expression(visitor, rhs))
-    }
-
-    pub fn walk_case<R>(
-        visitor: &mut impl ASTVisitor<R>,
-        case: &mut SourceIDSpanned<Case>,
-    ) -> Option<R> {
-        case.inner
-            .body
-            .iter_mut()
-            .find_map(|statement| Self::walk_statement(visitor, statement))
-            .or_else(|| visitor.visit_case(case))
+        self.walk_expression(visitor, lhs)
+            .or_else(|| self.walk_expression(visitor, rhs))
     }
 }
 
@@ -224,66 +307,79 @@ mod tests {
 
     #[test]
     fn finds_a_function() {
+        let mut store = ASTStore::new();
+
         let function1 = Function {
             name: "f1".to_string().with_span(DUMMY_SPAN),
             return_type_string: None,
             formals: vec![],
-            body: vec![Statement::Empty.with_span(DUMMY_SPAN)],
+            body: vec![store.statements.add(Statement::Empty.with_span(DUMMY_SPAN))],
         }
         .with_span(DUMMY_SPAN);
         let mut node = Program {
-            functions: vec![function1],
+            functions: vec![store.functions.add(function1)],
         }
         .with_span(DUMMY_SPAN);
 
-        let first_function_name = Node::walk_program(
-            &mut |node: NodeRef| match node {
-                NodeRef::Function(function) => function.inner.name.inner.clone().into(),
-                _ => None,
-            },
-            &mut node,
-        )
-        .unwrap();
+        let first_function_name = store
+            .walk_program(
+                &mut |node: NodeRef| match node {
+                    NodeRef::Function(function) => function.inner.name.inner.clone().into(),
+                    _ => None,
+                },
+                &mut node,
+            )
+            .unwrap();
 
         assert_eq!(first_function_name, "f1");
     }
 
     #[test]
     fn finds_a_node() {
-        let string_literal =
-            Expression::Literal(Literal::String("test_string".to_string())).with_span(DUMMY_SPAN);
-        let function1 = Function {
-            name: "f1".to_string().with_span(DUMMY_SPAN),
-            return_type_string: None,
-            formals: vec![],
-            body: vec![Statement::Empty.with_span(DUMMY_SPAN)],
-        }
-        .with_span(DUMMY_SPAN);
-        let function2 = Function {
-            name: "f2".to_string().with_span(DUMMY_SPAN),
-            return_type_string: None,
-            formals: vec![],
-            body: vec![
-                Statement::Expression(Box::new(string_literal.clone())).with_span(DUMMY_SPAN),
-            ],
-        }
-        .with_span(DUMMY_SPAN);
+        let mut store = ASTStore::new();
+
+        let string_literal = store.expressions.add(
+            Expression::Literal(Literal::String("test_string".to_string())).with_span(DUMMY_SPAN),
+        );
+        let function1 = store.functions.add(
+            Function {
+                name: "f1".to_string().with_span(DUMMY_SPAN),
+                return_type_string: None,
+                formals: vec![],
+                body: vec![store.statements.add(Statement::Empty.with_span(DUMMY_SPAN))],
+            }
+            .with_span(DUMMY_SPAN),
+        );
+        let function2 = store.functions.add(
+            Function {
+                name: "f2".to_string().with_span(DUMMY_SPAN),
+                return_type_string: None,
+                formals: vec![],
+                body: vec![
+                    store
+                        .statements
+                        .add(Statement::Expression(string_literal.clone()).with_span(DUMMY_SPAN)),
+                ],
+            }
+            .with_span(DUMMY_SPAN),
+        );
         let mut node = Program {
             functions: vec![function1, function2],
         }
         .with_span(DUMMY_SPAN);
 
-        let first_string_literal_value = Node::walk_program(
-            &mut |node: NodeRef| match node {
-                NodeRef::Expression(SourceIDSpanned {
-                    inner: Expression::Literal(Literal::String(value)),
-                    span: _,
-                }) => Some(value.clone()),
-                _ => None,
-            },
-            &mut node,
-        )
-        .unwrap();
+        let first_string_literal_value = store
+            .walk_program(
+                &mut |node: NodeRef| match node {
+                    NodeRef::Expression(SourceIDSpanned {
+                        inner: Expression::Literal(Literal::String(value)),
+                        span: _,
+                    }) => Some(value.clone()),
+                    _ => None,
+                },
+                &mut node,
+            )
+            .unwrap();
 
         assert_eq!(first_string_literal_value, "test_string");
     }
