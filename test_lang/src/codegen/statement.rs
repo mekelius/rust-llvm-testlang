@@ -58,7 +58,7 @@ impl<'ctx> CodeGen<'ctx> {
     ) -> Result<(), Box<dyn Error>> {
         // TODO: pop scope
         for statement_id in statement_ids {
-            self.handle_statement(ast_store, *statement_id);
+            self.handle_statement(ast_store, *statement_id)?;
         }
         Ok(())
     }

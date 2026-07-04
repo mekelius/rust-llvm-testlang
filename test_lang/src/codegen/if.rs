@@ -102,20 +102,14 @@ impl<'ctx> CodeGen<'ctx> {
         self.ir.builder.position_at_end(if_block);
         self.handle_statement(ast_store, if_branch_body)?;
 
-        self.ir
-            .builder
-            .build_unconditional_branch(after_block)
-            .unwrap();
+        self.ir.builder.build_unconditional_branch(after_block)?;
 
         self.ir.builder.position_at_end(else_block);
 
         self.handle_statement(ast_store, else_branch)?;
 
         if !self.ir.at_terminator() {
-            self.ir
-                .builder
-                .build_unconditional_branch(after_block)
-                .unwrap();
+            self.ir.builder.build_unconditional_branch(after_block)?;
         }
         self.ir.builder.position_at_end(after_block);
 

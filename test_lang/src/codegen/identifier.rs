@@ -57,7 +57,7 @@ impl<'ctx> CodeGen<'ctx> {
                     .try_into()
                     .unwrap();
                 let value: BasicValueEnum<'ctx> =
-                    self.ir.builder.build_load(ir_type, *pointer, "").unwrap();
+                    self.ir.builder.build_load(ir_type, *pointer, "")?;
                 Some(value.as_any_value_enum())
             }
             _ => None,
@@ -67,13 +67,18 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     /** unwraps the symbol, and if it is a variable, loads it from the stack */
-    pub fn symbol_to_value(&self, symbol: &Symbol<'ctx>) -> AnyValueEnum<'ctx> {
-        symbol
+    pub fn symbol_to_value(
+        &self,
+        symbol: &Symbol<'ctx>,
+    ) -> Result<AnyValueEnum<'ctx>, CodegenError> {
+        Ok(symbol
             .as_any_value_enum()
             .or_else(|| match symbol {
-                Symbol::Variable { pointer, type_ } => Some(self.load_variable(*pointer, type_)),
+                Symbol::Variable { pointer, type_ } => {
+                    Some(self.load_variable(*pointer, type_).unwrap())
+                }
                 _ => unreachable!(),
             })
-            .unwrap()
+            .unwrap())
     }
 }

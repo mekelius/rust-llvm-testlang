@@ -1,11 +1,11 @@
 use inkwell::{AddressSpace, types::FunctionType, values::FunctionValue};
 
-use crate::codegen::IR;
+use crate::codegen::{CodegenError, IR};
 
 use super::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn init_builtins(&mut self) {
+    pub fn init_builtins(&mut self) -> Result<(), CodegenError> {
         let CodeGen { ir, scopes } = self;
 
         macro_rules! builtin {
@@ -33,20 +33,17 @@ impl<'ctx> CodeGen<'ctx> {
 
             let int_format_string = ir
                 .builder
-                .build_global_string_ptr("%d", "printf_int_format")
-                .unwrap();
+                .build_global_string_ptr("%d", "printf_int_format")?;
 
             let arg1 = print_int.get_nth_param(0).unwrap();
 
-            ir.builder
-                .build_call(
-                    printf,
-                    &[int_format_string.as_pointer_value().into(), arg1.into()],
-                    "",
-                )
-                .unwrap();
+            ir.builder.build_call(
+                printf,
+                &[int_format_string.as_pointer_value().into(), arg1.into()],
+                "",
+            )?;
 
-            ir.builder.build_return(None).unwrap();
+            ir.builder.build_return(None)?;
         }
 
         //////////////////////////////////////// print_bool ////////////////////////////////////////
@@ -58,33 +55,26 @@ impl<'ctx> CodeGen<'ctx> {
 
             let string_format_string = ir
                 .builder
-                .build_global_string_ptr("%s", "printf_string_format")
-                .unwrap();
+                .build_global_string_ptr("%s", "printf_string_format")?;
 
-            let true_string = ir.builder.build_global_string_ptr("true", "true").unwrap();
+            let true_string = ir.builder.build_global_string_ptr("true", "true")?;
 
-            let false_string = ir
-                .builder
-                .build_global_string_ptr("false", "false")
-                .unwrap();
+            let false_string = ir.builder.build_global_string_ptr("false", "false")?;
 
             let arg1 = print_bool.get_nth_param(0).unwrap().into_int_value();
-            let val_as_string = ir
-                .builder
-                .build_select(arg1, true_string, false_string, "val_as_str")
-                .unwrap();
-            ir.builder
-                .build_call(
-                    printf,
-                    &[
-                        string_format_string.as_pointer_value().into(),
-                        val_as_string.into(),
-                    ],
-                    "",
-                )
-                .unwrap();
+            let val_as_string =
+                ir.builder
+                    .build_select(arg1, true_string, false_string, "val_as_str")?;
+            ir.builder.build_call(
+                printf,
+                &[
+                    string_format_string.as_pointer_value().into(),
+                    val_as_string.into(),
+                ],
+                "",
+            )?;
 
-            ir.builder.build_return(None).unwrap();
+            ir.builder.build_return(None)?;
 
             //////////////////////////////////////// println_bool ////////////////////////////////////////
             {
@@ -96,17 +86,14 @@ impl<'ctx> CodeGen<'ctx> {
                 ir.builder.position_at_end(entry_b);
 
                 let arg1 = println_bool.get_nth_param(0).unwrap().into_int_value();
-                ir.builder
-                    .build_call(print_bool, &[arg1.into()], "")
-                    .unwrap();
+                ir.builder.build_call(print_bool, &[arg1.into()], "")?;
 
-                let newline = ir.builder.build_global_string_ptr("\n", "newline").unwrap();
+                let newline = ir.builder.build_global_string_ptr("\n", "newline")?;
 
                 ir.builder
-                    .build_call(printf, &[newline.as_pointer_value().into()], "")
-                    .unwrap();
+                    .build_call(printf, &[newline.as_pointer_value().into()], "")?;
 
-                ir.builder.build_return(None).unwrap();
+                ir.builder.build_return(None)?;
             }
         }
 
@@ -118,9 +105,9 @@ impl<'ctx> CodeGen<'ctx> {
             ir.builder.position_at_end(entry_b);
 
             let arg1 = print.get_nth_param(0).unwrap();
-            ir.builder.build_call(printf, &[arg1.into()], "").unwrap();
+            ir.builder.build_call(printf, &[arg1.into()], "")?;
 
-            ir.builder.build_return(None).unwrap();
+            ir.builder.build_return(None)?;
         }
 
         //////////////////////////////////////// println_int ////////////////////////////////////////
@@ -134,21 +121,20 @@ impl<'ctx> CodeGen<'ctx> {
 
             let lnint_format_string = ir
                 .builder
-                .build_global_string_ptr("%d\n", "printf_lnint_format")
-                .unwrap();
+                .build_global_string_ptr("%d\n", "printf_lnint_format")?;
 
             let arg1 = println_int.get_nth_param(0).unwrap();
 
-            ir.builder
-                .build_call(
-                    printf,
-                    &[lnint_format_string.as_pointer_value().into(), arg1.into()],
-                    "",
-                )
-                .unwrap();
+            ir.builder.build_call(
+                printf,
+                &[lnint_format_string.as_pointer_value().into(), arg1.into()],
+                "",
+            )?;
 
-            ir.builder.build_return(None).unwrap();
+            ir.builder.build_return(None)?;
         }
+
+        Ok(())
     }
 }
 

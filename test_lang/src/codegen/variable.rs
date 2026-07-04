@@ -24,7 +24,7 @@ impl<'ctx> CodeGen<'ctx> {
             todo!("Non-identifier lvalues");
         };
 
-        let value = self.handle_expression(ast_store, expression).unwrap();
+        let value = self.handle_expression(ast_store, expression)?;
         let symbol = Symbol::Value(value);
         let current_scope = self.scopes.get_current_scope_mut();
 
@@ -64,12 +64,11 @@ impl<'ctx> CodeGen<'ctx> {
             .try_into()
             .unwrap();
         let value: BasicValueEnum<'ctx> = self
-            .handle_expression(ast_store, expression_id)
-            .unwrap()
+            .handle_expression(ast_store, expression_id)?
             .try_into()
             .unwrap();
-        let pointer = self.ir.builder.build_alloca(ir_type, identifier).unwrap();
-        self.ir.builder.build_store(pointer, value).unwrap();
+        let pointer = self.ir.builder.build_alloca(ir_type, identifier)?;
+        self.ir.builder.build_store(pointer, value)?;
         self.scopes.define_identifier(
             identifier,
             Symbol::Variable {
@@ -85,18 +84,19 @@ impl<'ctx> CodeGen<'ctx> {
         &self,
         pointer: PointerValue<'ctx>,
         type_: &SimpleType,
-    ) -> AnyValueEnum<'ctx> {
+    ) -> Result<AnyValueEnum<'ctx>, CodegenError> {
         let ir_type: BasicTypeEnum<'ctx> = self
             .ir
             .simple_type_to_ir_type(*type_)
             .expect("Void/Unit value not allowed to be stored in variables")
             .try_into()
             .unwrap();
-        self.ir
+
+        Ok(self
+            .ir
             .builder
-            .build_load(ir_type, pointer, "")
-            .unwrap()
-            .as_any_value_enum()
+            .build_load(ir_type, pointer, "")?
+            .as_any_value_enum())
     }
 
     pub fn handle_assignment(
@@ -134,12 +134,11 @@ impl<'ctx> CodeGen<'ctx> {
             todo!("Type casts on assignments");
         }
         let new_value: BasicValueEnum<'ctx> = self
-            .handle_expression(ast_store, new_value_expression_id)
-            .unwrap()
+            .handle_expression(ast_store, new_value_expression_id)?
             .try_into()
             .unwrap();
 
-        self.ir.builder.build_store(pointer, new_value).unwrap();
+        self.ir.builder.build_store(pointer, new_value)?;
         Ok(())
     }
 }

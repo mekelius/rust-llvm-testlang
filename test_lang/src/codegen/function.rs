@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use inkwell::{
     AddressSpace,
     types::BasicMetadataTypeEnum,
@@ -8,9 +6,9 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::{Expression, Function, Literal, Parameter, Statement},
-    ast_store::{self, ASTStore, ExpressionID, FunctionID, StatementID, Store},
-    codegen::{expression, identifier::Symbol},
+    ast::{Expression, Function, Literal, Parameter},
+    ast_store::{ASTStore, ExpressionID, FunctionID, StatementID, Store},
+    codegen::{CodegenError, identifier::Symbol},
     span::SourceIDSpanned,
     types::SimpleType,
 };
@@ -20,7 +18,7 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         ast_store: &ASTStore,
         function_id: FunctionID,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), CodegenError> {
         let Function {
             name,
             return_type_string,
@@ -41,7 +39,7 @@ impl<'ctx> CodeGen<'ctx> {
             {
                 panic!("main function is only allowed return type Int (if specified)");
             }
-            self.handle_main_function(ast_store, &formals, &body);
+            self.handle_main_function(ast_store, &formals, &body)?;
             return Ok(());
         }
 
@@ -100,7 +98,7 @@ impl<'ctx> CodeGen<'ctx> {
             }
         }
 
-        self.handle_function_body(ast_store, &body);
+        self.handle_function_body(ast_store, &body)?;
 
         {
             let CodeGen { ir, scopes } = self;
@@ -119,7 +117,7 @@ impl<'ctx> CodeGen<'ctx> {
         ast_store: &ASTStore,
         _formals: &Vec<SourceIDSpanned<Parameter>>,
         body: &Vec<StatementID>,
-    ) {
+    ) -> Result<(), CodegenError> {
         {
             let CodeGen { ir, scopes } = self;
 
@@ -136,7 +134,7 @@ impl<'ctx> CodeGen<'ctx> {
             scopes.push_new_scope();
         }
 
-        self.handle_function_body(ast_store, &body);
+        self.handle_function_body(ast_store, &body)?;
 
         {
             let CodeGen { ir, scopes } = self;
@@ -150,28 +148,36 @@ impl<'ctx> CodeGen<'ctx> {
             // Insert return if there isn't one
 
             if !ir.at_terminator() {
-                ir.builder.build_return(Some(&exit_code)).unwrap();
+                ir.builder.build_return(Some(&exit_code))?;
             }
             scopes.pop_scope();
         }
+
+        Ok(())
     }
 
     // Returns true if the body ends with a return statement
-    fn handle_function_body(&mut self, ast_store: &ASTStore, body: &Vec<StatementID>) {
+    fn handle_function_body(
+        &mut self,
+        ast_store: &ASTStore,
+        body: &Vec<StatementID>,
+    ) -> Result<(), CodegenError> {
         for statement in body {
-            self.handle_statement(ast_store, *statement);
+            self.handle_statement(ast_store, *statement)?;
         }
+
+        Ok(())
     }
 
     pub fn handle_return(
         &mut self,
         ast_store: &ASTStore,
         expression_id: ExpressionID,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), CodegenError> {
         let expression = ast_store.get_expression(expression_id);
 
         if *expression == Expression::Literal(Literal::Unit) {
-            self.ir.builder.build_return(None).unwrap();
+            self.ir.builder.build_return(None)?;
             return Ok(());
         }
 
@@ -185,26 +191,7 @@ impl<'ctx> CodeGen<'ctx> {
             _ => unreachable!("Encountered unsupported return value type"),
         };
 
-        self.ir.builder.build_return(value).unwrap();
+        self.ir.builder.build_return(value)?;
         Ok(())
-        // match *return_type {
-        //     SimpleType::Boolean => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
-        //     SimpleType::Int => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
-        //     SimpleType::Float => self.ir.builder.build_return(Some(&value.into_float_value())).unwrap(),
-        //     SimpleType::Char => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
-        //     SimpleType::String => self.ir.builder.build_return(Some(&value.into_pointer_value())).unwrap(),
-        //     SimpleType::Void => self.ir.builder.build_return(None).unwrap(),
-        //     SimpleType::Unknown => panic!("Unknown type as return type"),
-        // };
     }
-
-    // fn update_return_type(&self, function: FunctionValue<'ctx>, return_type: BasicTypeEnum<'ctx>) -> FunctionValue<'ctx> {
-    //     let name = function.get_name().to_str().unwrap();
-    //     function.nam
-    //     let formal_types = function.get_type().get_param_types();
-    //     let new_signature = return_type.fn_type(&formal_types, false);
-    //     let new_function = self.ir.module.add_function(name, new_signature, None);
-
-    //     new_function
-    // }
 }

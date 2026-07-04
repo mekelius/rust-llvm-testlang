@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use inkwell::values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum};
 
 use super::CodeGen;
@@ -11,7 +9,6 @@ use crate::{
     },
     ast_store::{ASTStore, ExpressionID},
     codegen::CodegenError,
-    span::SourceIDSpanned,
 };
 
 impl<'ctx> CodeGen<'ctx> {
@@ -82,8 +79,7 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(self
             .ir
             .builder
-            .build_call(callee, &args, "")
-            .unwrap()
+            .build_call(callee, &args, "")?
             .as_any_value_enum())
     }
 }

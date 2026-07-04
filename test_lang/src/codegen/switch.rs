@@ -113,7 +113,7 @@ impl<'ctx> CodeGen<'ctx> {
         // Slightly hacky way to implement fallthrough from cases
         next_block.replace_all_uses_with(&after_block);
         unsafe {
-            next_block.delete().unwrap();
+            next_block.delete();
         }
 
         Ok(HandleCasesReturn {
