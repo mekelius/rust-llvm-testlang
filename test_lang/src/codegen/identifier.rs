@@ -4,7 +4,7 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::{ast::Expression, types::SimpleType};
+use crate::{ast::Expression, codegen::CodegenError, types::SimpleType};
 
 #[derive(Debug, Clone)]
 pub enum Symbol<'ctx> {
@@ -35,20 +35,20 @@ impl<'ctx> Symbol<'ctx> {
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_lvalue(&self, lvalue: &Expression) -> AnyValueEnum<'ctx> {
+    pub fn handle_lvalue(&self, lvalue: &Expression) -> Result<AnyValueEnum<'ctx>, CodegenError> {
         match lvalue {
             Expression::Identifier(value) => self.handle_identifier(value),
             _ => todo!("Non identifier lvalues"),
         }
     }
 
-    pub fn handle_identifier(&self, identifier: &str) -> AnyValueEnum<'ctx> {
+    pub fn handle_identifier(&self, identifier: &str) -> Result<AnyValueEnum<'ctx>, CodegenError> {
         let symbol = self
             .scopes
             .resolve_identifier(identifier)
             .unwrap_or_else(|| panic!("Attempt to resolve undefined identifier {}", identifier));
 
-        match symbol {
+        Ok(match symbol {
             Symbol::Variable { pointer, type_ } => {
                 let ir_type: BasicTypeEnum<'ctx> = self
                     .ir
@@ -63,7 +63,7 @@ impl<'ctx> CodeGen<'ctx> {
             _ => None,
         }
         .or_else(|| symbol.as_any_value_enum())
-        .unwrap()
+        .unwrap())
     }
 
     /** unwraps the symbol, and if it is a variable, loads it from the stack */
