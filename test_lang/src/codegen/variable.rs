@@ -1,104 +1,145 @@
-// use inkwell::{
-//     types::BasicTypeEnum,
-//     values::{AnyValue, AnyValueEnum, BasicValueEnum, PointerValue},
-// };
+use inkwell::{
+    types::BasicTypeEnum,
+    values::{AnyValue, AnyValueEnum, BasicValueEnum, PointerValue},
+};
 
-// use super::CodeGen;
-// use crate::{ast::Expression, codegen::identifier::Symbol, types::SimpleType};
+use super::CodeGen;
+use crate::{
+    ast::Expression,
+    ast_store::{ASTStore, ExpressionID},
+    codegen::{CodegenError, identifier::Symbol},
+    types::SimpleType,
+};
 
-// impl<'ctx> CodeGen<'ctx> {
-//     pub fn handle_const(&mut self, lvalue: &Expression, expression: &Expression) {
-//         let Expression::Identifier(identifier) = lvalue else {
-//             todo!("Non-identifier lvalues");
-//         };
+impl<'ctx> CodeGen<'ctx> {
+    pub fn handle_const(
+        &mut self,
+        ast_store: &ASTStore,
+        lvalue_id: ExpressionID,
+        expression: ExpressionID,
+    ) -> Result<(), CodegenError> {
+        let lvalue = ast_store.get_expression(lvalue_id);
 
-//         let value = self.handle_expression(expression);
-//         let symbol = Symbol::Value(value);
-//         let current_scope = self.scopes.get_current_scope_mut();
+        let Expression::Identifier(identifier) = lvalue else {
+            todo!("Non-identifier lvalues");
+        };
 
-//         match current_scope.identifiers.get(identifier) {
-//             Some(_) => panic!("Attempting to redefine identifier \"{}\"", identifier),
-//             // NOTE: Only values defined with let atm
-//             None => current_scope
-//                 .identifiers
-//                 .insert(identifier.to_string(), symbol),
-//         };
-//     }
+        let value = self.handle_expression(ast_store, expression).unwrap();
+        let symbol = Symbol::Value(value);
+        let current_scope = self.scopes.get_current_scope_mut();
 
-//     pub fn handle_let(&mut self, lvalue: &Expression, expression: &Expression) {
-//         let Expression::Identifier(identifier) = lvalue else {
-//             todo!("Non-identifier lvalues");
-//         };
+        match current_scope.identifiers.get(identifier) {
+            Some(_) => return Err("Attempt to redefine identifier".into()),
+            // NOTE: Only values defined with let atm
+            None => current_scope
+                .identifiers
+                .insert(identifier.to_string(), symbol),
+        };
 
-//         let simple_type = match expression {
-//             Expression::TypedExpression(type_identifier, _) => {
-//                 SimpleType::from_type_string(type_identifier)
-//             }
-//             _ => SimpleType::Int,
-//         };
-//         let ir_type: BasicTypeEnum<'ctx> = self
-//             .ir
-//             .simple_type_to_ir_type(simple_type)
-//             .expect("Void/Unit type not allowed as a variable type")
-//             .try_into()
-//             .unwrap();
-//         let value: BasicValueEnum<'ctx> = self.handle_expression(expression).try_into().unwrap();
-//         let pointer = self.ir.builder.build_alloca(ir_type, identifier).unwrap();
-//         self.ir.builder.build_store(pointer, value).unwrap();
-//         self.scopes.define_identifier(
-//             identifier,
-//             Symbol::Variable {
-//                 pointer,
-//                 type_: simple_type,
-//             },
-//         );
-//     }
+        Ok(())
+    }
 
-//     pub fn load_variable(
-//         &self,
-//         pointer: PointerValue<'ctx>,
-//         type_: &SimpleType,
-//     ) -> AnyValueEnum<'ctx> {
-//         let ir_type: BasicTypeEnum<'ctx> = self
-//             .ir
-//             .simple_type_to_ir_type(*type_)
-//             .expect("Void/Unit value not allowed to be stored in variables")
-//             .try_into()
-//             .unwrap();
-//         self.ir
-//             .builder
-//             .build_load(ir_type, pointer, "")
-//             .unwrap()
-//             .as_any_value_enum()
-//     }
+    pub fn handle_let(
+        &mut self,
+        ast_store: &ASTStore,
+        lvalue_id: ExpressionID,
+        expression_id: ExpressionID,
+    ) -> Result<(), CodegenError> {
+        let lvalue = ast_store.get_expression(lvalue_id);
 
-//     pub fn handle_assignment(&self, lvalue: &Expression, new_value_expression: &Expression) {
-//         let Expression::Identifier(identifier) = lvalue else {
-//             todo!("Non-identifier lvalues");
-//         };
+        let Expression::Identifier(identifier) = lvalue else {
+            todo!("Non-identifier lvalues");
+        };
 
-//         let Symbol::Variable {
-//             pointer,
-//             type_: old_type,
-//         } = self.scopes.resolve_identifier(identifier).unwrap()
-//         else {
-//             panic!();
-//         };
+        let simple_type = match ast_store.get_expression(expression_id) {
+            Expression::TypedExpression(type_identifier, _) => {
+                SimpleType::from_type_string(type_identifier)
+            }
+            _ => SimpleType::Int,
+        };
+        let ir_type: BasicTypeEnum<'ctx> = self
+            .ir
+            .simple_type_to_ir_type(simple_type)
+            .expect("Void/Unit type not allowed as a variable type")
+            .try_into()
+            .unwrap();
+        let value: BasicValueEnum<'ctx> = self
+            .handle_expression(ast_store, expression_id)
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let pointer = self.ir.builder.build_alloca(ir_type, identifier).unwrap();
+        self.ir.builder.build_store(pointer, value).unwrap();
+        self.scopes.define_identifier(
+            identifier,
+            Symbol::Variable {
+                pointer,
+                type_: simple_type,
+            },
+        );
 
-//         let new_type = match new_value_expression {
-//             Expression::TypedExpression(type_string, _) => {
-//                 SimpleType::from_type_string(type_string)
-//             }
-//             _ => SimpleType::Int,
-//         };
+        Ok(())
+    }
 
-//         if new_type != *old_type {
-//             todo!("Type casts on assignments");
-//         }
-//         let new_value: BasicValueEnum<'ctx> = self
-//             .handle_expression(new_value_expression)
-//             .try_into()
-//             .unwrap();
-//         self.ir.builder.build_store(*pointer, new_value).unwrap();
-//     }
-// }
+    pub fn load_variable(
+        &self,
+        pointer: PointerValue<'ctx>,
+        type_: &SimpleType,
+    ) -> AnyValueEnum<'ctx> {
+        let ir_type: BasicTypeEnum<'ctx> = self
+            .ir
+            .simple_type_to_ir_type(*type_)
+            .expect("Void/Unit value not allowed to be stored in variables")
+            .try_into()
+            .unwrap();
+        self.ir
+            .builder
+            .build_load(ir_type, pointer, "")
+            .unwrap()
+            .as_any_value_enum()
+    }
+
+    pub fn handle_assignment(
+        &mut self,
+        ast_store: &ASTStore,
+        lvalue_id: ExpressionID,
+        new_value_expression_id: ExpressionID,
+    ) -> Result<(), CodegenError> {
+        let lvalue = ast_store.get_expression(lvalue_id);
+
+        let Expression::Identifier(identifier) = lvalue else {
+            todo!("Non-identifier lvalues");
+        };
+
+        let Symbol::Variable {
+            pointer,
+            type_: old_type,
+        } = self.scopes.resolve_identifier(identifier).unwrap()
+        else {
+            panic!();
+        };
+
+        let pointer = pointer.clone();
+
+        let new_value_expression = ast_store.get_expression(new_value_expression_id);
+
+        let new_type = match new_value_expression {
+            Expression::TypedExpression(type_string, _) => {
+                SimpleType::from_type_string(type_string)
+            }
+            _ => SimpleType::Int,
+        };
+
+        if new_type != *old_type {
+            todo!("Type casts on assignments");
+        }
+        let new_value: BasicValueEnum<'ctx> = self
+            .handle_expression(ast_store, new_value_expression_id)
+            .unwrap()
+            .try_into()
+            .unwrap();
+
+        self.ir.builder.build_store(pointer, new_value).unwrap();
+        Ok(())
+    }
+}
