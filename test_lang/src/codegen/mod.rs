@@ -29,6 +29,8 @@ pub struct CodeGen<'ctx> {
     pub scopes: Scopes<'ctx>,
 }
 
+pub type CodegenError = Box<dyn Error>;
+
 impl<'ctx> CodeGen<'ctx> {
     pub fn new(context: &'ctx Context, name: &'ctx str) -> CodeGen<'ctx> {
         let mut codegen = Self {

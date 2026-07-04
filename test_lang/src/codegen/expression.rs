@@ -10,6 +10,7 @@ use crate::{
         Literal,
     },
     ast_store::{ASTStore, ExpressionID},
+    codegen::CodegenError,
     span::SourceIDSpanned,
 };
 
@@ -18,12 +19,12 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         ast_store: &ASTStore,
         expression_id: ExpressionID,
-    ) -> Result<AnyValueEnum<'ctx>, Box<dyn Error>> {
+    ) -> Result<AnyValueEnum<'ctx>, CodegenError> {
         match &ast_store.get_expression(expression_id) {
             // Expression::TypedExpression(type_identifier, expression) => {
             //     self.handle_typed_expresssion(type_identifier, expression)
             // }
-
+            Expression::Call(call) => self.handle_function_call(ast_store, call),
             // Expression::Binop(binop) => self.handle_binop(binop),
             // Expression::Unop(unop) => self.handle_unop(unop),
             // Expression::Call(call) => self.handle_function_call(&call),
@@ -51,30 +52,39 @@ impl<'ctx> CodeGen<'ctx> {
     //     self.handle_expression(expression)
     // }
 
-    // fn handle_function_call(&self, call_expression: &Call) -> AnyValueEnum<'ctx> {
-    //     let Call {
-    //         callee: callee_expression,
-    //         args: argument_list,
-    //     } = call_expression;
+    fn handle_function_call(
+        &mut self,
+        ast_store: &ASTStore,
+        call_expression: &Call,
+    ) -> Result<AnyValueEnum<'ctx>, CodegenError> {
+        let Call {
+            callee: callee_expression_id,
+            args: argument_list,
+        } = call_expression;
 
-    //     let Expression::Identifier(callee_name) = &callee_expression.inner else {
-    //         todo!("Callee expressions")
-    //     };
+        let callee_expression = ast_store.get_expression(*callee_expression_id);
+        let Expression::Identifier(callee_name) = &callee_expression else {
+            todo!("Callee expressions")
+        };
 
-    //     let args: Vec<BasicMetadataValueEnum> = argument_list
-    //         .into_iter()
-    //         .map(|arg| BasicMetadataValueEnum::try_from(self.handle_expression(arg)).unwrap())
-    //         .collect();
+        let args: Vec<BasicMetadataValueEnum> = argument_list
+            .into_iter()
+            .map(|arg| {
+                BasicMetadataValueEnum::try_from(self.handle_expression(ast_store, *arg).unwrap())
+                    .unwrap()
+            })
+            .collect();
 
-    //     let callee = self
-    //         .scopes
-    //         .resolve_function(&callee_name)
-    //         .unwrap_or_else(|| panic!("Attempt to call nonexistent function {}", callee_name));
+        let callee = self
+            .scopes
+            .resolve_function(&callee_name)
+            .unwrap_or_else(|| panic!("Attempt to call nonexistent function {}", callee_name));
 
-    //     self.ir
-    //         .builder
-    //         .build_call(callee, &args, "")
-    //         .unwrap()
-    //         .as_any_value_enum()
-    // }
+        Ok(self
+            .ir
+            .builder
+            .build_call(callee, &args, "")
+            .unwrap()
+            .as_any_value_enum())
+    }
 }
