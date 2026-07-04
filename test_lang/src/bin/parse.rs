@@ -6,7 +6,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let src = io::read_to_string(io::stdin())?;
 
     match parser::run(&src, 1, ASTStore::new()) {
-        Ok((program, ast_store)) => {
+        Ok((program, _ast_store)) => {
             println!("[AST]\n{:#?}", program);
         }
         Err(e) => {

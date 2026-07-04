@@ -351,7 +351,7 @@ mod tests {
             #[test]
             fn handles_no_files() {
                 let sources = SourceStore::new();
-                assert_eq!(sources.map_offset(0, 3), None);
+                assert_eq!(sources.map_offset(1, 3), None);
             }
         }
 
