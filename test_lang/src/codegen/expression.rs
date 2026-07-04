@@ -26,7 +26,7 @@ impl<'ctx> CodeGen<'ctx> {
             // }
             Expression::Call(call) => self.handle_function_call(ast_store, call),
             Expression::Binop(binop) => self.handle_binop(ast_store, binop),
-            // Expression::Unop(unop) => self.handle_unop(unop),
+            Expression::Unop(unop) => self.handle_unop(ast_store, unop),
             Expression::Identifier(value) => self.handle_identifier(&value),
             Expression::PropertyAccess(_) => todo!("Dot access expressions"),
 
