@@ -3,7 +3,6 @@ use std::error::Error;
 use crate::{
     ast::Statement,
     ast_store::{ASTStore, StatementID},
-    span::SourceIDSpanned,
 };
 
 use super::CodeGen;
@@ -33,13 +32,13 @@ impl<'ctx> CodeGen<'ctx> {
             Statement::IfElse(if_branch, else_branch) => {
                 self.handle_if_else(ast_store, *if_branch, *else_branch)
             }
-            // Statement::While { condition, body } => self.handle_while(*condition, *body),
-            // Statement::For {
-            //     init,
-            //     condition,
-            //     step,
-            //     body,
-            // } => self.handle_for(init, condition, step, body),
+            Statement::While { condition, body } => self.handle_while(ast_store, *condition, *body),
+            Statement::For {
+                init,
+                condition,
+                step,
+                body,
+            } => self.handle_for(ast_store, *init, *condition, *step, *body),
 
             // Statement::Switch {
             //     matched_value_expression,
