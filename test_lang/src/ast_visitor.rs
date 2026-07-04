@@ -129,7 +129,7 @@ impl ASTStore {
         visitor: &mut impl ASTVisitor<R>,
         function_id: FunctionID,
     ) -> Option<R> {
-        let (function, _) = self.functions.get_node_mut(function_id);
+        let function = self.functions.get_node_mut(function_id);
 
         let result = visitor.enter_function((function, function_id));
         if result.is_some() {
@@ -146,7 +146,7 @@ impl ASTStore {
             return result;
         }
 
-        visitor.exit_function(self.functions.get_node(function_id))
+        visitor.exit_function((self.functions.get_node(function_id), function_id))
     }
 
     pub fn walk_statement<R>(
@@ -154,7 +154,7 @@ impl ASTStore {
         visitor: &mut impl ASTVisitor<R>,
         statement_id: StatementID,
     ) -> Option<R> {
-        let (statement, _) = self.statements.get_node(statement_id);
+        let statement = self.statements.get_node(statement_id);
 
         let result = visitor.enter_statement((statement, statement_id));
         if result.is_some() {
@@ -221,7 +221,7 @@ impl ASTStore {
         }
 
         let statement = self.statements.get_node(statement_id);
-        visitor.exit_statement(statement)
+        visitor.exit_statement((statement, statement_id))
     }
 
     fn walk_case<R>(&mut self, _visitor: &mut impl ASTVisitor<R>, _case: &Case) -> Option<R> {
@@ -233,7 +233,7 @@ impl ASTStore {
         visitor: &mut impl ASTVisitor<R>,
         expression_id: ExpressionID,
     ) -> Option<R> {
-        let (expression, _) = self.expressions.get_node(expression_id);
+        let expression = self.expressions.get_node(expression_id);
 
         let result = visitor.enter_expression((expression, expression_id));
         if result.is_some() {
@@ -273,7 +273,7 @@ impl ASTStore {
         }
 
         let expression = self.expressions.get_node(expression_id);
-        visitor.exit_expression(expression)
+        visitor.exit_expression((expression, expression_id))
     }
 
     /**

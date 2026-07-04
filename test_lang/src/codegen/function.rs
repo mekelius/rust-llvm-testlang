@@ -8,23 +8,28 @@ use inkwell::{
 
 use super::CodeGen;
 use crate::{
-    ast::{Expression, Function, Literal, Parameter}, ast_store::{ExpressionID, FunctionID}, ast_visitor::ASTVisitor, codegen::identifier::Symbol, span::SourceIDSpanned, types::SimpleType,
+    ast::{Expression, Function, Literal, Parameter, Statement},
+    ast_store::{self, ASTStore, ExpressionID, FunctionID, StatementID, Store},
+    codegen::{expression, identifier::Symbol},
+    span::SourceIDSpanned,
+    types::SimpleType,
 };
 
 impl<'ctx> CodeGen<'ctx> {
-    fn enter_function(
+    pub fn handle_function(
         &mut self,
-        (function, _): (&SourceIDSpanned<Function>, FunctionID),
-    ) -> Option<Box<dyn Error>> {
+        ast_store: &ASTStore,
+        function_id: FunctionID,
+    ) -> Result<(), Box<dyn Error>> {
         let Function {
             name,
             return_type_string,
             formals,
-            body: _,
-        } = &function.inner;
+            body,
+        } = &ast_store.functions.get_node(function_id).inner;
 
         let return_type = match return_type_string {
-            Some(string) => SimpleType::from_type_string(&string.inner),
+            Some(string) => SimpleType::from_type_string(&string),
             None => SimpleType::Void,
         };
 
@@ -36,8 +41,8 @@ impl<'ctx> CodeGen<'ctx> {
             {
                 panic!("main function is only allowed return type Int (if specified)");
             }
-            self.enter_main_function(&formals);
-            return None;
+            self.handle_main_function(ast_store, &formals, &body);
+            return Ok(());
         }
 
         {
@@ -82,7 +87,7 @@ impl<'ctx> CodeGen<'ctx> {
             let function_scope = scopes.push_new_scope();
 
             for (i, formal) in formals.iter().enumerate() {
-                let value = function.get_nth_param(i.try_into().unwrap());
+                let value = function.get_nth_param(i.try_into()?);
 
                 match &formal.inner {
                     Parameter::Typed(_, identifier) => {
@@ -93,91 +98,95 @@ impl<'ctx> CodeGen<'ctx> {
                     }
                 };
             }
-            None
         }
-    }
 
-    fn exit_function(
-        &mut self,
-        (function, _): (&SourceIDSpanned<Function>, FunctionID),
-    ) -> Option<Box<dyn Error>> {
+        self.handle_function_body(ast_store, &body);
+
         {
-            let Function {
-                name,
-                return_type_string,
-                formals: _,
-                body: _,
-            } = &function.inner;
-
-            // Special case for main
-            if name.inner == "main" {
-                self.exit_main_function();
-                return None;
-            }
             let CodeGen { ir, scopes } = self;
 
-            let return_type = match return_type_string {
-                Some(string) => SimpleType::from_type_string(&string.inner),
-                None => SimpleType::Void,
-            };
             // Insert return if return type is Void there isn't one
             if !ir.at_terminator() && return_type == SimpleType::Void {
-                ir.builder.build_return(None).unwrap();
+                ir.builder.build_return(None)?;
             }
             scopes.pop_scope();
         }
-        None
-    }
-}
-
-impl<'ctx> CodeGen<'ctx> {
-    fn enter_main_function(&mut self, _formals: &Vec<SourceIDSpanned<Parameter>>) {
-        let CodeGen { ir, scopes } = self;
-
-        let i32_t = ir.context.i32_type();
-        let i32_ft = i32_t.fn_type(&[], false);
-
-        let main_f = ir.module.add_function("main", i32_ft, None);
-        scopes.define_identifier("main", Symbol::Function(main_f));
-
-        let entry_b = ir.context.append_basic_block(main_f, "Entry");
-        ir.builder.position_at_end(entry_b);
-
-        // Create function scope and add formal parameters to it
-        scopes.push_new_scope();
+        Ok(())
     }
 
-    fn exit_main_function(&mut self) {
-        let CodeGen { ir, scopes } = self;
+    fn handle_main_function(
+        &mut self,
+        ast_store: &ASTStore,
+        _formals: &Vec<SourceIDSpanned<Parameter>>,
+        body: &Vec<StatementID>,
+    ) {
+        {
+            let CodeGen { ir, scopes } = self;
 
-        let exit_code: BasicValueEnum<'ctx> = ir
-            .context
-            .i32_type()
-            .const_int(0, false)
-            .as_basic_value_enum();
+            let i32_t = ir.context.i32_type();
+            let i32_ft = i32_t.fn_type(&[], false);
 
-        // Insert return if there isn't one
+            let main_f = ir.module.add_function("main", i32_ft, None);
+            scopes.define_identifier("main", Symbol::Function(main_f));
 
-        if !ir.at_terminator() {
-            ir.builder.build_return(Some(&exit_code)).unwrap();
+            let entry_b = ir.context.append_basic_block(main_f, "Entry");
+            ir.builder.position_at_end(entry_b);
+
+            // Create function scope and add formal parameters to it
+            scopes.push_new_scope();
         }
-        scopes.pop_scope();
+
+        self.handle_function_body(ast_store, &body);
+
+        {
+            let CodeGen { ir, scopes } = self;
+
+            let exit_code: BasicValueEnum<'ctx> = ir
+                .context
+                .i32_type()
+                .const_int(0, false)
+                .as_basic_value_enum();
+
+            // Insert return if there isn't one
+
+            if !ir.at_terminator() {
+                ir.builder.build_return(Some(&exit_code)).unwrap();
+            }
+            scopes.pop_scope();
+        }
     }
 
-    pub fn exit_return(&mut self) -> Option<Box<dyn Error>> {
-        let return_value = self.ir.expression_stack.pop().unwrap();
+    // Returns true if the body ends with a return statement
+    fn handle_function_body(&mut self, ast_store: &ASTStore, body: &Vec<StatementID>) {
+        for statement in body {
+            self.handle_statement(ast_store, *statement);
+        }
+    }
+
+    pub fn handle_return(
+        &mut self,
+        ast_store: &ASTStore,
+        expression_id: ExpressionID,
+    ) -> Result<(), Box<dyn Error>> {
+        let expression = ast_store.get_expression(expression_id);
+
+        if *expression == Expression::Literal(Literal::Unit) {
+            self.ir.builder.build_return(None).unwrap();
+            return Ok(());
+        }
 
         // let return_type = self.get_current_function().get_return_type();
-        let value: Option<&dyn BasicValue> = match return_value {
-            Some(AnyValueEnum::IntValue(value)) => Some(&value.clone()),
-            Some(AnyValueEnum::FloatValue(value)) => Some(&value.clone()),
-            Some(AnyValueEnum::PointerValue(value)) => Some(&value.clone()),
-            Some(AnyValueEnum::VectorValue(value)) => Some(&value.clone()),
-            None => None,
-            _ => todo!("Other return types"),
+        let value: Option<&dyn BasicValue> = match self.handle_expression(ast_store, expression_id)
+        {
+            Ok(AnyValueEnum::IntValue(value)) => Some(&value.clone()),
+            Ok(AnyValueEnum::FloatValue(value)) => Some(&value.clone()),
+            Ok(AnyValueEnum::PointerValue(value)) => Some(&value.clone()),
+            Ok(AnyValueEnum::VectorValue(value)) => Some(&value.clone()),
+            _ => unreachable!("Encountered unsupported return value type"),
         };
 
         self.ir.builder.build_return(value).unwrap();
+        Ok(())
         // match *return_type {
         //     SimpleType::Boolean => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
         //     SimpleType::Int => self.ir.builder.build_return(Some(&value.into_int_value())).unwrap(),
@@ -187,8 +196,6 @@ impl<'ctx> CodeGen<'ctx> {
         //     SimpleType::Void => self.ir.builder.build_return(None).unwrap(),
         //     SimpleType::Unknown => panic!("Unknown type as return type"),
         // };
-
-        None
     }
 
     // fn update_return_type(&self, function: FunctionValue<'ctx>, return_type: BasicTypeEnum<'ctx>) -> FunctionValue<'ctx> {

@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut codegen = CodeGen::new(&context, "test");
     codegen.ir.module.set_triple(&triple);
 
-    codegen.run((&mut program, &mut ast_store))?;
+    codegen.run(&ast_store, &program)?;
 
     codegen
         .ir

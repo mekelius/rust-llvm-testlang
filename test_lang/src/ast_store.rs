@@ -14,7 +14,10 @@ pub trait HasID {
     fn value(self) -> Self::Value;
 }
 
-impl<Value, ID> HasID for (Value, ID) where ID: Copy {
+impl<Value, ID> HasID for (Value, ID)
+where
+    ID: Copy,
+{
     type Value = Value;
     type ID = ID;
 
@@ -30,8 +33,8 @@ pub trait Store<N> {
     type ID;
 
     fn add(&mut self, node: N) -> Self::ID;
-    fn get_node(&self, id: Self::ID) -> (&N, Self::ID);
-    fn get_node_mut(&mut self, id: Self::ID) -> (&mut N, Self::ID);
+    fn get_node(&self, id: Self::ID) -> &N;
+    fn get_node_mut(&mut self, id: Self::ID) -> &mut N;
 }
 
 impl<N> Store<N> for Vec<N> {
@@ -41,11 +44,11 @@ impl<N> Store<N> for Vec<N> {
         self.push(node);
         self.len() - 1
     }
-    fn get_node(&self, id: Self::ID) -> (&N, Self::ID) {
-        (&self[id], id)
+    fn get_node(&self, id: Self::ID) -> &N {
+        &self[id]
     }
-    fn get_node_mut(&mut self, id: Self::ID) -> (&mut N, Self::ID) {
-        (&mut self[id], id)
+    fn get_node_mut(&mut self, id: Self::ID) -> &mut N {
+        &mut self[id]
     }
 }
 
@@ -95,3 +98,26 @@ pub const UNIT_LITERAL: ExpressionID = 0;
 pub const TRUE_LITERAL: ExpressionID = 1;
 pub const FALSE_LITERAL: ExpressionID = 2;
 pub const NUMBER_1_LITERAL: ExpressionID = 3;
+
+impl ASTStore {
+    pub fn get_function(&self, id: FunctionID) -> &Function {
+        &self.functions[id]
+    }
+    pub fn get_function_mut(&mut self, id: FunctionID) -> &mut Function {
+        &mut self.functions[id]
+    }
+
+    pub fn get_statement(&self, id: StatementID) -> &SourceIDSpanned<Statement> {
+        &self.statements[id]
+    }
+    pub fn get_statement_mut(&mut self, id: StatementID) -> &mut Statement {
+        &mut self.statements[id]
+    }
+
+    pub fn get_expression(&self, id: ExpressionID) -> &Expression {
+        &self.expressions[id]
+    }
+    pub fn get_expression_mut(&mut self, id: ExpressionID) -> &mut Expression {
+        &mut self.expressions[id]
+    }
+}

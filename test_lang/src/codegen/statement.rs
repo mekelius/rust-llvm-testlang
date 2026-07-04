@@ -1,20 +1,22 @@
 use std::error::Error;
 
 use crate::{
-    ast::Statement, ast_store::StatementID, ast_visitor::ASTVisitor, span::SourceIDSpanned,
+    ast::Statement,
+    ast_store::{ASTStore, StatementID},
+    span::SourceIDSpanned,
 };
 
 use super::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
-    fn enter_statement(
+    pub fn handle_statement(
         &mut self,
-        (statement, statement_id): (&SourceIDSpanned<Statement>, StatementID),
-    ) -> Option<Box<dyn Error>> {
-        match &statement.inner {
-            Statement::Block(_) => {
-                self.enter_block();
-                None
+        ast_store: &ASTStore,
+        statement_id: StatementID,
+    ) -> Result<(), Box<dyn Error>> {
+        match &ast_store.get_statement(statement_id).inner {
+            Statement::Block(id) => {
+                self.handle_block(ast_store, id)
             }
 
             // Statement::Const(lvalue, expression) => self.handle_const(lvalue, expression),
@@ -37,21 +39,21 @@ impl<'ctx> CodeGen<'ctx> {
             //     matched_value_expression,
             //     cases,
             // } => self.handle_switch(matched_value_expression, cases),
-            _ => None,
+            _ => todo!("Other statement types"),
         }
     }
 
-    fn exit_statement(
-        &mut self,
-        (statement, _): (&SourceIDSpanned<Statement>, StatementID),
-    ) -> Option<Box<dyn Error>> {
-        match &statement.inner {
-            Statement::Block(_) => self.exit_block(),
+    // fn exit_statement(
+    //     &mut self,
+    //     (statement, _): (&SourceIDSpanned<Statement>, StatementID),
+    // ) -> result((), <Box<dyn Error>) {
+    //     match &statement.inner {
+            // Statement::Block(_) => self.exit_block(),
 
             // Statement::Const(lvalue, expression) => self.handle_const(lvalue, expression),
             // Statement::Let(lvalue, expression) => self.handle_let(lvalue, expression),
             // Statement::Assignment(lvalue, expression) => self.handle_assignment(lvalue, expression),
-            Statement::Return(_) => self.exit_return(),
+            // Statement::Return(_) => self.exit_return(),
             // Statement::If { condition, body } => self.handle_if(*condition, *body),
             // Statement::IfElse(if_branch, else_branch) => {
             //     self.handle_if_else(*if_branch, *else_branch)
@@ -68,18 +70,14 @@ impl<'ctx> CodeGen<'ctx> {
             //     matched_value_expression,
             //     cases,
             // } => self.handle_switch(matched_value_expression, cases),
-            _ => None,
-        }
-    }
+            // _ => None,
+        // }
+    // }
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn enter_block(&mut self) {
-        // TODO: push scope
-    }
-
-    pub fn exit_block(&mut self) -> Option<Box<dyn Error>> {
+    pub fn handle_block(&mut self, ast_store: &ASTStore, statement_ids: &Vec<StatementID>) -> Result<(), Box<dyn Error>> {
         // TODO: pop scope
-        None
+        Ok(())
     }
 }

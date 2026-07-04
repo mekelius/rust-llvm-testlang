@@ -19,12 +19,10 @@ mod variable;
 use inkwell::context::Context;
 use std::error::Error;
 
-use crate::ast::{Expression, Function, Program, Statement};
-use crate::ast_store::{ASTStore, ExpressionID, FunctionID, StatementID};
-use crate::ast_visitor::ASTVisitor;
+use crate::ast::Program;
+use crate::ast_store::ASTStore;
 use crate::codegen::ir::IR;
 use crate::codegen::scope::Scopes;
-use crate::span::SourceIDSpanned;
 
 pub struct CodeGen<'ctx> {
     pub ir: IR<'ctx>,
@@ -32,9 +30,13 @@ pub struct CodeGen<'ctx> {
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn new(context: &'ctx Context, module_name: &'ctx str) -> CodeGen<'ctx> {
+    pub fn new(context: &'ctx Context, name: &'ctx str) -> CodeGen<'ctx> {
         let mut codegen = Self {
-            ir: IR::new(context, module_name),
+            ir: IR {
+                context,
+                module: context.create_module(name),
+                builder: context.create_builder(),
+            },
             scopes: Scopes::new(),
         };
 
@@ -42,29 +44,11 @@ impl<'ctx> CodeGen<'ctx> {
         codegen
     }
 
-    pub fn run(
-        &mut self,
-        (program, store): (&mut SourceIDSpanned<Program>, &mut ASTStore),
-    ) -> Result<(), Box<dyn Error>> {
-        store.walk_program(self, program);
+    pub fn run(&mut self, ast_store: &ASTStore, Program { functions }: &Program) -> Result<(), Box<dyn Error>> {
+        for function in functions {
+            self.handle_function(ast_store, *function)?;
+        }
 
         Ok(())
     }
-}
-
-macro_rules! add_visit {
-    ($visit_method:ident, $node_type:ty) => {
-        fn $visit_method(&mut self, node: $node_type) -> Option<Box<dyn Error>> {
-            self.$visit_method(node)
-        }
-    };
-}
-
-impl<'ctx> ASTVisitor<Box<dyn Error>> for CodeGen<'ctx> {
-    add_visit!(enter_function, (&SourceIDSpanned<Function>, FunctionID));
-    add_visit!(exit_function, (&SourceIDSpanned<Function>, FunctionID));
-    add_visit!(enter_statement, (&SourceIDSpanned<Statement>, StatementID));
-    add_visit!(exit_statement, (&SourceIDSpanned<Statement>, StatementID));
-    add_visit!(enter_expression, (&SourceIDSpanned<Expression>, ExpressionID));
-    add_visit!(exit_expression, (&SourceIDSpanned<Expression>, ExpressionID));
 }

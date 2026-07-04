@@ -9,16 +9,17 @@ use crate::{
         Expression::{self},
         Literal,
     },
-    ast_store::ExpressionID,
+    ast_store::{ASTStore, ExpressionID},
     span::SourceIDSpanned,
 };
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn enter_expression(
+    pub fn handle_expression(
         &mut self,
-        (expression, expression_id): (&SourceIDSpanned<Expression>, ExpressionID),
-    ) -> Option<Box<dyn Error>> {
-        match &expression.inner {
+        ast_store: &ASTStore,
+        expression_id: ExpressionID,
+    ) -> Result<AnyValueEnum<'ctx>, Box<dyn Error>> {
+        match &ast_store.get_expression(expression_id) {
             // Expression::TypedExpression(type_identifier, expression) => {
             //     self.handle_typed_expresssion(type_identifier, expression)
             // }
@@ -29,26 +30,15 @@ impl<'ctx> CodeGen<'ctx> {
             // Expression::Identifier(value) => self.handle_identifier(&value),
             Expression::PropertyAccess(_) => todo!("Dot access expressions"),
 
-            Expression::Literal(Literal::Number(value)) => self
-                .ir
-                .expression_stack
-                .push(Some(self.handle_number_literal(&value))),
-            Expression::Literal(Literal::String(value)) => self
-                .ir
-                .expression_stack
-                .push(Some(self.handle_string_literal(&value))),
-            Expression::Literal(Literal::Boolean(value)) => self
-                .ir
-                .expression_stack
-                .push(Some(self.handle_boolean_literal(&value))),
+            Expression::Literal(Literal::Number(value)) => Ok(self.handle_number_literal(&value)),
+            Expression::Literal(Literal::String(value)) => Ok(self.handle_string_literal(&value)),
+            Expression::Literal(Literal::Boolean(value)) => Ok(self.handle_boolean_literal(&value)),
             Expression::Literal(Literal::Unit) => {
                 panic!("UnitLiteral only allowed as return value atm")
             }
 
             _ => todo!("other expression types"),
-        };
-
-        None
+        }
     }
 
     // fn handle_typed_expresssion(
