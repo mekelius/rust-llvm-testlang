@@ -23,6 +23,7 @@ impl<'ctx> CodeGen<'ctx> {
             // Statement::Const(lvalue, expression) => self.handle_const(lvalue, expression),
             // Statement::Let(lvalue, expression) => self.handle_let(lvalue, expression),
             // Statement::Assignment(lvalue, expression) => self.handle_assignment(lvalue, expression),
+            Statement::Return(expression_id) => self.handle_return(ast_store, *expression_id),
 
             // Statement::If { condition, body } => self.handle_if(*condition, *body),
             // Statement::IfElse(if_branch, else_branch) => {
@@ -49,12 +50,6 @@ impl<'ctx> CodeGen<'ctx> {
     //     (statement, _): (&SourceIDSpanned<Statement>, StatementID),
     // ) -> result((), <Box<dyn Error>) {
     //     match &statement.inner {
-    // Statement::Block(_) => self.exit_block(),
-
-    // Statement::Const(lvalue, expression) => self.handle_const(lvalue, expression),
-    // Statement::Let(lvalue, expression) => self.handle_let(lvalue, expression),
-    // Statement::Assignment(lvalue, expression) => self.handle_assignment(lvalue, expression),
-    // Statement::Return(_) => self.exit_return(),
     // Statement::If { condition, body } => self.handle_if(*condition, *body),
     // Statement::IfElse(if_branch, else_branch) => {
     //     self.handle_if_else(*if_branch, *else_branch)
