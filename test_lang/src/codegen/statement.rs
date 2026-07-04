@@ -3,6 +3,7 @@ use std::error::Error;
 use crate::{
     ast::Statement,
     ast_store::{ASTStore, StatementID},
+    codegen::CodegenError,
 };
 
 use super::CodeGen;
@@ -12,7 +13,7 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         ast_store: &ASTStore,
         statement_id: StatementID,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), CodegenError> {
         match &ast_store.get_statement(statement_id).inner {
             Statement::Block(ids) => self.handle_block(ast_store, ids),
 
@@ -40,10 +41,10 @@ impl<'ctx> CodeGen<'ctx> {
                 body,
             } => self.handle_for(ast_store, *init, *condition, *step, *body),
 
-            // Statement::Switch {
-            //     matched_value_expression,
-            //     cases,
-            // } => self.handle_switch(matched_value_expression, cases),
+            Statement::Switch {
+                matched_value_expression,
+                cases,
+            } => self.handle_switch(ast_store, *matched_value_expression, cases),
             _ => todo!("Other statement types"),
         }
     }
