@@ -20,15 +20,19 @@ impl<'ctx> CodeGen<'ctx> {
             Statement::Expression(expression_id) => self
                 .handle_expression(ast_store, *expression_id)
                 .map(|_| ()),
-            Statement::Const(lvalue, expression) => self.handle_const(ast_store, *lvalue, *expression),
+            Statement::Const(lvalue, expression) => {
+                self.handle_const(ast_store, *lvalue, *expression)
+            }
             Statement::Let(lvalue, expression) => self.handle_let(ast_store, *lvalue, *expression),
-            Statement::Assignment(lvalue, expression) => self.handle_assignment(ast_store, *lvalue, *expression),
+            Statement::Assignment(lvalue, expression) => {
+                self.handle_assignment(ast_store, *lvalue, *expression)
+            }
             Statement::Return(expression_id) => self.handle_return(ast_store, *expression_id),
 
-            // Statement::If { condition, body } => self.handle_if(*condition, *body),
-            // Statement::IfElse(if_branch, else_branch) => {
-            //     self.handle_if_else(*if_branch, *else_branch)
-            // }
+            Statement::If { condition, body } => self.handle_if(ast_store, *condition, *body),
+            Statement::IfElse(if_branch, else_branch) => {
+                self.handle_if_else(ast_store, *if_branch, *else_branch)
+            }
             // Statement::While { condition, body } => self.handle_while(*condition, *body),
             // Statement::For {
             //     init,
