@@ -16,8 +16,14 @@ impl<'ctx> CodeGen<'ctx> {
         condition: ExpressionID,
         body: StatementID,
     ) -> Result<(), CodegenError> {
-        let from_block = self.ir.builder.get_insert_block().unwrap();
-        let current_function = from_block.get_parent().unwrap();
+        let from_block = self
+            .ir
+            .builder
+            .get_insert_block()
+            .expect("statement should have an insert block");
+        let current_function = from_block
+            .get_parent()
+            .expect("statement should be inside a function");
 
         let loop_header = self
             .ir
@@ -63,8 +69,14 @@ impl<'ctx> CodeGen<'ctx> {
         step: StatementID,
         body: StatementID,
     ) -> Result<(), CodegenError> {
-        let from_block = self.ir.builder.get_insert_block().unwrap();
-        let current_function = from_block.get_parent().unwrap();
+        let from_block = self
+            .ir
+            .builder
+            .get_insert_block()
+            .expect("statement should have an insert block");
+        let current_function = from_block
+            .get_parent()
+            .expect("statement should be inside a function");
 
         self.scopes.push_new_scope();
 

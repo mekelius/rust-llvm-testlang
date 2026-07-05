@@ -329,7 +329,7 @@ mod tests {
                 },
                 &mut node,
             )
-            .unwrap();
+            .expect("should have a function");
 
         assert_eq!(first_function_name, "f1");
     }
@@ -379,7 +379,7 @@ mod tests {
                 },
                 &mut node,
             )
-            .unwrap();
+            .expect("should find a string");
 
         assert_eq!(first_string_literal_value, "test_string");
     }

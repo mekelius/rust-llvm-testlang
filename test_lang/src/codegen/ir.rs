@@ -10,13 +10,13 @@ pub struct IR<'ctx> {
 }
 
 impl<'ctx> IR<'ctx> {
-    /** Helper that returns true if the last instruction in the current block is a terminator 
+    /** Helper that returns true if the last instruction in the current block is a terminator
      *  (and the block is not empty) */
     pub fn at_terminator(&self) -> bool {
         let last_instruction = self
             .builder
             .get_insert_block()
-            .unwrap()
+            .expect("at_terminator should not be called unless inside a block")
             .get_last_instruction();
 
         last_instruction.is_some_and(|instruction| instruction.is_terminator())

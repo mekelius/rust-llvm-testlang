@@ -63,13 +63,13 @@ impl<'ctx> CodeGen<'ctx> {
             todo!("Callee expressions")
         };
 
-        let args: Vec<BasicMetadataValueEnum> = argument_list
+        let args = argument_list
             .into_iter()
             .map(|arg| {
-                BasicMetadataValueEnum::try_from(self.handle_expression(ast_store, *arg).unwrap())
-                    .unwrap()
+                BasicMetadataValueEnum::try_from(self.handle_expression(ast_store, *arg)?)
+                    .or(Err("arg expression not convertable ".into()))
             })
-            .collect();
+            .collect::<Result<Vec<BasicMetadataValueEnum>, CodegenError>>()?;
 
         let callee = self
             .scopes

@@ -48,22 +48,21 @@ impl<'ctx> CodeGen<'ctx> {
             .resolve_identifier(identifier)
             .unwrap_or_else(|| panic!("Attempt to resolve undefined identifier {}", identifier));
 
-        Ok(match symbol {
+        match symbol {
             Symbol::Variable { pointer, type_ } => {
                 let ir_type: BasicTypeEnum<'ctx> = self
                     .ir
                     .simple_type_to_ir_type(*type_)
-                    .unwrap()
+                    .ok_or("encountered Void value during codegen")?
                     .try_into()
-                    .unwrap();
+                    .map_err(|_| "convesion from AnyTypeEnum to BasicTypeEnum failed")?;
                 let value: BasicValueEnum<'ctx> =
                     self.ir.builder.build_load(ir_type, *pointer, "")?;
                 Some(value.as_any_value_enum())
             }
             _ => None,
         }
-        .or_else(|| symbol.as_any_value_enum())
-        .unwrap())
+        .or_else(|| symbol.as_any_value_enum()).ok_or("".into())
     }
 
     /** unwraps the symbol, and if it is a variable, loads it from the stack */
@@ -71,14 +70,15 @@ impl<'ctx> CodeGen<'ctx> {
         &self,
         symbol: &Symbol<'ctx>,
     ) -> Result<AnyValueEnum<'ctx>, CodegenError> {
-        Ok(symbol
-            .as_any_value_enum()
-            .or_else(|| match symbol {
-                Symbol::Variable { pointer, type_ } => {
-                    Some(self.load_variable(*pointer, type_).unwrap())
-                }
-                _ => unreachable!(),
-            })
-            .unwrap())
+        let value = symbol.as_any_value_enum();
+        match value {
+            None => match symbol {
+                Symbol::Variable { pointer, type_ } => Ok(self
+                    .load_variable(*pointer, type_)
+                    .expect("all variables should be able to produce a load")),
+                _ => unreachable!("symbols other than variables should produce an any_value_enum"),
+            },
+            Some(value) => Ok(value),
+        }
     }
 }

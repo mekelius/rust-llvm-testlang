@@ -121,7 +121,9 @@ impl<'src> Source {
 impl<'src> SourceStore {
     pub fn new() -> SourceStore {
         let builtins_source = Source::new("!BUILTINS!", "");
-        SourceStore { sources: vec![builtins_source] }
+        SourceStore {
+            sources: vec![builtins_source],
+        }
     }
 
     pub fn get_filename(&self, source_id: SourceID) -> Option<&String> {
@@ -318,7 +320,9 @@ mod tests {
             fn calculates_line_and_col_correctly() {
                 let mut sources = SourceStore::new();
                 let source_id = sources.add_source("testfile", "\n\n\n3456789A\n\nDEFGHIJKL\n\n\n");
-                let source_location = sources.map_offset(source_id, 15).unwrap();
+                let source_location = sources
+                    .map_offset(source_id, 15)
+                    .expect("offset should be in the source");
                 assert_eq!(source_location.line, 6);
                 assert_eq!(source_location.col, 3);
                 assert_eq!(source_location.source.filename, "testfile");
@@ -332,17 +336,23 @@ mod tests {
                 let source2_id = sources.add_source("testfile2", "012345\n\n\n");
                 let source3_id = sources.add_source("testfile3", "0\n2\n456789ABC\n\n\n");
 
-                let source_location = sources.map_offset(source2_id, 3).unwrap();
+                let source_location = sources
+                    .map_offset(source2_id, 3)
+                    .expect("offset should be in the source");
                 assert_eq!(source_location.line, 1);
                 assert_eq!(source_location.col, 4);
                 assert_eq!(source_location.source.filename, "testfile2");
 
-                let source_location = sources.map_offset(source3_id, 3).unwrap();
+                let source_location = sources
+                    .map_offset(source3_id, 3)
+                    .expect("offset should be in the source");
                 assert_eq!(source_location.line, 2);
                 assert_eq!(source_location.col, 2);
                 assert_eq!(source_location.source.filename, "testfile3");
 
-                let source_location = sources.map_offset(source1_id, 3).unwrap();
+                let source_location = sources
+                    .map_offset(source1_id, 3)
+                    .expect("offset should be in the source");
                 assert_eq!(source_location.line, 4);
                 assert_eq!(source_location.col, 1);
                 assert_eq!(source_location.source.filename, "testfile1");
@@ -388,7 +398,9 @@ mod tests {
         fn first_char_formatted_correctly() {
             let mut sources = SourceStore::new();
             let source_id = sources.add_source("testfile1", "01234567\n\nthing(){}\n\n\n");
-            let location = sources.map_offset(source_id, 0).unwrap();
+            let location = sources
+                .map_offset(source_id, 0)
+                .expect("offset should be in the source");
             assert_eq!(location.to_string(), "testfile1: 1:1")
         }
 
@@ -396,7 +408,9 @@ mod tests {
         fn end_of_line_formatted_correctly() {
             let mut sources = SourceStore::new();
             let source_id = sources.add_source("testfile1", "01234567\n\nthing(){}\n\n\n");
-            let location = sources.map_offset(source_id, 8).unwrap();
+            let location = sources
+                .map_offset(source_id, 8)
+                .expect("offset should be in the source");
             assert_eq!(location.to_string(), "testfile1: 1:9")
         }
 
@@ -404,7 +418,9 @@ mod tests {
         fn formatted_correctly() {
             let mut sources = SourceStore::new();
             let source_id = sources.add_source("testfile1", "01234567\n\nABCDEFGHI\n\n\n");
-            let location = sources.map_offset(source_id, 11).unwrap();
+            let location = sources
+                .map_offset(source_id, 11)
+                .expect("offset should be in the source");
             assert_eq!(location.to_string(), "testfile1: 3:2")
         }
     }

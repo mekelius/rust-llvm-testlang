@@ -24,8 +24,14 @@ impl<'ctx> CodeGen<'ctx> {
 
         self.scopes.push_new_scope();
 
-        let entry_block = self.ir.builder.get_insert_block().unwrap();
-        let current_function = entry_block.get_parent().unwrap();
+        let entry_block = self
+            .ir
+            .builder
+            .get_insert_block()
+            .expect("statement should have an insert block");
+        let current_function = entry_block
+            .get_parent()
+            .expect("statement should be inside a function");
 
         // TODO: Check the type of the matched value
 
@@ -42,19 +48,19 @@ impl<'ctx> CodeGen<'ctx> {
 
         self.ir.builder.position_at_end(entry_block);
 
-        let cases: Vec<(IntValue<'ctx>, BasicBlock<'ctx>)> = cases
+        let cases = cases
             .iter()
             .map(|(case_string, case_block)| {
-                (
+                Ok((
                     self.ir
                         .context
                         .i32_type()
                         .const_int_from_string(&case_string, Decimal)
-                        .unwrap(),
+                        .ok_or_else(|| format!("{} does not produce an Int", case_string))?,
                     *case_block,
-                )
+                ))
             })
-            .collect();
+            .collect::<Result<Vec<(IntValue<'ctx>, BasicBlock<'ctx>)>, CodegenError>>()?;
 
         let matched_value = matched_value.into_int_value();
 
@@ -75,8 +81,14 @@ impl<'ctx> CodeGen<'ctx> {
         cases_body: &Vec<SourceIDSpanned<Case>>,
         after_block: BasicBlock<'ctx>,
     ) -> Result<HandleCasesReturn<'ctx>, CodegenError> {
-        let entry_block = self.ir.builder.get_insert_block().unwrap();
-        let current_function = entry_block.get_parent().unwrap();
+        let entry_block = self
+            .ir
+            .builder
+            .get_insert_block()
+            .expect("statement should have an insert block");
+        let current_function = entry_block
+            .get_parent()
+            .expect("statement should be inside a function");
         let mut next_block = self.ir.context.append_basic_block(current_function, "case");
         let mut default_block = None;
         let mut cases = Vec::<(String, BasicBlock)>::new();

@@ -18,9 +18,9 @@ impl<'ctx> CodeGen<'ctx> {
             .ir
             .builder
             .get_insert_block()
-            .unwrap()
+            .expect("statement should have an insert block")
             .get_parent()
-            .unwrap();
+            .expect("statement should be inside a function");
 
         // Create basic blocks
         let then_block = self
@@ -70,9 +70,9 @@ impl<'ctx> CodeGen<'ctx> {
             .ir
             .builder
             .get_insert_block()
-            .unwrap()
+            .expect("function should have an insert block")
             .get_parent()
-            .unwrap();
+            .expect("statement should be inside a function");
 
         // Create basic blocks
         let if_block = self

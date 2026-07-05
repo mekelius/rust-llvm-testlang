@@ -45,27 +45,35 @@ impl<'ctx> Scopes<'ctx> {
     }
 
     pub fn get_global_scope(&self) -> &Scope<'ctx> {
-        self.scopes.get(0).unwrap()
+        self.scopes.get(0).expect("global scope should exist")
     }
 
     pub fn get_scope(&self, scope_id: &ScopeID) -> &Scope<'ctx> {
-        self.scopes.get(*scope_id).unwrap()
+        self.scopes
+            .get(*scope_id)
+            .expect("called should be sure that scope exists")
     }
 
     pub fn get_current_scope(&self) -> &Scope<'ctx> {
-        self.scopes.get(self.current_scope_id).unwrap()
+        self.scopes
+            .get(self.current_scope_id)
+            .expect("there should always be a current scope")
     }
 
     pub fn get_global_scope_mut(&mut self) -> &mut Scope<'ctx> {
-        self.scopes.get_mut(0).unwrap()
+        self.scopes.get_mut(0).expect("global scope should exist")
     }
 
     pub fn get_scope_mut(&mut self, scope_id: &ScopeID) -> &mut Scope<'ctx> {
-        self.scopes.get_mut(*scope_id).unwrap()
+        self.scopes
+            .get_mut(*scope_id)
+            .expect("called should be sure that scope exists")
     }
 
     pub fn get_current_scope_mut(&mut self) -> &mut Scope<'ctx> {
-        self.scopes.get_mut(self.current_scope_id).unwrap()
+        self.scopes
+            .get_mut(self.current_scope_id)
+            .expect("there should always be a current scope")
     }
 
     pub fn push_new_scope(&mut self) -> &mut Scope<'ctx> {

@@ -35,7 +35,7 @@ impl<'ctx> CodeGen<'ctx> {
                 .builder
                 .build_global_string_ptr("%d", "printf_int_format")?;
 
-            let arg1 = print_int.get_nth_param(0).unwrap();
+            let arg1 = print_int.get_nth_param(0).expect("parameter should exist");
 
             ir.builder.build_call(
                 printf,
@@ -61,7 +61,10 @@ impl<'ctx> CodeGen<'ctx> {
 
             let false_string = ir.builder.build_global_string_ptr("false", "false")?;
 
-            let arg1 = print_bool.get_nth_param(0).unwrap().into_int_value();
+            let arg1 = print_bool
+                .get_nth_param(0)
+                .expect("parameter should exist")
+                .into_int_value();
             let val_as_string =
                 ir.builder
                     .build_select(arg1, true_string, false_string, "val_as_str")?;
@@ -85,7 +88,10 @@ impl<'ctx> CodeGen<'ctx> {
                     .append_basic_block(println_bool, "PrintlnBoolEntry");
                 ir.builder.position_at_end(entry_b);
 
-                let arg1 = println_bool.get_nth_param(0).unwrap().into_int_value();
+                let arg1 = println_bool
+                    .get_nth_param(0)
+                    .expect("parameter should exist")
+                    .into_int_value();
                 ir.builder.build_call(print_bool, &[arg1.into()], "")?;
 
                 let newline = ir.builder.build_global_string_ptr("\n", "newline")?;
@@ -104,7 +110,7 @@ impl<'ctx> CodeGen<'ctx> {
             let entry_b = ir.context.append_basic_block(print, "PrintEntry");
             ir.builder.position_at_end(entry_b);
 
-            let arg1 = print.get_nth_param(0).unwrap();
+            let arg1 = print.get_nth_param(0).expect("parameter should exist");
             ir.builder.build_call(printf, &[arg1.into()], "")?;
 
             ir.builder.build_return(None)?;
@@ -123,7 +129,9 @@ impl<'ctx> CodeGen<'ctx> {
                 .builder
                 .build_global_string_ptr("%d\n", "printf_lnint_format")?;
 
-            let arg1 = println_int.get_nth_param(0).unwrap();
+            let arg1 = println_int
+                .get_nth_param(0)
+                .expect("parameter should exist");
 
             ir.builder.build_call(
                 printf,

@@ -8,10 +8,10 @@ use super::CodeGen;
 
 /** Unescapes \n, \\ and \r in strings */
 fn unescape(value: &str) -> String {
-    let re_n = Regex::new(r"\\n").unwrap();
-    let re_r = Regex::new(r"\\r").unwrap();
-    let re_bs = Regex::new(r"\\\\").unwrap();
-    
+    let re_n = Regex::new(r"\\n").expect("regex should be valid");
+    let re_r = Regex::new(r"\\r").expect("regex should be valid");
+    let re_bs = Regex::new(r"\\\\").expect("regex should be valid");
+
     let value = re_n.replace_all(value, "\n");
     let value = re_r.replace_all(&value, "\r");
     let value = re_bs.replace_all(&value, "\\");
@@ -19,7 +19,7 @@ fn unescape(value: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use super::*;
 
     #[test]
