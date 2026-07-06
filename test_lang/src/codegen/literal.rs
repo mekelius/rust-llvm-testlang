@@ -4,6 +4,8 @@ use inkwell::{
 };
 use regex::Regex;
 
+use crate::codegen::CodegenError;
+
 use super::CodeGen;
 
 /** Unescapes \n, \\ and \r in strings */
@@ -42,30 +44,32 @@ mod tests {
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn handle_number_literal(&self, value: &str) -> AnyValueEnum<'ctx> {
-        self.ir
+    pub fn handle_number_literal(&self, value: &str) -> Result<AnyValueEnum<'ctx>, CodegenError> {
+        Ok(self
+            .ir
             .context
             .i32_type()
             .const_int_from_string(value, Decimal)
-            .unwrap_or_else(|| panic!("Could not create integer from {}", value))
-            .as_any_value_enum()
+            .ok_or_else(|| format!("could not create integer from {}", value))?
+            .as_any_value_enum())
     }
 
-    pub fn handle_string_literal(&self, value: &str) -> AnyValueEnum<'ctx> {
+    pub fn handle_string_literal(&self, value: &str) -> Result<AnyValueEnum<'ctx>, CodegenError> {
         let unescaped_value: String = unescape(value);
 
-        self.ir
+        Ok(self
+            .ir
             .builder
-            .build_global_string_ptr(&*&unescaped_value, "string_literal")
-            .unwrap_or_else(|_| panic!("Creating global string from {} failed", value))
-            .as_any_value_enum()
+            .build_global_string_ptr(&*&unescaped_value, "string_literal")?
+            .as_any_value_enum())
     }
 
-    pub fn handle_boolean_literal(&self, value: &bool) -> AnyValueEnum<'ctx> {
-        self.ir
+    pub fn handle_boolean_literal(&self, value: &bool) -> Result<AnyValueEnum<'ctx>, CodegenError> {
+        Ok(self
+            .ir
             .context
             .bool_type()
             .const_int(*value as u64, false)
-            .as_any_value_enum()
+            .as_any_value_enum())
     }
 }

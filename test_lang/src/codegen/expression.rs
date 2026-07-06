@@ -27,13 +27,12 @@ impl<'ctx> CodeGen<'ctx> {
             Expression::Identifier(value) => self.handle_identifier(&value),
             Expression::PropertyAccess(_) => todo!("Dot access expressions"),
 
-            Expression::Literal(Literal::Number(value)) => Ok(self.handle_number_literal(&value)),
-            Expression::Literal(Literal::String(value)) => Ok(self.handle_string_literal(&value)),
-            Expression::Literal(Literal::Boolean(value)) => Ok(self.handle_boolean_literal(&value)),
+            Expression::Literal(Literal::Number(value)) => self.handle_number_literal(&value),
+            Expression::Literal(Literal::String(value)) => self.handle_string_literal(&value),
+            Expression::Literal(Literal::Boolean(value)) => self.handle_boolean_literal(&value),
             Expression::Literal(Literal::Unit) => {
-                panic!("UnitLiteral only allowed as return value atm")
+                Err("UnitLiteral only allowed as return value".into())
             }
-
             _ => todo!("other expression types"),
         }
     }

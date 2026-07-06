@@ -1,5 +1,5 @@
 use inkwell::{
-    types::{AnyTypeEnum, BasicTypeEnum},
+    types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicTypeEnum},
     values::{AnyValueEnum, BasicValueEnum},
 };
 
@@ -20,5 +20,12 @@ impl<'ctx> TryIntoOverride<BasicTypeEnum<'ctx>> for AnyTypeEnum<'ctx> {
     fn try_into_override(self) -> Result<BasicTypeEnum<'ctx>, CodegenError> {
         self.try_into()
             .map_err(|_| "converting AnyTypeEnum to BasicTypeEnum failed".into())
+    }
+}
+
+impl<'ctx> TryIntoOverride<BasicMetadataTypeEnum<'ctx>> for AnyTypeEnum<'ctx> {
+    fn try_into_override(self) -> Result<BasicMetadataTypeEnum<'ctx>, CodegenError> {
+        self.try_into()
+            .map_err(|_| "converting AnyTypeEnum to BasicMeatadataTypeEnum failed".into())
     }
 }

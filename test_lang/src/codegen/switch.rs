@@ -125,7 +125,9 @@ impl<'ctx> CodeGen<'ctx> {
         // Slightly hacky way to implement fallthrough from cases
         next_block.replace_all_uses_with(&after_block);
         unsafe {
-            next_block.delete();
+            next_block
+                .delete()
+                .map_err(|_| "deleting basic block failed")?;
         }
 
         Ok(HandleCasesReturn {

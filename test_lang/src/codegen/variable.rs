@@ -112,9 +112,12 @@ impl<'ctx> CodeGen<'ctx> {
         let Symbol::Variable {
             pointer,
             type_: old_type,
-        } = self.scopes.resolve_identifier(identifier).unwrap()
+        } = self
+            .scopes
+            .resolve_identifier(identifier)
+            .ok_or::<CodegenError>(format!("unknown identifier {}", identifier).into())?
         else {
-            panic!();
+            return Err(format!("{} is not a variable", identifier).into());
         };
 
         let pointer = pointer.clone();
@@ -133,8 +136,7 @@ impl<'ctx> CodeGen<'ctx> {
         }
         let new_value: BasicValueEnum<'ctx> = self
             .handle_expression(ast_store, new_value_expression_id)?
-            .try_into()
-            .unwrap();
+            .try_into_override()?;
 
         self.ir.builder.build_store(pointer, new_value)?;
         Ok(())

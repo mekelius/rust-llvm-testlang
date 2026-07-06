@@ -1,12 +1,12 @@
-use crate::ast_visitor::ASTVisitorMut;
+// use crate::ast_visitor::ASTVisitorMut;
 
-pub struct TypeError {
-    message: String
-}
+// pub struct TypeError {
+//     message: String
+// }
 
-pub struct SimpleTypeChecker {
+// pub struct SimpleTypeChecker {
 
-}
+// }
 
 // impl ASTVisitorMut<TypeError> for SimpleTypeChecker {
 //     fn visit_function(&mut self, function: &mut crate::span::SourceIDSpanned<crate::ast::Function>) -> Option<TypeError> {

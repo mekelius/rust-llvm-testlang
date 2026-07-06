@@ -6,7 +6,7 @@ use inkwell::{
 use super::CodeGen;
 use crate::{
     ast_store::{ASTStore, ExpressionID, StatementID},
-    codegen::CodegenError,
+    codegen::{CodegenError, helpers::TryIntoOverride},
 };
 
 impl<'ctx> CodeGen<'ctx> {
@@ -42,15 +42,11 @@ impl<'ctx> CodeGen<'ctx> {
 
         self.ir.builder.position_at_end(loop_header);
         let condition_value = self.handle_expression(ast_store, condition)?;
-        self.ir
-            .builder
-            .build_conditional_branch(condition_value.into_int_value(), loop_body, after_block)
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Failed to build conditional branch from {:?}, {}",
-                    condition, e
-                )
-            });
+        self.ir.builder.build_conditional_branch(
+            condition_value.into_int_value(),
+            loop_body,
+            after_block,
+        )?;
 
         self.ir.builder.position_at_end(loop_body);
         self.handle_statement(ast_store, body)?;
@@ -112,9 +108,9 @@ impl<'ctx> CodeGen<'ctx> {
         self.ir.builder.position_at_end(header_block);
 
         let condition_value_initial: BasicValueEnum<'ctx> =
-            condition_value_initial.try_into().unwrap();
+            condition_value_initial.try_into_override()?;
         let condition_value_updated: BasicValueEnum<'ctx> =
-            condition_value_updated.try_into().unwrap();
+            condition_value_updated.try_into_override()?;
 
         let phi_type: BasicTypeEnum<'ctx> = condition_value_initial.get_type().try_into().unwrap();
         let phi = self.ir.builder.build_phi(phi_type, "loop_condition")?;

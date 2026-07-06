@@ -8,7 +8,7 @@ use super::CodeGen;
 use crate::{
     ast::{Expression, Function, Literal, Parameter},
     ast_store::{ASTStore, ExpressionID, FunctionID, StatementID, Store},
-    codegen::{CodegenError, identifier::Symbol},
+    codegen::{CodegenError, helpers::TryIntoOverride, identifier::Symbol},
     span::SourceIDSpanned,
     types::SimpleType,
 };
@@ -52,14 +52,13 @@ impl<'ctx> CodeGen<'ctx> {
             let param_types: Vec<BasicMetadataTypeEnum<'ctx>> = params
                 .iter()
                 .map(|param| match &param.inner {
-                    Parameter::Untyped(_) => i32_t.into(),
+                    Parameter::Untyped(_) => Ok(i32_t.into()),
                     Parameter::Typed(type_string, _) => ir
                         .type_string_to_ir_type(&type_string)
                         .unwrap_or_else(|| panic!("Void is not allowed as a parameter type"))
-                        .try_into()
-                        .unwrap(),
+                        .try_into_override(),
                 })
-                .collect();
+                .collect::<Result<Vec<BasicMetadataTypeEnum<'ctx>>, CodegenError>>()?;
 
             let signature = match return_type {
                 SimpleType::Boolean => ir.context.bool_type().fn_type(&param_types, false),
@@ -85,14 +84,16 @@ impl<'ctx> CodeGen<'ctx> {
             let function_scope = scopes.push_new_scope();
 
             for (i, param) in params.iter().enumerate() {
-                let value = function.get_nth_param(i.try_into()?);
+                let value = function
+                    .get_nth_param(i.try_into()?)
+                    .expect("function signature should have been produced correctly");
 
                 match &param.inner {
                     Parameter::Typed(_, identifier) => {
-                        function_scope.define_param(&identifier, value.unwrap())
+                        function_scope.define_param(&identifier, value)
                     }
                     Parameter::Untyped(identifier) => {
-                        function_scope.define_param(&identifier, value.unwrap())
+                        function_scope.define_param(&identifier, value)
                     }
                 };
             }
