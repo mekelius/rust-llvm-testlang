@@ -41,13 +41,10 @@ pub fn run(
     ast_store: ASTStore,
 ) -> Result<(SourceIDSpanned<Program>, ASTStore), Box<dyn Error>> {
     if source_id == BUILTINS_SOURCE_ID {
-        panic!("BUILTINS_SOURCE_ID is reserved for builtins");
+        return Err("BUILTINS_SOURCE_ID is reserved for builtins".into());
     }
 
-    let tokens = match lexer::run(src, source_id) {
-        Ok(tokens) => tokens,
-        Err(_) => unreachable!(),
-    };
+    let tokens = lexer::run(src, source_id)?;
 
     if tokens.is_empty() {
         return Ok((
@@ -68,7 +65,7 @@ pub fn run(
 
     match parser().parse_with_state(input, &mut state).into_result() {
         Ok(result) => Ok((result, state.0)),
-        Err(e) => panic!("parse error: {:#?}", e),
+        Err(e) => Err(format!("parse error: {:#?}", e).into()),
     }
 }
 

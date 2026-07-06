@@ -23,18 +23,11 @@ impl<'ctx> IR<'ctx> {
     }
 
     pub fn print(&self) -> Result<(), LLVMString> {
-        let passed = self.module.verify();
-
+        self.module.verify()?;
         let dump = self.module.print_to_string().to_string();
         print!("{}", &dump);
 
-        match passed {
-            Err(err) => {
-                print!("{:?}", err);
-                panic!("Module verification failed");
-            }
-            Ok(_) => return Ok(()),
-        };
+        Ok(())
     }
 
     pub fn print_to_file(&self, output_file: &str) -> Result<(), LLVMString> {

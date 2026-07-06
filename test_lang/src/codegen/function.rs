@@ -27,7 +27,8 @@ impl<'ctx> CodeGen<'ctx> {
         } = &ast_store.functions.get_node(function_id).inner;
 
         let return_type = match return_type_string {
-            Some(string) => SimpleType::from_type_string(&string),
+            Some(string) => SimpleType::from_type_string(&string)
+                .ok_or_else(|| format!("invalid return type {}", string.inner))?,
             None => SimpleType::Void,
         };
 
@@ -37,7 +38,7 @@ impl<'ctx> CodeGen<'ctx> {
                 .as_ref()
                 .is_some_and(|string| string.inner != "Int")
             {
-                panic!("main function is only allowed return type Int (if specified)");
+                return Err("main function is only allowed return type Int (if specified)".into());
             }
             self.handle_main_function(ast_store, &params, &body)?;
             return Ok(());
@@ -54,7 +55,7 @@ impl<'ctx> CodeGen<'ctx> {
                 .map(|param| match &param.inner {
                     Parameter::Untyped(_) => Ok(i32_t.into()),
                     Parameter::Typed(type_string, _) => ir
-                        .type_string_to_ir_type(&type_string)
+                        .type_string_to_ir_type(&type_string)?
                         .ok_or("Void is not allowed as a parameter type")?
                         .try_into_override(),
                 })
@@ -71,7 +72,7 @@ impl<'ctx> CodeGen<'ctx> {
                     .ptr_type(AddressSpace::default())
                     .fn_type(&param_types, false),
                 SimpleType::Void => ir.context.void_type().fn_type(&param_types, false),
-                SimpleType::Unknown => panic!("Unknown type as return type"),
+                SimpleType::Unknown => return Err("Unknown type as return type".into()),
             };
 
             let function = ir.module.add_function(&name, signature, None);
@@ -90,10 +91,10 @@ impl<'ctx> CodeGen<'ctx> {
 
                 match &param.inner {
                     Parameter::Typed(_, identifier) => {
-                        function_scope.define_param(&identifier, value)
+                        function_scope.define_param(&identifier, value)?
                     }
                     Parameter::Untyped(identifier) => {
-                        function_scope.define_param(&identifier, value)
+                        function_scope.define_param(&identifier, value)?
                     }
                 };
             }

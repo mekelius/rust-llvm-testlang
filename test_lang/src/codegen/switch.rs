@@ -112,7 +112,7 @@ impl<'ctx> CodeGen<'ctx> {
                 } => {
                     // Check no duplicate default
                     if default_block.is_some() {
-                        panic!("Multiple default cases in one switch statement");
+                        return Err("Multiple default cases in one switch statement".into());
                     }
 
                     default_block = Some(case_block.clone());

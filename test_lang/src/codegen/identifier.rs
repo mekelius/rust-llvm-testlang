@@ -56,7 +56,7 @@ impl<'ctx> CodeGen<'ctx> {
             Symbol::Variable { pointer, type_ } => {
                 let ir_type: BasicTypeEnum<'ctx> = self
                     .ir
-                    .simple_type_to_ir_type(*type_)
+                    .simple_type_to_ir_type(*type_)?
                     .ok_or("encountered Void value during codegen")?
                     .try_into_override()?;
                 let value: BasicValueEnum<'ctx> =

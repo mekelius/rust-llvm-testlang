@@ -163,7 +163,7 @@ pub fn run(src: &str, source_id: SourceID) -> Result<Vec<(Token, SourceIDSpan)>,
                 },
             )),
             Err(e) => {
-                panic!("lexer error at {:?}: {:?}", span, e);
+                return Err(format!("lexer error at {:?}: {:?}", span, e).into());
             }
         }
     }

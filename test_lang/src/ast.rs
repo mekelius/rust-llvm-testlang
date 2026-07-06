@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use crate::{
     ast_store::{ExpressionID, FunctionID, StatementID},
     span::SourceIDSpanned,
@@ -141,17 +143,18 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn get_actual_type(&self) -> SimpleType {
+    pub fn get_actual_type(&self) -> Result<SimpleType, Box<dyn Error>> {
         match self {
             Expression::TypedExpression(type_string, _expression) => {
                 SimpleType::from_type_string(type_string)
+                    .ok_or_else(|| format!("invalid type {}", type_string.inner).into())
             }
-            Expression::Call(_call) => Unknown,
-            Expression::Binop(expression) => expression.get_actual_type(),
-            Expression::Unop(expression) => expression.get_actual_type(),
-            Expression::Identifier(_value) => Unknown,
-            Expression::PropertyAccess(_) => Unknown,
-            Expression::Literal(literal) => literal.get_type(),
+            Expression::Call(_call) => Ok(Unknown),
+            Expression::Binop(expression) => Ok(expression.get_actual_type()),
+            Expression::Unop(expression) => Ok(expression.get_actual_type()),
+            Expression::Identifier(_value) => Ok(Unknown),
+            Expression::PropertyAccess(_) => Ok(Unknown),
+            Expression::Literal(literal) => Ok(literal.get_type()),
         }
     }
 }

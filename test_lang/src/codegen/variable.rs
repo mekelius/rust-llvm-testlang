@@ -53,13 +53,15 @@ impl<'ctx> CodeGen<'ctx> {
 
         let simple_type = match ast_store.get_expression(expression_id) {
             Expression::TypedExpression(type_identifier, _) => {
-                SimpleType::from_type_string(type_identifier)
+                SimpleType::from_type_string(type_identifier).ok_or_else::<CodegenError, _>(
+                    || format!("invalid type {}", type_identifier.inner).into(),
+                )?
             }
             _ => SimpleType::Int,
         };
         let ir_type: BasicTypeEnum<'ctx> = self
             .ir
-            .simple_type_to_ir_type(simple_type)
+            .simple_type_to_ir_type(simple_type)?
             .expect("Void/Unit type not allowed as a variable type")
             .try_into_override()?;
         let value: BasicValueEnum<'ctx> = self
@@ -86,7 +88,7 @@ impl<'ctx> CodeGen<'ctx> {
     ) -> Result<AnyValueEnum<'ctx>, CodegenError> {
         let ir_type: BasicTypeEnum<'ctx> = self
             .ir
-            .simple_type_to_ir_type(*type_)
+            .simple_type_to_ir_type(*type_)?
             .expect("Void/Unit value not allowed to be stored in variables")
             .try_into_override()?;
 
@@ -126,7 +128,9 @@ impl<'ctx> CodeGen<'ctx> {
 
         let new_type = match new_value_expression {
             Expression::TypedExpression(type_string, _) => {
-                SimpleType::from_type_string(type_string)
+                SimpleType::from_type_string(type_string).ok_or_else::<CodegenError, _>(|| {
+                    format!("invalid type {}", type_string.inner).into()
+                })?
             }
             _ => SimpleType::Int,
         };

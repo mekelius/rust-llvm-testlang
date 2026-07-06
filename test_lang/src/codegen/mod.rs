@@ -1,6 +1,6 @@
+pub mod helpers;
 pub mod ir;
 pub mod scope;
-pub mod helpers;
 
 mod builtins;
 mod types;
@@ -43,11 +43,17 @@ impl<'ctx> CodeGen<'ctx> {
             scopes: Scopes::new(),
         };
 
-        codegen.init_builtins();
+        codegen
+            .init_builtins()
+            .unwrap_or_else(|err| panic!("Initializing builtins failed: {}", err));
         codegen
     }
 
-    pub fn run(&mut self, ast_store: &ASTStore, Program { functions }: &Program) -> Result<(), Box<dyn Error>> {
+    pub fn run(
+        &mut self,
+        ast_store: &ASTStore,
+        Program { functions }: &Program,
+    ) -> Result<(), Box<dyn Error>> {
         for function in functions {
             self.handle_function(ast_store, *function)?;
         }

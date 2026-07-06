@@ -1,7 +1,7 @@
 use inkwell::values::{BasicValueEnum, FunctionValue};
 
 use crate::codegen::identifier::Symbol;
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 pub type ScopeID = usize;
 
 #[derive(Debug)]
@@ -24,15 +24,22 @@ impl<'ctx> Scope<'ctx> {
         }
     }
 
-    pub fn define_param(&mut self, identifier: &str, value: BasicValueEnum<'ctx>) {
+    pub fn define_param(
+        &mut self,
+        identifier: &str,
+        value: BasicValueEnum<'ctx>,
+    ) -> Result<(), Box<dyn Error>> {
         if self.identifiers.contains_key(identifier) {
-            panic!(
+            return Err(format!(
                 "Attempt to redefine identifier {} as a formal parameter",
                 identifier
-            );
+            )
+            .into());
         }
         self.identifiers
             .insert(identifier.to_string(), Symbol::Formal(value));
+
+        Ok(())
     }
 }
 
