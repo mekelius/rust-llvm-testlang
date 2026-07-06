@@ -1,6 +1,7 @@
 use inkwell::context::Context;
 use inkwell::passes::PassBuilderOptions;
 use inkwell::targets::{InitializationConfig, Target, TargetMachine, TargetMachineOptions};
+use testl::source::SourceID;
 use std::error::Error;
 use std::io;
 use testl::ast_store::ASTStore;
@@ -12,7 +13,7 @@ const PASSES: &str = "mem2reg,instcombine,reassociate,simplifycfg";
 fn main() -> Result<(), Box<dyn Error>> {
     let src = io::read_to_string(io::stdin())?;
 
-    let (program, ast_store) = parser::run(&src, 1, ASTStore::new())?;
+    let (program, ast_store) = parser::run(&src, SourceID::new(1), ASTStore::new())?;
 
     Target::initialize_native(&InitializationConfig::default()).unwrap();
 

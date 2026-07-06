@@ -15,7 +15,7 @@ use std::error::Error;
 use crate::ast::Program;
 use crate::ast_store::{ASTStore, FunctionID};
 use crate::parser::function::function;
-use crate::source::SourceID;
+use crate::source::{BUILTINS_SOURCE_ID, SourceID};
 use crate::span::{SourceIDSpan, SourceIDSpanned};
 
 type Extras<'tokens> =
@@ -40,8 +40,8 @@ pub fn run(
     source_id: SourceID,
     ast_store: ASTStore,
 ) -> Result<(SourceIDSpanned<Program>, ASTStore), Box<dyn Error>> {
-    if source_id == 0 {
-        panic!("SourceID 0 is reserved for builtins");
+    if source_id == BUILTINS_SOURCE_ID {
+        panic!("BUILTINS_SOURCE_ID is reserved for builtins");
     }
 
     let tokens = match lexer::run(src, source_id) {

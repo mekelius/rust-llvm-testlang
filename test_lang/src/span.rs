@@ -1,15 +1,12 @@
-use std::{
-    fmt::{Display, Error, Formatter},
-    ops::Range,
-};
+use std::ops::Range;
 
 use chumsky::span::{Span, Spanned, WrappingSpan};
 
-use crate::source::{SourceID, SourceStore};
+use crate::source::SourceID;
 
 pub type ByteOffset = usize;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd)]
 pub struct SourceIDSpan {
     pub context: SourceID,
     pub start: ByteOffset,
@@ -55,25 +52,5 @@ impl<T> WrappingSpan<T> for SourceIDSpan {
     }
     fn span_of(spanned: &Self::Spanned) -> &Self {
         &spanned.span
-    }
-}
-
-pub struct SourceIDSpanWithStore<'src> {
-    pub span: SourceIDSpan,
-    pub sources: &'src SourceStore,
-}
-
-impl<'src> Display for SourceIDSpanWithStore<'src> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let SourceIDSpanWithStore {
-            span,
-            sources,
-        } = self;
-        // let source_filename = sources
-        //     .get_filename(*source_id)
-        //     .unwrap_or_else(|| panic!("No source with source id {}", source_id));
-
-        let source_location = sources.map_span(span);
-        write!(f, "{:?}", source_location)
     }
 }

@@ -89,15 +89,11 @@ impl<'ctx> CodeGen<'ctx> {
             .append_basic_block(current_function, "after");
 
         // Jump
-        self.ir
-            .builder
-            .build_conditional_branch(condition_value.into_int_value(), if_block, else_block)
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Failed to build conditional branch from {:?}, {}",
-                    condition, e
-                )
-            });
+        self.ir.builder.build_conditional_branch(
+            condition_value.into_int_value(),
+            if_block,
+            else_block,
+        )?;
 
         self.ir.builder.position_at_end(if_block);
         self.handle_statement(ast_store, if_branch_body)?;

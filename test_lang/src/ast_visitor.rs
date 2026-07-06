@@ -296,11 +296,11 @@ impl ASTStore {
 mod tests {
     use super::*;
 
-    use crate::{ast::Literal, span::SourceIDSpan};
+    use crate::{ast::Literal, source::SourceID, span::SourceIDSpan};
     use chumsky::span::SpanWrap;
 
     const DUMMY_SPAN: SourceIDSpan = SourceIDSpan {
-        context: 0,
+        context: SourceID::new(1),
         start: 0,
         end: 0,
     };

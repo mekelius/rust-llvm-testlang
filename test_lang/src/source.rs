@@ -9,9 +9,34 @@ use crate::helpers::LineCol;
 use crate::span::ByteOffset;
 use crate::span::SourceIDSpan;
 
-pub type SourceID = usize;
+// ******************************************** SourceID *********************************************
 
-// ****************************************** TYPES ***********************************************
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+pub struct SourceID(usize);
+
+impl SourceID {
+    pub const fn new(id: usize) -> Self {
+        if id == 0 {
+            panic!("SourceID 0 is reserved for builtins");
+        }
+
+        Self(id)
+    }
+
+    pub const fn get(&self) -> usize {
+        self.0
+    }
+}
+
+impl Display for SourceID {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "{}", self.0)
+    }
+}
+
+pub const BUILTINS_SOURCE_ID: SourceID = SourceID(0);
+
+// ******************************************** TYPES *********************************************
 
 /**
  * Stores the filename and contents of a source. Supports mapping byteoffsets to line col locations
@@ -32,7 +57,11 @@ pub struct SourceStore {
     sources: Vec<Source>,
 }
 
-pub const BUILTINS_SOURCE_ID: SourceID = 0;
+impl SourceStore {
+    pub fn get(&self, source_id: SourceID) -> Option<&Source> {
+        self.sources.get(source_id.get())
+    }
+}
 
 /**
  * Location in a source. Contains a ref to the Source and thus cannot be stored long term.
@@ -127,18 +156,18 @@ impl<'src> SourceStore {
     }
 
     pub fn get_filename(&self, source_id: SourceID) -> Option<&String> {
-        let source = self.sources.get(source_id)?;
+        let source = self.get(source_id)?;
         Some(&source.filename)
     }
 
     pub fn get_source(&self, source_id: SourceID) -> Option<&Source> {
-        let source = self.sources.get(source_id)?;
+        let source = self.get(source_id)?;
         Some(&source)
     }
 
     pub fn add_source(&mut self, filename: &str, contents: &str) -> SourceID {
         self.sources.push(Source::new(filename, contents));
-        self.sources.len() - 1
+        SourceID::new(self.sources.len() - 1)
     }
 
     /** Maps a span (of byte offsets) into line and col numbers */
@@ -361,7 +390,7 @@ mod tests {
             #[test]
             fn handles_no_files() {
                 let sources = SourceStore::new();
-                assert_eq!(sources.map_offset(1, 3), None);
+                assert_eq!(sources.map_offset(SourceID::new(1), 3), None);
             }
         }
 

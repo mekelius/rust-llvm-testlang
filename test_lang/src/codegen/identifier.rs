@@ -4,7 +4,11 @@ use inkwell::{
 };
 
 use super::CodeGen;
-use crate::{ast::Expression, codegen::CodegenError, types::SimpleType};
+use crate::{
+    ast::Expression,
+    codegen::{CodegenError, helpers::TryIntoOverride},
+    types::SimpleType,
+};
 
 #[derive(Debug, Clone)]
 pub enum Symbol<'ctx> {
@@ -46,7 +50,7 @@ impl<'ctx> CodeGen<'ctx> {
         let symbol = self
             .scopes
             .resolve_identifier(identifier)
-            .unwrap_or_else(|| panic!("Attempt to resolve undefined identifier {}", identifier));
+            .ok_or_else(|| format!("Attempt to resolve undefined identifier {}", identifier))?;
 
         match symbol {
             Symbol::Variable { pointer, type_ } => {
@@ -54,15 +58,15 @@ impl<'ctx> CodeGen<'ctx> {
                     .ir
                     .simple_type_to_ir_type(*type_)
                     .ok_or("encountered Void value during codegen")?
-                    .try_into()
-                    .map_err(|_| "convesion from AnyTypeEnum to BasicTypeEnum failed")?;
+                    .try_into_override()?;
                 let value: BasicValueEnum<'ctx> =
                     self.ir.builder.build_load(ir_type, *pointer, "")?;
                 Some(value.as_any_value_enum())
             }
             _ => None,
         }
-        .or_else(|| symbol.as_any_value_enum()).ok_or("".into())
+        .or_else(|| symbol.as_any_value_enum())
+        .ok_or("".into())
     }
 
     /** unwraps the symbol, and if it is a variable, loads it from the stack */

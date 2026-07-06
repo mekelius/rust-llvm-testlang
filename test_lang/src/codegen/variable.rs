@@ -7,7 +7,7 @@ use super::CodeGen;
 use crate::{
     ast::Expression,
     ast_store::{ASTStore, ExpressionID},
-    codegen::{CodegenError, identifier::Symbol},
+    codegen::{CodegenError, helpers::TryIntoOverride, identifier::Symbol},
     types::SimpleType,
 };
 
@@ -61,13 +61,12 @@ impl<'ctx> CodeGen<'ctx> {
             .ir
             .simple_type_to_ir_type(simple_type)
             .expect("Void/Unit type not allowed as a variable type")
-            .try_into()
-            .unwrap();
+            .try_into_override()?;
         let value: BasicValueEnum<'ctx> = self
             .handle_expression(ast_store, expression_id)?
-            .try_into()
-            .unwrap();
+            .try_into_override()?;
         let pointer = self.ir.builder.build_alloca(ir_type, identifier)?;
+
         self.ir.builder.build_store(pointer, value)?;
         self.scopes.define_identifier(
             identifier,
@@ -89,8 +88,7 @@ impl<'ctx> CodeGen<'ctx> {
             .ir
             .simple_type_to_ir_type(*type_)
             .expect("Void/Unit value not allowed to be stored in variables")
-            .try_into()
-            .unwrap();
+            .try_into_override()?;
 
         Ok(self
             .ir

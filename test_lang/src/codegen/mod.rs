@@ -1,5 +1,6 @@
 pub mod ir;
 pub mod scope;
+pub mod helpers;
 
 mod builtins;
 mod types;
