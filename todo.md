@@ -37,3 +37,7 @@
 - ADT
 - pattern matching
 - multithreading
+
+## Known issues/risks
+
+- i32_type.const_int_from_string "should not be relied for validation"
