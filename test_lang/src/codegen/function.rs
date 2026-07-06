@@ -190,7 +190,7 @@ impl<'ctx> CodeGen<'ctx> {
             Ok(AnyValueEnum::FloatValue(value)) => Some(&value.clone()),
             Ok(AnyValueEnum::PointerValue(value)) => Some(&value.clone()),
             Ok(AnyValueEnum::VectorValue(value)) => Some(&value.clone()),
-            _ => unreachable!("Encountered unsupported return value type"),
+            _ => return Err("Encountered unsupported return value type".into()),
         };
 
         self.ir.builder.build_return(value)?;

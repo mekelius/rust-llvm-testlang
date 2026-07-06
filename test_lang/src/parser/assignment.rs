@@ -99,7 +99,7 @@ where
                 Token::AsteriskEquals => BinaryOperator::Mul,
                 Token::SlashEquals => BinaryOperator::Div,
                 Token::PercentEquals => BinaryOperator::Mod,
-                _ => unreachable!("Unhandled shorthand assignment operator"),
+                _ => todo!("Unhandled shorthand assignment operator"),
             };
             let rhs = Expression::Binop(BinopExpression {
                 op,

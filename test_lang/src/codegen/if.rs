@@ -61,7 +61,7 @@ impl<'ctx> CodeGen<'ctx> {
             body: if_branch_body,
         } = ast_store.get_statement(if_branch).inner
         else {
-            unreachable!("Encountered if-else-statement with non if-statement first branch");
+            return Err("Encountered if-else-statement with non if-statement first branch".into());
         };
 
         let condition_value = self.handle_expression(ast_store, condition)?;
