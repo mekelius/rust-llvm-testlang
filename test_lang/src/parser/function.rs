@@ -92,10 +92,10 @@ where
         .then(parameter_list())
         .then(maybe_return_type())
         .then(function_body())
-        .map(|(((name, formals), return_type_string), body)| Function {
+        .map(|(((name, params), return_type_string), body)| Function {
             name,
             return_type_string,
-            formals,
+            params,
             body,
         })
         .spanned()

@@ -24,7 +24,7 @@ impl<'ctx> Scope<'ctx> {
         }
     }
 
-    pub fn define_formal(&mut self, identifier: &str, value: BasicValueEnum<'ctx>) {
+    pub fn define_param(&mut self, identifier: &str, value: BasicValueEnum<'ctx>) {
         if self.identifiers.contains_key(identifier) {
             panic!(
                 "Attempt to redefine identifier {} as a formal parameter",

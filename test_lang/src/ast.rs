@@ -72,7 +72,7 @@ pub struct Program {
 pub struct Function {
     pub name: SourceIDSpanned<String>,
     pub return_type_string: Option<SourceIDSpanned<String>>,
-    pub formals: Vec<SourceIDSpanned<Parameter>>,
+    pub params: Vec<SourceIDSpanned<Parameter>>,
     pub body: Vec<StatementID>,
 }
 

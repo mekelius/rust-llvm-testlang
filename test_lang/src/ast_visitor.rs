@@ -312,7 +312,7 @@ mod tests {
         let function1 = Function {
             name: "f1".to_string().with_span(DUMMY_SPAN),
             return_type_string: None,
-            formals: vec![],
+            params: vec![],
             body: vec![store.statements.add(Statement::Empty.with_span(DUMMY_SPAN))],
         }
         .with_span(DUMMY_SPAN);
@@ -345,7 +345,7 @@ mod tests {
             Function {
                 name: "f1".to_string().with_span(DUMMY_SPAN),
                 return_type_string: None,
-                formals: vec![],
+                params: vec![],
                 body: vec![store.statements.add(Statement::Empty.with_span(DUMMY_SPAN))],
             }
             .with_span(DUMMY_SPAN),
@@ -354,7 +354,7 @@ mod tests {
             Function {
                 name: "f2".to_string().with_span(DUMMY_SPAN),
                 return_type_string: None,
-                formals: vec![],
+                params: vec![],
                 body: vec![
                     store
                         .statements

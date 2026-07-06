@@ -22,7 +22,7 @@ impl<'ctx> CodeGen<'ctx> {
         let Function {
             name,
             return_type_string,
-            formals,
+            params,
             body,
         } = &ast_store.functions.get_node(function_id).inner;
 
@@ -39,7 +39,7 @@ impl<'ctx> CodeGen<'ctx> {
             {
                 panic!("main function is only allowed return type Int (if specified)");
             }
-            self.handle_main_function(ast_store, &formals, &body)?;
+            self.handle_main_function(ast_store, &params, &body)?;
             return Ok(());
         }
 
@@ -48,10 +48,10 @@ impl<'ctx> CodeGen<'ctx> {
 
             let i32_t = ir.context.i32_type();
 
-            // Process formal params
-            let formal_types: Vec<BasicMetadataTypeEnum<'ctx>> = formals
+            // Process param
+            let param_types: Vec<BasicMetadataTypeEnum<'ctx>> = params
                 .iter()
-                .map(|formal| match &formal.inner {
+                .map(|param| match &param.inner {
                     Parameter::Untyped(_) => i32_t.into(),
                     Parameter::Typed(type_string, _) => ir
                         .type_string_to_ir_type(&type_string)
@@ -62,16 +62,16 @@ impl<'ctx> CodeGen<'ctx> {
                 .collect();
 
             let signature = match return_type {
-                SimpleType::Boolean => ir.context.bool_type().fn_type(&formal_types, false),
-                SimpleType::Int => ir.context.i32_type().fn_type(&formal_types, false),
-                SimpleType::Float => ir.context.f64_type().fn_type(&formal_types, false),
-                SimpleType::Char => ir.context.i8_type().fn_type(&formal_types, false),
-                SimpleType::Byte => ir.context.i8_type().fn_type(&formal_types, false),
+                SimpleType::Boolean => ir.context.bool_type().fn_type(&param_types, false),
+                SimpleType::Int => ir.context.i32_type().fn_type(&param_types, false),
+                SimpleType::Float => ir.context.f64_type().fn_type(&param_types, false),
+                SimpleType::Char => ir.context.i8_type().fn_type(&param_types, false),
+                SimpleType::Byte => ir.context.i8_type().fn_type(&param_types, false),
                 SimpleType::String => ir
                     .context
                     .ptr_type(AddressSpace::default())
-                    .fn_type(&formal_types, false),
-                SimpleType::Void => ir.context.void_type().fn_type(&formal_types, false),
+                    .fn_type(&param_types, false),
+                SimpleType::Void => ir.context.void_type().fn_type(&param_types, false),
                 SimpleType::Unknown => panic!("Unknown type as return type"),
             };
 
@@ -81,18 +81,18 @@ impl<'ctx> CodeGen<'ctx> {
             let entry_b = ir.context.append_basic_block(function, "Entry");
             ir.builder.position_at_end(entry_b);
 
-            // Create function scope and add formal parameters to it
+            // Create function scope and add param parameters to it
             let function_scope = scopes.push_new_scope();
 
-            for (i, formal) in formals.iter().enumerate() {
+            for (i, param) in params.iter().enumerate() {
                 let value = function.get_nth_param(i.try_into()?);
 
-                match &formal.inner {
+                match &param.inner {
                     Parameter::Typed(_, identifier) => {
-                        function_scope.define_formal(&identifier, value.unwrap())
+                        function_scope.define_param(&identifier, value.unwrap())
                     }
                     Parameter::Untyped(identifier) => {
-                        function_scope.define_formal(&identifier, value.unwrap())
+                        function_scope.define_param(&identifier, value.unwrap())
                     }
                 };
             }
@@ -115,7 +115,7 @@ impl<'ctx> CodeGen<'ctx> {
     fn handle_main_function(
         &mut self,
         ast_store: &ASTStore,
-        _formals: &Vec<SourceIDSpanned<Parameter>>,
+        _params: &Vec<SourceIDSpanned<Parameter>>,
         body: &Vec<StatementID>,
     ) -> Result<(), CodegenError> {
         {
@@ -130,7 +130,7 @@ impl<'ctx> CodeGen<'ctx> {
             let entry_b = ir.context.append_basic_block(main_f, "Entry");
             ir.builder.position_at_end(entry_b);
 
-            // Create function scope and add formal parameters to it
+            // Create function scope and add param parameters to it
             scopes.push_new_scope();
         }
 
