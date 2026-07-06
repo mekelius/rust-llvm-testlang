@@ -112,7 +112,7 @@ impl<'ctx> CodeGen<'ctx> {
         let condition_value_updated: BasicValueEnum<'ctx> =
             condition_value_updated.try_into_override()?;
 
-        let phi_type: BasicTypeEnum<'ctx> = condition_value_initial.get_type().try_into().unwrap();
+        let phi_type: BasicTypeEnum<'ctx> = condition_value_initial.get_type();
         let phi = self.ir.builder.build_phi(phi_type, "loop_condition")?;
         phi.add_incoming(&[
             (&condition_value_initial, from_block),

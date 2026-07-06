@@ -55,7 +55,7 @@ impl<'ctx> CodeGen<'ctx> {
                     Parameter::Untyped(_) => Ok(i32_t.into()),
                     Parameter::Typed(type_string, _) => ir
                         .type_string_to_ir_type(&type_string)
-                        .unwrap_or_else(|| panic!("Void is not allowed as a parameter type"))
+                        .ok_or("Void is not allowed as a parameter type")?
                         .try_into_override(),
                 })
                 .collect::<Result<Vec<BasicMetadataTypeEnum<'ctx>>, CodegenError>>()?;

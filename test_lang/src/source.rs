@@ -189,12 +189,8 @@ impl<'src> SourceStore {
             end: _,
         } = span;
 
-        self.map_offset(*source_id, *start).unwrap_or_else(|| {
-            panic!(
-                "Encountered span with source_id {}, but no such source exists!",
-                span.context
-            )
-        })
+        self.map_offset(*source_id, *start)
+            .expect("caller should be sure that source exists")
     }
 
     pub fn map_end(&'src self, span: &SourceIDSpan) -> SourceLocation<'src> {
@@ -204,12 +200,8 @@ impl<'src> SourceStore {
             end,
         } = span;
 
-        self.map_offset(*source_id, *end).unwrap_or_else(|| {
-            panic!(
-                "Encountered span with source_id {}, but no such source exists!",
-                span.context
-            )
-        })
+        self.map_offset(*source_id, *end)
+            .expect("caller should be sure that source exists")
     }
 
     /** Maps a span (of byte offsets) into line and col numbers */
@@ -219,12 +211,9 @@ impl<'src> SourceStore {
             start: _,
             end: _,
         } = span;
-        let source = self.get_source(*context).unwrap_or_else(|| {
-            panic!(
-                "Encountered span with source_id {}, but no such source exists!",
-                span.context
-            )
-        });
+        let source = self
+            .get_source(*context)
+            .expect("caller should be sure that source exists");
 
         let (
             LineCol {
