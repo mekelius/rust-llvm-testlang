@@ -49,11 +49,66 @@ pub fn run(
         Err(_) => unreachable!(),
     };
 
-    let input = IterInput::new(tokens.iter().cloned(), tokens.last().unwrap().1);
+    if tokens.is_empty() {
+        return Ok((
+            Program { functions: vec![] }.with_span(SourceIDSpan {
+                context: source_id,
+                start: 0,
+                end: 0,
+            }),
+            ast_store,
+        ));
+    }
+
+    let input = IterInput::new(
+        tokens.iter().cloned(),
+        tokens.last().expect("empty input is handled above").1,
+    );
     let mut state = extra::SimpleState(ast_store);
 
     match parser().parse_with_state(input, &mut state).into_result() {
         Ok(result) => Ok((result, state.0)),
         Err(e) => panic!("parse error: {:#?}", e),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn handles_empty_source() {
+        let store = ASTStore::new();
+        let source_id = SourceID::new(3);
+        let (program, _store) = run("", source_id, store).expect("should parse");
+
+        assert_eq!(program.inner, Program { functions: vec![] });
+        assert_eq!(
+            program.span,
+            SourceIDSpan {
+                context: source_id,
+                start: 0,
+                end: 0
+            }
+        );
+    }
+
+    #[test]
+    fn handles_nonempty_zero_token_source_with_zero_span() {
+        let store = ASTStore::new();
+        let source_id = SourceID::new(3);
+
+        let source = "\n\n   //jeejee    \n\n      /*somethingsomething(){\n\njoo\n  } kyl    \n\n    */    \n\n ";
+        let (program, _store) = run(source, source_id, store).expect("should parse");
+
+        assert_eq!(program.inner, Program { functions: vec![] });
+        assert_eq!(
+            program.span,
+            SourceIDSpan {
+                context: source_id,
+                start: 0,
+                end: 0
+            }
+        );
     }
 }
